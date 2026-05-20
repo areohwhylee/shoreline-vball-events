@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>KOB Doubles Grass League</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --sans:'DM Sans',system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+  --t1:#1a1a18;--t2:#58584f;--t3:#9a9a90;
+  --ti:#185fa5;--ts:#0f6e56;--tw:#993c1d;
+  --bg1:#fff;--bg2:#f4f3ef;--bgs:#e1f5ee;--bgw:#faece7;
+  --b3:rgba(26,26,24,.13);--b2:rgba(26,26,24,.28);--b1:rgba(26,26,24,.42);
+  --bs:#0f6e56;--rm:8px;--rl:12px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --t1:#f0efe8;--t2:#9a9a90;--t3:#68685f;
+  --ti:#85b7eb;--ts:#5dcaa5;--tw:#f0997b;
+  --bg1:#1c1c1a;--bg2:#262623;--bgs:#085041;--bgw:#4a1b0c;
+  --b3:rgba(240,239,232,.13);--b2:rgba(240,239,232,.28);--b1:rgba(240,239,232,.42);
+  --bs:#5dcaa5;
+}}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--sans);background:var(--bg2);color:var(--t1);min-height:100vh;}
+.page-hdr{background:var(--bg1);border-bottom:.5px solid var(--b3);padding:16px 24px;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;}
+.page-hdr h1{font-size:18px;font-weight:500;}
+.page-hdr span{font-size:13px;color:var(--t3);}
+.page-main{max-width:820px;margin:0 auto;padding:24px 16px 64px;}
+.card{background:var(--bg1);border:.5px solid var(--b3);border-radius:var(--rl);padding:24px;}
+.tabs{display:flex;gap:2px;border-bottom:.5px solid var(--b3);margin-bottom:1.5rem;}
+.tab{background:transparent;border:.5px solid transparent;border-radius:var(--rm) var(--rm) 0 0;padding:8px 18px;cursor:pointer;font-size:14px;font-family:var(--sans);color:var(--t2);margin-bottom:-.5px;}
+.tab.active{background:var(--bg1);border-color:var(--b2);border-bottom-color:var(--bg1);color:var(--t1);}
+.btn-sm{padding:6px 13px;font-size:13px;font-family:var(--sans);cursor:pointer;border-radius:var(--rm);border:.5px solid var(--b3);background:transparent;color:var(--t2);}
+.btn-sm:hover{background:var(--bg2);}
+.btn-sm.sel{border-color:var(--b1);background:var(--bg2);color:var(--t1);font-weight:500;}
+.btn-sm.green{color:var(--ts);border-color:var(--bs);}
+.btn-sm.green:hover{background:var(--bgs);}
+.btn-xs{padding:5px 11px;font-size:12px;font-family:var(--sans);cursor:pointer;border-radius:var(--rm);border:.5px solid var(--b3);background:transparent;color:var(--t2);}
+.btn-xs.sel{border-color:var(--b2);background:var(--bg2);color:var(--t1);}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1.25rem;}
+.stat{background:var(--bg2);border-radius:var(--rm);padding:10px 12px;}
+.stat-lbl{font-size:10px;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;}
+.stat-val{font-size:20px;font-weight:500;color:var(--t1);margin-top:4px;}
+.nav-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.nav-l{display:flex;gap:4px;}.nav-r{display:flex;gap:6px;}
+.round-row{display:flex;gap:4px;margin-bottom:.75rem;flex-wrap:wrap;}
+.prog-row{display:flex;align-items:center;gap:10px;margin-bottom:1rem;}
+.prog-lbl{font-size:12px;color:var(--t3);white-space:nowrap;}
+.prog-wrap{flex:1;height:4px;background:var(--b3);border-radius:99px;overflow:hidden;}
+.prog-bar{height:4px;background:var(--bs);border-radius:99px;transition:width .3s;}
+.net-table{border:.5px solid var(--b3);border-radius:var(--rl);overflow:hidden;}
+.net-head{display:grid;grid-template-columns:36px 1fr 58px 24px 58px 1fr;padding:7px 12px;font-size:11px;font-weight:500;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;border-bottom:.5px solid var(--b3);background:var(--bg2);}
+.net-row{display:grid;grid-template-columns:36px 1fr 58px 24px 58px 1fr;padding:6px 12px;align-items:center;border-bottom:.5px solid var(--b3);}
+.net-row:last-child{border-bottom:none;}
+.net-row.alt{background:var(--bg2);}
+.nnum{font-size:12px;font-weight:500;color:var(--t2);}
+.pair{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pa{color:var(--t1);}.pb{color:var(--ti);}
+.plus{color:var(--t3);font-size:11px;margin:0 3px;}
+.vsc{text-align:center;font-size:11px;color:var(--t3);}
+.score-in{width:56px;text-align:center;font-size:14px;font-weight:500;font-family:var(--mono);padding:3px 4px;border-radius:var(--rm);border:.5px solid var(--b2);background:var(--bg2);color:var(--t1);outline:none;display:block;}
+.score-in:focus{border-color:var(--b1);}
+.score-in.win{border-color:var(--bs);color:var(--ts);background:var(--bgs);}
+.score-in.lose{color:var(--t3);border-color:var(--b3);}
+.fnote{margin-top:10px;font-size:12px;color:var(--t3);}
+.grp-filter{display:flex;gap:4px;margin-bottom:1rem;}
+.std-wrap{border:.5px solid var(--b3);border-radius:var(--rl);overflow:hidden;}
+.std-table{width:100%;border-collapse:collapse;font-size:13px;}
+.std-table th{font-size:10px;font-weight:500;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;padding:8px 10px;text-align:left;background:var(--bg2);border-bottom:.5px solid var(--b3);cursor:pointer;user-select:none;}
+.std-table th:hover{color:var(--t1);}
+.std-table th.r,.std-table td.r{text-align:right;}
+.std-table td{padding:8px 10px;border-bottom:.5px solid var(--b3);color:var(--t1);}
+.std-table tr:last-child td{border-bottom:none;}
+.std-table tr.alt td{background:var(--bg2);}
+.rnk{font-size:12px;font-weight:500;color:var(--t2);}
+.gold{color:#b8860b;}.silver{color:#888;}.bronze{color:#a0522d;}
+.dpos{color:var(--ts);font-weight:500;}.dneg{color:var(--tw);}
+.gbadge{display:inline-block;font-size:10px;padding:2px 6px;border-radius:4px;background:var(--bg2);border:.5px solid var(--b3);color:var(--t2);}
+.lookup-sel{font-size:13px;font-family:var(--sans);padding:6px 10px;border-radius:var(--rm);border:.5px solid var(--b3);background:var(--bg2);color:var(--t1);cursor:pointer;}
+.lk-wrap{margin-top:10px;border:.5px solid var(--b3);border-radius:var(--rl);overflow:hidden;}
+.lk-head{display:grid;grid-template-columns:50px 90px 1fr 26px 1fr 70px;padding:7px 12px;font-size:11px;font-weight:500;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;border-bottom:.5px solid var(--b3);background:var(--bg2);}
+.lk-row{display:grid;grid-template-columns:50px 90px 1fr 26px 1fr 70px;padding:7px 12px;font-size:13px;align-items:center;border-bottom:.5px solid var(--b3);}
+.lk-row:last-child{border-bottom:none;}
+.lk-row.alt{background:var(--bg2);}
+.empty{padding:3rem 0;text-align:center;color:var(--t2);}
+@media(max-width:560px){
+  .stats{grid-template-columns:repeat(2,1fr);}
+  .page-main{padding:14px 10px 48px;}
+  .card{padding:14px;}
+  .net-head,.net-row{grid-template-columns:28px 1fr 50px 20px 50px 1fr;}
+  .tabs .tab{padding:8px 11px;font-size:13px;}
+}
+</style>
+</head>
+<body>
+<header class="page-hdr">
+  <h1 id="page-title">KOB Doubles Grass League</h1>
+  <span id="page-sub"></span>
+</header>
+<main class="page-main">
+<div class="card">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('schedule')">Schedule</button>
+    <button class="tab" onclick="switchTab('standings')">Standings</button>
+    <button class="tab" onclick="switchTab('lookup')">Player lookup</button>
+  </div>
+
+  <!-- SCHEDULE -->
+  <div id="tab-schedule">
+    <div id="stats-bar" class="stats"></div>
+    <div class="nav-row">
+      <div class="nav-l" id="week-btns"></div>
+      <div class="nav-r">
+        <button class="btn-sm green" onclick="exportXLSX()">Export .xlsx</button>
+      </div>
+    </div>
+    <div class="round-row" id="round-btns"></div>
+    <div class="prog-row">
+      <span class="prog-lbl" id="prog-lbl">0 / 165 scored</span>
+      <div class="prog-wrap"><div class="prog-bar" id="prog-bar" style="width:0%"></div></div>
+    </div>
+    <div class="net-table" id="net-table"></div>
+    <p class="fnote" id="fnote"></p>
+  </div>
+
+  <!-- STANDINGS -->
+  <div id="tab-standings" style="display:none;">
+    <div class="grp-filter">
+      <button class="btn-xs sel" onclick="setGF('all',this)">All players</button>
+      <button class="btn-xs" onclick="setGF('A',this)">Group A</button>
+      <button class="btn-xs" onclick="setGF('B',this)">Group B</button>
+    </div>
+    <div class="std-wrap"><table class="std-table" id="std-table"></table></div>
+    <p class="fnote" id="std-note"></p>
+  </div>
+
+  <!-- LOOKUP -->
+  <div id="tab-lookup" style="display:none;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+      <label style="font-size:13px;color:var(--t2);">Player:</label>
+      <select id="lookup-sel" class="lookup-sel" onchange="renderLookup()"></select>
+    </div>
+    <div id="lookup-res"></div>
+  </div>
+</div>
+</main>
+
+<script>
+var SD = {"sched":[[[[{"a":"Dheemanth","b":"Sam G"},{"a":"Tom Y","b":"Giao"}],[{"a":"Brandon G","b":"Sandy Z"},{"a":"Jerry C","b":"Cece L"}],[{"a":"Mikee G","b":"Cindy X"},{"a":"Destry H","b":"Annie"}],[{"a":"Mark L","b":"Cora H"},{"a":"Nik A","b":"Abby H"}],[{"a":"Kiet T","b":"Amanda P"},{"a":"Andrew K","b":"Leanne L"}],[{"a":"Evan D","b":"Jenny N"},{"a":"Wesley VD","b":"Allie L"}],[{"a":"Kevin Z","b":"Grace L"},{"a":"Michael B","b":"Tracy M"}],[{"a":"Leo M","b":"Jenny L"},{"a":"Matt G","b":"Chrissy D"}],[{"a":"Preston B","b":"Morgan W"},{"a":"Sohka","b":"Cindy D"}],[{"a":"Tristan Y","b":"Trish"},{"a":"Andrew G","b":"May"}],[{"a":"Vini","b":"Saho K"},{"a":"Brandon M","b":"Namika"}]],[[{"a":"Tom Y","b":"Amanda P"},{"a":"Sohka","b":"Leanne L"}],[{"a":"Wesley VD","b":"Chrissy D"},{"a":"Andrew G","b":"Saho K"}],[{"a":"Evan D","b":"Jenny L"},{"a":"Kiet T","b":"Cindy X"}],[{"a":"Jerry C","b":"Namika"},{"a":"Dheemanth","b":"Cece L"}],[{"a":"Brandon M","b":"Annie"},{"a":"Preston B","b":"Sam G"}],[{"a":"Tristan Y","b":"Giao"},{"a":"Leo M","b":"Sandy Z"}],[{"a":"Matt G","b":"May"},{"a":"Brandon G","b":"Jenny N"}],[{"a":"Andrew K","b":"Abby H"},{"a":"Michael B","b":"Cora H"}],[{"a":"Nik A","b":"Allie L"},{"a":"Mark L","b":"Grace L"}],[{"a":"Mikee G","b":"Tracy M"},{"a":"Destry H","b":"Morgan W"}],[{"a":"Vini","b":"Trish"},{"a":"Kevin Z","b":"Cindy D"}]],[[{"a":"Andrew G","b":"Cece L"},{"a":"Brandon M","b":"Tracy M"}],[{"a":"Preston B","b":"Trish"},{"a":"Jerry C","b":"Giao"}],[{"a":"Leo M","b":"Amanda P"},{"a":"Wesley VD","b":"Annie"}],[{"a":"Dheemanth","b":"Leanne L"},{"a":"Destry H","b":"Saho K"}],[{"a":"Kiet T","b":"Chrissy D"},{"a":"Tom Y","b":"Cora H"}],[{"a":"Michael B","b":"Grace L"},{"a":"Nik A","b":"Namika"}],[{"a":"Tristan Y","b":"Cindy X"},{"a":"Andrew K","b":"Sandy Z"}],[{"a":"Brandon G","b":"Sam G"},{"a":"Kevin Z","b":"Jenny L"}],[{"a":"Vini","b":"Abby H"},{"a":"Mikee G","b":"Allie L"}],[{"a":"Mark L","b":"May"},{"a":"Evan D","b":"Morgan W"}],[{"a":"Sohka","b":"Jenny N"},{"a":"Matt G","b":"Cindy D"}]],[[{"a":"Mark L","b":"Cindy D"},{"a":"Vini","b":"Cindy X"}],[{"a":"Jerry C","b":"Abby H"},{"a":"Kiet T","b":"Giao"}],[{"a":"Brandon M","b":"Allie L"},{"a":"Wesley VD","b":"Cece L"}],[{"a":"Destry H","b":"Leanne L"},{"a":"Evan D","b":"Amanda P"}],[{"a":"Tom Y","b":"Sam G"},{"a":"Kevin Z","b":"Namika"}],[{"a":"Andrew K","b":"Chrissy D"},{"a":"Nik A","b":"May"}],[{"a":"Brandon G","b":"Tracy M"},{"a":"Preston B","b":"Cora H"}],[{"a":"Sohka","b":"Annie"},{"a":"Matt G","b":"Trish"}],[{"a":"Dheemanth","b":"Saho K"},{"a":"Leo M","b":"Jenny N"}],[{"a":"Andrew G","b":"Grace L"},{"a":"Mikee G","b":"Jenny L"}],[{"a":"Tristan Y","b":"Morgan W"},{"a":"Michael B","b":"Sandy Z"}]],[[{"a":"Vini","b":"Jenny N"},{"a":"Tom Y","b":"Jenny L"}],[{"a":"Brandon M","b":"Morgan W"},{"a":"Mark L","b":"Saho K"}],[{"a":"Michael B","b":"Abby H"},{"a":"Preston B","b":"Leanne L"}],[{"a":"Jerry C","b":"Trish"},{"a":"Kevin Z","b":"Allie L"}],[{"a":"Nik A","b":"Sam G"},{"a":"Leo M","b":"May"}],[{"a":"Destry H","b":"Amanda P"},{"a":"Mikee G","b":"Giao"}],[{"a":"Tristan Y","b":"Chrissy D"},{"a":"Wesley VD","b":"Cindy X"}],[{"a":"Kiet T","b":"Tracy M"},{"a":"Andrew K","b":"Grace L"}],[{"a":"Matt G","b":"Cora H"},{"a":"Evan D","b":"Annie"}],[{"a":"Dheemanth","b":"Sandy Z"},{"a":"Sohka","b":"Namika"}],[{"a":"Andrew G","b":"Cindy D"},{"a":"Brandon G","b":"Cece L"}]]],[[[{"a":"Evan D","b":"Cora H"},{"a":"Nik A","b":"Chrissy D"}],[{"a":"Mikee G","b":"Leanne L"},{"a":"Sohka","b":"Jenny L"}],[{"a":"Wesley VD","b":"Abby H"},{"a":"Andrew K","b":"Saho K"}],[{"a":"Tristan Y","b":"May"},{"a":"Vini","b":"Sandy Z"}],[{"a":"Destry H","b":"Giao"},{"a":"Kiet T","b":"Morgan W"}],[{"a":"Leo M","b":"Grace L"},{"a":"Brandon M","b":"Cece L"}],[{"a":"Preston B","b":"Cindy D"},{"a":"Matt G","b":"Cindy X"}],[{"a":"Dheemanth","b":"Jenny N"},{"a":"Jerry C","b":"Amanda P"}],[{"a":"Andrew G","b":"Allie L"},{"a":"Michael B","b":"Trish"}],[{"a":"Mark L","b":"Tracy M"},{"a":"Brandon G","b":"Annie"}],[{"a":"Kevin Z","b":"Sam G"},{"a":"Tom Y","b":"Namika"}]],[[{"a":"Evan D","b":"Chrissy D"},{"a":"Brandon M","b":"Saho K"}],[{"a":"Preston B","b":"Amanda P"},{"a":"Wesley VD","b":"Leanne L"}],[{"a":"Sohka","b":"Grace L"},{"a":"Nik A","b":"Jenny L"}],[{"a":"Mikee G","b":"Cece L"},{"a":"Destry H","b":"Trish"}],[{"a":"Andrew K","b":"Namika"},{"a":"Tom Y","b":"Cindy X"}],[{"a":"Jerry C","b":"Sam G"},{"a":"Dheemanth","b":"Abby H"}],[{"a":"Leo M","b":"Cora H"},{"a":"Mark L","b":"Allie L"}],[{"a":"Vini","b":"Cindy D"},{"a":"Brandon G","b":"May"}],[{"a":"Andrew G","b":"Morgan W"},{"a":"Tristan Y","b":"Tracy M"}],[{"a":"Matt G","b":"Jenny N"},{"a":"Michael B","b":"Annie"}],[{"a":"Kiet T","b":"Sandy Z"},{"a":"Kevin Z","b":"Giao"}]],[[{"a":"Vini","b":"Amanda P"},{"a":"Leo M","b":"Cindy D"}],[{"a":"Nik A","b":"Giao"},{"a":"Preston B","b":"Leanne L"}],[{"a":"Andrew K","b":"Cece L"},{"a":"Dheemanth","b":"Allie L"}],[{"a":"Kevin Z","b":"Chrissy D"},{"a":"Tristan Y","b":"Annie"}],[{"a":"Jerry C","b":"Saho K"},{"a":"Brandon G","b":"Trish"}],[{"a":"Mark L","b":"Jenny N"},{"a":"Mikee G","b":"Sandy Z"}],[{"a":"Brandon M","b":"Grace L"},{"a":"Tom Y","b":"Morgan W"}],[{"a":"Wesley VD","b":"Namika"},{"a":"Evan D","b":"Cindy X"}],[{"a":"Matt G","b":"Tracy M"},{"a":"Michael B","b":"Jenny L"}],[{"a":"Destry H","b":"Abby H"},{"a":"Andrew G","b":"Cora H"}],[{"a":"Sohka","b":"Sam G"},{"a":"Kiet T","b":"May"}]],[[{"a":"Kiet T","b":"Jenny L"},{"a":"Kevin Z","b":"Amanda P"}],[{"a":"Dheemanth","b":"Morgan W"},{"a":"Brandon M","b":"Cora H"}],[{"a":"Leo M","b":"Trish"},{"a":"Michael B","b":"Cindy X"}],[{"a":"Evan D","b":"Cindy D"},{"a":"Mikee G","b":"Grace L"}],[{"a":"Matt G","b":"Namika"},{"a":"Sohka","b":"Tracy M"}],[{"a":"Brandon G","b":"Chrissy D"},{"a":"Jerry C","b":"Leanne L"}],[{"a":"Andrew K","b":"Giao"},{"a":"Andrew G","b":"Jenny N"}],[{"a":"Wesley VD","b":"May"},{"a":"Vini","b":"Sam G"}],[{"a":"Nik A","b":"Annie"},{"a":"Mark L","b":"Cece L"}],[{"a":"Preston B","b":"Saho K"},{"a":"Tristan Y","b":"Sandy Z"}],[{"a":"Destry H","b":"Allie L"},{"a":"Tom Y","b":"Abby H"}]],[[{"a":"Mikee G","b":"Cindy D"},{"a":"Tristan Y","b":"Jenny N"}],[{"a":"Vini","b":"Leanne L"},{"a":"Andrew G","b":"Sandy Z"}],[{"a":"Tom Y","b":"Tracy M"},{"a":"Mark L","b":"Trish"}],[{"a":"Matt G","b":"Allie L"},{"a":"Brandon G","b":"Morgan W"}],[{"a":"Leo M","b":"Annie"},{"a":"Wesley VD","b":"Sam G"}],[{"a":"Andrew K","b":"Amanda P"},{"a":"Nik A","b":"Cece L"}],[{"a":"Sohka","b":"Chrissy D"},{"a":"Michael B","b":"May"}],[{"a":"Destry H","b":"Namika"},{"a":"Kevin Z","b":"Saho K"}],[{"a":"Evan D","b":"Abby H"},{"a":"Preston B","b":"Cindy X"}],[{"a":"Brandon M","b":"Giao"},{"a":"Kiet T","b":"Cora H"}],[{"a":"Jerry C","b":"Grace L"},{"a":"Dheemanth","b":"Jenny L"}]]],[[[{"a":"Vini","b":"Jenny L"},{"a":"Nik A","b":"Sam G"}],[{"a":"Mikee G","b":"Saho K"},{"a":"Tristan Y","b":"Grace L"}],[{"a":"Mark L","b":"Abby H"},{"a":"Kevin Z","b":"Annie"}],[{"a":"Evan D","b":"Sandy Z"},{"a":"Sohka","b":"Cece L"}],[{"a":"Dheemanth","b":"May"},{"a":"Kiet T","b":"Namika"}],[{"a":"Michael B","b":"Cindy D"},{"a":"Leo M","b":"Giao"}],[{"a":"Brandon M","b":"Amanda P"},{"a":"Andrew G","b":"Cindy X"}],[{"a":"Tom Y","b":"Leanne L"},{"a":"Jerry C","b":"Jenny N"}],[{"a":"Preston B","b":"Chrissy D"},{"a":"Matt G","b":"Morgan W"}],[{"a":"Wesley VD","b":"Trish"},{"a":"Brandon G","b":"Allie L"}],[{"a":"Andrew K","b":"Tracy M"},{"a":"Destry H","b":"Cora H"}]],[[{"a":"Brandon M","b":"Trish"},{"a":"Andrew G","b":"Saho K"}],[{"a":"Kiet T","b":"Grace L"},{"a":"Andrew K","b":"Cindy X"}],[{"a":"Nik A","b":"Tracy M"},{"a":"Leo M","b":"Cece L"}],[{"a":"Destry H","b":"Cindy D"},{"a":"Tom Y","b":"Allie L"}],[{"a":"Jerry C","b":"Morgan W"},{"a":"Evan D","b":"May"}],[{"a":"Dheemanth","b":"Namika"},{"a":"Wesley VD","b":"Sandy Z"}],[{"a":"Michael B","b":"Jenny N"},{"a":"Sohka","b":"Cora H"}],[{"a":"Vini","b":"Chrissy D"},{"a":"Tristan Y","b":"Sam G"}],[{"a":"Mikee G","b":"Amanda P"},{"a":"Brandon G","b":"Leanne L"}],[{"a":"Mark L","b":"Giao"},{"a":"Preston B","b":"Abby H"}],[{"a":"Matt G","b":"Jenny L"},{"a":"Kevin Z","b":"Annie"}]],[[{"a":"Mark L","b":"Morgan W"},{"a":"Destry H","b":"Tracy M"}],[{"a":"Kiet T","b":"Cindy D"},{"a":"Preston B","b":"Allie L"}],[{"a":"Matt G","b":"Grace L"},{"a":"Mikee G","b":"Annie"}],[{"a":"Brandon M","b":"Abby H"},{"a":"Sohka","b":"Amanda P"}],[{"a":"Nik A","b":"Sandy Z"},{"a":"Kevin Z","b":"Leanne L"}],[{"a":"Tom Y","b":"May"},{"a":"Brandon G","b":"Cora H"}],[{"a":"Vini","b":"Namika"},{"a":"Tristan Y","b":"Cece L"}],[{"a":"Wesley VD","b":"Jenny N"},{"a":"Dheemanth","b":"Chrissy D"}],[{"a":"Evan D","b":"Giao"},{"a":"Andrew K","b":"Trish"}],[{"a":"Andrew G","b":"Sam G"},{"a":"Jerry C","b":"Jenny L"}],[{"a":"Michael B","b":"Saho K"},{"a":"Leo M","b":"Cindy X"}]],[[{"a":"Kiet T","b":"Cece L"},{"a":"Tristan Y","b":"Saho K"}],[{"a":"Sohka","b":"Giao"},{"a":"Michael B","b":"Sam G"}],[{"a":"Kevin Z","b":"Tracy M"},{"a":"Mark L","b":"Cindy X"}],[{"a":"Andrew K","b":"May"},{"a":"Brandon G","b":"Morgan W"}],[{"a":"Evan D","b":"Grace L"},{"a":"Nik A","b":"Amanda P"}],[{"a":"Wesley VD","b":"Jenny L"},{"a":"Destry H","b":"Jenny N"}],[{"a":"Matt G","b":"Abby H"},{"a":"Dheemanth","b":"Trish"}],[{"a":"Brandon M","b":"Chrissy D"},{"a":"Jerry C","b":"Annie"}],[{"a":"Vini","b":"Allie L"},{"a":"Mikee G","b":"Cora H"}],[{"a":"Leo M","b":"Namika"},{"a":"Tom Y","b":"Cindy D"}],[{"a":"Preston B","b":"Sandy Z"},{"a":"Andrew G","b":"Leanne L"}]],[[{"a":"Vini","b":"May"},{"a":"Tom Y","b":"Grace L"}],[{"a":"Michael B","b":"Amanda P"},{"a":"Preston B","b":"Jenny N"}],[{"a":"Tristan Y","b":"Abby H"},{"a":"Leo M","b":"Allie L"}],[{"a":"Wesley VD","b":"Cora H"},{"a":"Dheemanth","b":"Giao"}],[{"a":"Brandon G","b":"Cindy X"},{"a":"Matt G","b":"Leanne L"}],[{"a":"Evan D","b":"Trish"},{"a":"Mikee G","b":"Chrissy D"}],[{"a":"Mark L","b":"Namika"},{"a":"Destry H","b":"Sam G"}],[{"a":"Sohka","b":"Tracy M"},{"a":"Jerry C","b":"Cindy D"}],[{"a":"Kevin Z","b":"Morgan W"},{"a":"Kiet T","b":"Cece L"}],[{"a":"Andrew G","b":"Annie"},{"a":"Nik A","b":"Saho K"}],[{"a":"Andrew K","b":"Jenny L"},{"a":"Brandon M","b":"Sandy Z"}]]]],"stats":{"rp":7,"mp":1,"rpMx":2,"mpMx":2},"gA":["Leo M","Matt G","Kevin Z","Nik A","Vini","Michael B","Jerry C","Andrew G","Tom Y","Evan D","Dheemanth","Preston B","Mikee G","Wesley VD","Tristan Y","Brandon G","Sohka","Andrew K","Destry H","Mark L","Kiet T","Brandon M"],"gB":["May","Annie","Namika","Giao","Trish","Cora H","Cindy X","Cindy D","Tracy M","Morgan W","Grace L","Sam G","Jenny L","Amanda P","Jenny N","Chrissy D","Abby H","Saho K","Leanne L","Allie L","Sandy Z","Cece L"],"ph":{"Leo M":{"May":1,"Annie":1,"Namika":1,"Giao":1,"Trish":1,"Cora H":1,"Cindy X":1,"Cindy D":1,"Tracy M":0,"Morgan W":0,"Grace L":1,"Sam G":0,"Jenny L":1,"Amanda P":1,"Jenny N":1,"Chrissy D":0,"Abby H":0,"Saho K":0,"Leanne L":0,"Allie L":1,"Sandy Z":1,"Cece L":1},"Matt G":{"May":1,"Annie":0,"Namika":1,"Giao":0,"Trish":1,"Cora H":1,"Cindy X":1,"Cindy D":1,"Tracy M":1,"Morgan W":1,"Grace L":1,"Sam G":0,"Jenny L":1,"Amanda P":0,"Jenny N":1,"Chrissy D":1,"Abby H":1,"Saho K":0,"Leanne L":1,"Allie L":1,"Sandy Z":0,"Cece L":0},"Kevin Z":{"May":0,"Annie":2,"Namika":1,"Giao":1,"Trish":0,"Cora H":0,"Cindy X":0,"Cindy D":1,"Tracy M":1,"Morgan W":1,"Grace L":1,"Sam G":1,"Jenny L":1,"Amanda P":1,"Jenny N":0,"Chrissy D":1,"Abby H":0,"Saho K":1,"Leanne L":1,"Allie L":1,"Sandy Z":0,"Cece L":0},"Nik A":{"May":1,"Annie":1,"Namika":1,"Giao":1,"Trish":0,"Cora H":0,"Cindy X":0,"Cindy D":0,"Tracy M":1,"Morgan W":0,"Grace L":0,"Sam G":2,"Jenny L":1,"Amanda P":1,"Jenny N":0,"Chrissy D":1,"Abby H":1,"Saho K":1,"Leanne L":0,"Allie L":1,"Sandy Z":1,"Cece L":1},"Vini":{"May":1,"Annie":0,"Namika":1,"Giao":0,"Trish":1,"Cora H":0,"Cindy X":1,"Cindy D":1,"Tracy M":0,"Morgan W":0,"Grace L":0,"Sam G":1,"Jenny L":1,"Amanda P":1,"Jenny N":1,"Chrissy D":1,"Abby H":1,"Saho K":1,"Leanne L":1,"Allie L":1,"Sandy Z":1,"Cece L":0},"Michael B":{"May":1,"Annie":1,"Namika":0,"Giao":0,"Trish":1,"Cora H":1,"Cindy X":1,"Cindy D":1,"Tracy M":1,"Morgan W":0,"Grace L":1,"Sam G":1,"Jenny L":1,"Amanda P":1,"Jenny N":1,"Chrissy D":0,"Abby H":1,"Saho K":1,"Leanne L":0,"Allie L":0,"Sandy Z":1,"Cece L":0},"Jerry C":{"May":0,"Annie":1,"Namika":1,"Giao":1,"Trish":1,"Cora H":0,"Cindy X":0,"Cindy D":1,"Tracy M":0,"Morgan W":1,"Grace L":1,"Sam G":1,"Jenny L":1,"Amanda P":1,"Jenny N":1,"Chrissy D":0,"Abby H":1,"Saho K":1,"Leanne L":1,"Allie L":0,"Sandy Z":0,"Cece L":1},"Andrew G":{"May":1,"Annie":1,"Namika":0,"Giao":0,"Trish":0,"Cora H":1,"Cindy X":1,"Cindy D":1,"Tracy M":0,"Morgan W":1,"Grace L":1,"Sam G":1,"Jenny L":0,"Amanda P":0,"Jenny N":1,"Chrissy D":0,"Abby H":0,"Saho K":2,"Leanne L":1,"Allie L":1,"Sandy Z":1,"Cece L":1},"Tom Y":{"May":1,"Annie":0,"Namika":1,"Giao":1,"Trish":0,"Cora H":1,"Cindy X":1,"Cindy D":1,"Tracy M":1,"Morgan W":1,"Grace L":1,"Sam G":1,"Jenny L":1,"Amanda P":1,"Jenny N":0,"Chrissy D":0,"Abby H":1,"Saho K":0,"Leanne L":1,"Allie L":1,"Sandy Z":0,"Cece L":0},"Evan D":{"May":1,"Annie":1,"Namika":0,"Giao":1,"Trish":1,"Cora H":1,"Cindy X":1,"Cindy D":1,"Tracy M":0,"Morgan W":1,"Grace L":1,"Sam G":0,"Jenny L":1,"Amanda P":1,"Jenny N":1,"Chrissy D":1,"Abby H":1,"Saho K":0,"Leanne L":0,"Allie L":0,"Sandy Z":1,"Cece L":0},"Dheemanth":{"May":1,"Annie":0,"Namika":1,"Giao":1,"Trish":1,"Cora H":0,"Cindy X":0,"Cindy D":0,"Tracy M":0,"Morgan W":1,"Grace L":0,"Sam G":1,"Jenny L":1,"Amanda P":0,"Jenny N":1,"Chrissy D":1,"Abby H":1,"Saho K":1,"Leanne L":1,"Allie L":1,"Sandy Z":1,"Cece L":1},"Preston B":{"May":0,"Annie":0,"Namika":0,"Giao":0,"Trish":1,"Cora H":1,"Cindy X":1,"Cindy D":1,"Tracy M":0,"Morgan W":1,"Grace L":0,"Sam G":1,"Jenny L":0,"Amanda P":1,"Jenny N":1,"Chrissy D":1,"Abby H":1,"Saho K":1,"Leanne L":2,"Allie L":1,"Sandy Z":1,"Cece L":0},"Mikee G":{"May":0,"Annie":1,"Namika":0,"Giao":1,"Trish":0,"Cora H":1,"Cindy X":1,"Cindy D":1,"Tracy M":1,"Morgan W":0,"Grace L":1,"Sam G":0,"Jenny L":1,"Amanda P":1,"Jenny N":0,"Chrissy D":1,"Abby H":0,"Saho K":1,"Leanne L":1,"Allie L":1,"Sandy Z":1,"Cece L":1},"Wesley VD":{"May":1,"Annie":1,"Namika":1,"Giao":0,"Trish":1,"Cora H":1,"Cindy X":1,"Cindy D":0,"Tracy M":0,"Morgan W":0,"Grace L":0,"Sam G":1,"Jenny L":1,"Amanda P":0,"Jenny N":1,"Chrissy D":1,"Abby H":1,"Saho K":0,"Leanne L":1,"Allie L":1,"Sandy Z":1,"Cece L":1},"Tristan Y":{"May":1,"Annie":1,"Namika":0,"Giao":1,"Trish":1,"Cora H":0,"Cindy X":1,"Cindy D":0,"Tracy M":1,"Morgan W":1,"Grace L":1,"Sam G":1,"Jenny L":0,"Amanda P":0,"Jenny N":1,"Chrissy D":1,"Abby H":1,"Saho K":1,"Leanne L":0,"Allie L":0,"Sandy Z":1,"Cece L":1},"Brandon G":{"May":1,"Annie":1,"Namika":0,"Giao":0,"Trish":1,"Cora H":1,"Cindy X":1,"Cindy D":0,"Tracy M":1,"Morgan W":2,"Grace L":0,"Sam G":1,"Jenny L":0,"Amanda P":0,"Jenny N":1,"Chrissy D":1,"Abby H":0,"Saho K":0,"Leanne L":1,"Allie L":1,"Sandy Z":1,"Cece L":1},"Sohka":{"May":0,"Annie":1,"Namika":1,"Giao":1,"Trish":0,"Cora H":1,"Cindy X":0,"Cindy D":1,"Tracy M":2,"Morgan W":0,"Grace L":1,"Sam G":1,"Jenny L":1,"Amanda P":1,"Jenny N":1,"Chrissy D":1,"Abby H":0,"Saho K":0,"Leanne L":1,"Allie L":0,"Sandy Z":0,"Cece L":1},"Andrew K":{"May":1,"Annie":0,"Namika":1,"Giao":1,"Trish":1,"Cora H":0,"Cindy X":1,"Cindy D":0,"Tracy M":1,"Morgan W":0,"Grace L":1,"Sam G":0,"Jenny L":1,"Amanda P":1,"Jenny N":0,"Chrissy D":1,"Abby H":1,"Saho K":1,"Leanne L":1,"Allie L":0,"Sandy Z":1,"Cece L":1},"Destry H":{"May":0,"Annie":1,"Namika":1,"Giao":1,"Trish":1,"Cora H":1,"Cindy X":0,"Cindy D":1,"Tracy M":1,"Morgan W":1,"Grace L":0,"Sam G":1,"Jenny L":0,"Amanda P":1,"Jenny N":1,"Chrissy D":0,"Abby H":1,"Saho K":1,"Leanne L":1,"Allie L":1,"Sandy Z":0,"Cece L":0},"Mark L":{"May":1,"Annie":0,"Namika":1,"Giao":1,"Trish":1,"Cora H":1,"Cindy X":1,"Cindy D":1,"Tracy M":1,"Morgan W":1,"Grace L":1,"Sam G":0,"Jenny L":0,"Amanda P":0,"Jenny N":1,"Chrissy D":0,"Abby H":1,"Saho K":1,"Leanne L":0,"Allie L":1,"Sandy Z":0,"Cece L":1},"Kiet T":{"May":1,"Annie":0,"Namika":1,"Giao":1,"Trish":0,"Cora H":1,"Cindy X":1,"Cindy D":1,"Tracy M":1,"Morgan W":1,"Grace L":1,"Sam G":0,"Jenny L":1,"Amanda P":1,"Jenny N":0,"Chrissy D":1,"Abby H":0,"Saho K":0,"Leanne L":0,"Allie L":0,"Sandy Z":1,"Cece L":2},"Brandon M":{"May":0,"Annie":1,"Namika":1,"Giao":1,"Trish":1,"Cora H":1,"Cindy X":0,"Cindy D":0,"Tracy M":1,"Morgan W":1,"Grace L":1,"Sam G":0,"Jenny L":0,"Amanda P":1,"Jenny N":0,"Chrissy D":1,"Abby H":1,"Saho K":1,"Leanne L":0,"Allie L":1,"Sandy Z":1,"Cece L":1}}};
+var selWeek = 0, selRound = 0, scores = {}, gf = 'all';
+
+/* – Tabs – */
+function switchTab(t) {
+  ['schedule','standings','lookup'].forEach(function(x) {
+    document.getElementById('tab-'+x).style.display = x===t ? '' : 'none';
+  });
+  document.querySelectorAll('.tab').forEach(function(b,i) {
+    b.classList.toggle('active', ['schedule','standings','lookup'][i] === t);
+  });
+  if (t === 'standings') renderStandings();
+}
+
+function setGF(f, btn) {
+  gf = f;
+  document.querySelectorAll('.grp-filter .btn-xs').forEach(function(b){ b.classList.remove('sel'); });
+  btn.classList.add('sel');
+  renderStandings();
+}
+
+/* – Schedule – */
+function renderSchedule() {
+  var sd = SD;
+  var html = '';
+  // week buttons
+  var wb = '';
+  for (var w = 0; w < 3; w++) {
+    wb += '<button class="btn-sm' + (w===selWeek?' sel':'') + '" onclick="selWeek='+w+';selRound=0;renderSchedule()">Week '+(w+1)+'</button>';
+  }
+  document.getElementById('week-btns').innerHTML = wb;
+  // round buttons
+  var rb = '';
+  for (var r = 0; r < 5; r++) {
+    rb += '<button class="btn-xs' + (r===selRound?' sel':'') + '" onclick="selRound='+r+';renderSchedule()">Round '+(r+1)+'</button>';
+  }
+  document.getElementById('round-btns').innerHTML = rb;
+  // net rows
+  var round = sd.sched[selWeek][selRound];
+  var rows = '<div class="net-head"><span>Net</span><span>Pair 1</span><span style="text-align:center">Score</span><span></span><span style="text-align:center">Score</span><span>Pair 2</span></div>';
+  for (var i = 0; i < round.length; i++) {
+    var m = round[i];
+    var key = selWeek+'-'+selRound+'-'+i;
+    var sc = scores[key] || {s1:'',s2:''};
+    var s1n = parseInt(sc.s1), s2n = parseInt(sc.s2);
+    var has = sc.s1!=='' && sc.s2!=='' && !isNaN(s1n) && !isNaN(s2n);
+    var c1 = has ? (s1n>s2n?'win':s1n<s2n?'lose':'') : '';
+    var c2 = has ? (s2n>s1n?'win':s2n<s1n?'lose':'') : '';
+    var alt = i%2 ? ' alt' : '';
+    rows += '<div class="net-row'+alt+'">' +
+      '<span class="nnum">'+(i+1)+'</span>' +
+      '<span class="pair"><span class="pa">'+m[0].a+'</span><span class="plus">+</span><span class="pb">'+m[0].b+'</span></span>' +
+      '<input id="s'+i+'a" type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'" oninput="onScore('+selWeek+','+selRound+','+i+',0,this.value)">' +
+      '<span class="vsc">vs</span>' +
+      '<input id="s'+i+'b" type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'" oninput="onScore('+selWeek+','+selRound+','+i+',1,this.value)">' +
+      '<span class="pair"><span class="pa">'+m[1].a+'</span><span class="plus">+</span><span class="pb">'+m[1].b+'</span></span>' +
+      '</div>';
+  }
+  document.getElementById('net-table').innerHTML = rows;
+  updateProgress();
+}
+
+function onScore(wi, ri, ni, side, val) {
+  var key = wi+'-'+ri+'-'+ni;
+  if (!scores[key]) scores[key] = {s1:'',s2:''};
+  if (side===0) scores[key].s1 = val; else scores[key].s2 = val;
+  var sc = scores[key];
+  var s1n = parseInt(sc.s1), s2n = parseInt(sc.s2);
+  var has = sc.s1!=='' && sc.s2!=='' && !isNaN(s1n) && !isNaN(s2n);
+  var c1 = has ? (s1n>s2n?'win':s1n<s2n?'lose':'') : '';
+  var c2 = has ? (s2n>s1n?'win':s2n<s1n?'lose':'') : '';
+  var a = document.getElementById('s'+ni+'a');
+  var b = document.getElementById('s'+ni+'b');
+  if (a) a.className = 'score-in '+c1;
+  if (b) b.className = 'score-in '+c2;
+  updateProgress();
+}
+
+function updateProgress() {
+  var total = 165, done = 0;
+  var sched = SD.sched;
+  for (var w=0;w<sched.length;w++)
+    for (var r=0;r<sched[w].length;r++)
+      for (var n=0;n<sched[w][r].length;n++) {
+        var sc = scores[w+'-'+r+'-'+n];
+        if (sc && sc.s1!=='' && sc.s2!=='' && !isNaN(parseInt(sc.s1)) && !isNaN(parseInt(sc.s2))) done++;
+      }
+  document.getElementById('prog-lbl').textContent = done+' / '+total+' scored';
+  document.getElementById('prog-bar').style.width = Math.round(done/total*100)+'%';
+}
+
+/* – Standings – */
+function calcStandings() {
+  var sd = SD, players = {};
+  sd.gA.forEach(function(n){ players[n]={name:n,grp:'A',w:0,l:0,pf:0,pa:0}; });
+  sd.gB.forEach(function(n){ players[n]={name:n,grp:'B',w:0,l:0,pf:0,pa:0}; });
+  sd.sched.forEach(function(week,wi) {
+    week.forEach(function(round,ri) {
+      round.forEach(function(m,ni) {
+        var sc = scores[wi+'-'+ri+'-'+ni];
+        if (!sc||sc.s1===''||sc.s2==='') return;
+        var s1=parseInt(sc.s1), s2=parseInt(sc.s2);
+        if (isNaN(s1)||isNaN(s2)) return;
+        var w1=s1>s2, w2=s2>s1;
+        [m[0].a,m[0].b].forEach(function(p){
+          players[p].pf+=s1; players[p].pa+=s2;
+          if(w1) players[p].w++; else if(w2) players[p].l++;
+        });
+        [m[1].a,m[1].b].forEach(function(p){
+          players[p].pf+=s2; players[p].pa+=s1;
+          if(w2) players[p].w++; else if(w1) players[p].l++;
+        });
+      });
+    });
+  });
+  return Object.values(players).sort(function(a,b){
+    if (b.w!==a.w) return b.w-a.w;
+    var da=a.pf-a.pa, db=b.pf-b.pa;
+    if (db!==da) return db-da;
+    return b.pf-a.pf;
+  });
+}
+
+function renderStandings() {
+  var all = calcStandings();
+  var list = gf==='all' ? all : all.filter(function(p){ return p.grp===gf; });
+  var tbody = '';
+  for (var i=0;i<list.length;i++) {
+    var p=list[i], rank=i+1;
+    var diff = p.pf-p.pa;
+    var dCls = diff>0?'dpos':diff<0?'dneg':'';
+    var dStr = (diff>0?'+':'')+diff;
+    var medal = rank===1?'gold':rank===2?'silver':rank===3?'bronze':'';
+    var altCls = rank%2===0?' alt':'';
+    tbody += '<tr class="'+altCls+'">' +
+      '<td><span class="rnk '+medal+'">'+rank+'</span></td>' +
+      '<td>'+p.name+'</td>' +
+      '<td><span class="gbadge">'+p.grp+'</span></td>' +
+      '<td class="r">'+p.w+'</td>' +
+      '<td class="r">'+p.l+'</td>' +
+      '<td class="r">'+(p.w+p.l)+'</td>' +
+      '<td class="r">'+p.pf+'</td>' +
+      '<td class="r">'+p.pa+'</td>' +
+      '<td class="r"><span class="'+dCls+'">'+dStr+'</span></td>' +
+      '</tr>';
+  }
+  document.getElementById('std-table').innerHTML =
+    '<thead><tr><th>#</th><th>Player</th><th>Grp</th>' +
+    '<th class="r">W</th><th class="r">L</th><th class="r">MP</th>' +
+    '<th class="r">PF</th><th class="r">PA</th><th class="r">+/-</th>' +
+    '</tr></thead><tbody>'+tbody+'</tbody>';
+  var done=Object.keys(scores).filter(function(k){var s=scores[k];return s.s1!==''&&s.s2!=='';}).length;
+  document.getElementById('std-note').textContent = done+' of 165 matches scored · Ranked by wins, then points differential.';
+}
+
+/* – Lookup – */
+function renderLookupSelect() {
+  var sd = SD;
+  var opt = '<option value="">-- select player --</option>';
+  sd.gA.forEach(function(n){ opt += '<option value="'+n+'|A">'+n+' (Group A)</option>'; });
+  sd.gB.forEach(function(n){ opt += '<option value="'+n+'|B">'+n+' (Group B)</option>'; });
+  document.getElementById('lookup-sel').innerHTML = opt;
+}
+
+function renderLookup() {
+  var val = document.getElementById('lookup-sel').value;
+  if (!val) { document.getElementById('lookup-res').innerHTML=''; return; }
+  var parts = val.split('|'), name=parts[0], grp=parts[1];
+  var sd = SD, rows = [];
+  sd.sched.forEach(function(week,wi){
+    week.forEach(function(round,ri){
+      round.forEach(function(m,ni){
+        var partner=null,opp1=null,opp2=null,mySc=null,oppSc=null;
+        if (grp==='A') {
+          if (m[0].a===name){partner=m[0].b;opp1=m[1].a;opp2=m[1].b;
+            var sc=scores[wi+'-'+ri+'-'+ni];if(sc&&sc.s1!==''&&sc.s2!=''){mySc=parseInt(sc.s1);oppSc=parseInt(sc.s2);}}
+          else if (m[1].a===name){partner=m[1].b;opp1=m[0].a;opp2=m[0].b;
+            var sc=scores[wi+'-'+ri+'-'+ni];if(sc&&sc.s1!==''&&sc.s2!=''){mySc=parseInt(sc.s2);oppSc=parseInt(sc.s1);}}
+        } else {
+          if (m[0].b===name){partner=m[0].a;opp1=m[1].a;opp2=m[1].b;
+            var sc=scores[wi+'-'+ri+'-'+ni];if(sc&&sc.s1!==''&&sc.s2!=''){mySc=parseInt(sc.s1);oppSc=parseInt(sc.s2);}}
+          else if (m[1].b===name){partner=m[1].a;opp1=m[0].a;opp2=m[0].b;
+            var sc=scores[wi+'-'+ri+'-'+ni];if(sc&&sc.s1!==''&&sc.s2!=''){mySc=parseInt(sc.s2);oppSc=parseInt(sc.s1);}}
+        }
+        if (partner) rows.push({wi:wi,ri:ri,ni:ni,partner:partner,opp1:opp1,opp2:opp2,mySc:mySc,oppSc:oppSc,grp:grp});
+      });
+    });
+  });
+  var html = '<div class="lk-wrap"><div class="lk-head"><span>Week</span><span>Round/Net</span><span>Partner</span><span></span><span>Opponents</span><span>Result</span></div>';
+  for (var i=0;i<rows.length;i++) {
+    var r=rows[i];
+    var resHtml='<span style="color:var(--t3);font-size:12px;">–</span>';
+    if (r.mySc!==null&&!isNaN(r.mySc)) {
+      var win=r.mySc>r.oppSc, lose=r.mySc<r.oppSc;
+      var col=win?'var(--ts)':lose?'var(--tw)':'var(--t2)';
+      resHtml='<span style="font-family:var(--mono);font-size:12px;color:'+col+'">'+r.mySc+'–'+r.oppSc+'</span>';
+    }
+    var pCls = r.grp==='A'?'pb':'pa';
+    html += '<div class="lk-row'+(i%2?' alt':'')+'">' +
+      '<span style="font-size:12px;color:var(--t2);">W'+(r.wi+1)+'</span>' +
+      '<span style="font-size:12px;color:var(--t2);">R'+(r.ri+1)+'·N'+(r.ni+1)+'</span>' +
+      '<span class="pair"><span class="'+pCls+'">'+r.partner+'</span></span>' +
+      '<span class="vsc">vs</span>' +
+      '<span class="pair"><span class="pa">'+r.opp1+'</span><span class="plus">+</span><span class="pb">'+r.opp2+'</span></span>' +
+      resHtml +
+      '</div>';
+  }
+  html += '</div>';
+  document.getElementById('lookup-res').innerHTML = html;
+}
+
+/* – Export – */
+function exportXLSX() {
+  var sd=SD, wb=XLSX.utils.book_new();
+  var standings=calcStandings();
+
+  // Summary
+  var sumRows=[['KOB Doubles Grass League'],[]];
+  sumRows.push(['Repeat partnerships',sd.stats.rp],['Repeat matchups',sd.stats.mp],[]);
+  sumRows.push(['Group A','Group B']);
+  for(var i=0;i<22;i++) sumRows.push([sd.gA[i],sd.gB[i]]);
+  var sw=XLSX.utils.aoa_to_sheet(sumRows);
+  sw['!cols']=[{wch:28},{wch:22}];
+  XLSX.utils.book_append_sheet(wb,sw,'Summary');
+
+  // Weeks
+  sd.sched.forEach(function(week,wi){
+    var rows=[['Week '+(wi+1)],[]];
+    week.forEach(function(round,ri){
+      rows.push(['Round '+(ri+1)]);
+      rows.push(['Net','A (Pair 1)','B (Pair 1)','Score 1','','Score 2','A (Pair 2)','B (Pair 2)']);
+      round.forEach(function(m,ni){
+        var sc=scores[wi+'-'+ri+'-'+ni]||{s1:'',s2:''};
+        rows.push([ni+1,m[0].a,m[0].b,sc.s1,'–',sc.s2,m[1].a,m[1].b]);
+      });
+      rows.push([]);
+    });
+    var ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:5},{wch:16},{wch:16},{wch:7},{wch:3},{wch:7},{wch:16},{wch:16}];
+    XLSX.utils.book_append_sheet(wb,ws,'Week '+(wi+1));
+  });
+
+  // Standings
+  var stRows=[['Rank','Player','Group','W','L','MP','PF','PA','+/-']];
+  standings.forEach(function(p,i){
+    stRows.push([i+1,p.name,p.grp,p.w,p.l,p.w+p.l,p.pf,p.pa,p.pf-p.pa]);
+  });
+  var stWs=XLSX.utils.aoa_to_sheet(stRows);
+  stWs['!cols']=[{wch:5},{wch:18},{wch:7},{wch:5},{wch:5},{wch:6},{wch:7},{wch:7},{wch:7}];
+  XLSX.utils.book_append_sheet(wb,stWs,'Standings');
+
+  XLSX.writeFile(wb,'KOB_Schedule.xlsx');
+}
+
+/* – Init – */
+(function(){
+  if (!SD || SD==='SCHEDULE_DATA_PLACEHOLDER') {
+    document.getElementById('page-sub').textContent='No schedule loaded';
+    document.querySelector('.card').innerHTML='<div class="empty"><p>No schedule data found.</p><p style="margin-top:8px;font-size:13px;color:var(--t3);">Use the generator to produce a populated viewer.</p></div>';
+    return;
+  }
+  document.getElementById('page-sub').textContent='3 weeks · 5 rounds/week · 11 nets · '+SD.gA.length+'+'+SD.gB.length+' players';
+  var sb=document.getElementById('stats-bar');
+  var labels=[['Total matches',165],['Sets / player',15],['Repeat partners',SD.stats.rp],['Repeat matchups',SD.stats.mp]];
+  var sbHtml='';
+  for(var i=0;i<labels.length;i++){
+    sbHtml+='<div class="stat"><div class="stat-lbl">'+labels[i][0]+'</div><div class="stat-val">'+labels[i][1]+'</div></div>';
+  }
+  sb.innerHTML=sbHtml;
+  document.getElementById('fnote').textContent='Max same partners: '+SD.stats.rpMx+' · Max same 4-player matchup: '+SD.stats.mpMx;
+  renderSchedule();
+  renderLookupSelect();
+})();
+</script>
+</body>
+</html>
