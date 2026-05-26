@@ -1,0 +1,1830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>KOB Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<style>
+:root{
+  --sans:'DM Sans',system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+  --t1:#1a1a18;--t2:#58584f;--t3:#9a9a90;
+  --ti:#185fa5;--ts:#0f6e56;--tw:#993c1d;--tp:#6b3fa0;
+  --bg1:#fff;--bg2:#f4f3ef;--bg3:#eceae4;
+  --bgs:#e1f5ee;--bgp:#f0eaf8;
+  --b3:rgba(26,26,24,.13);--b2:rgba(26,26,24,.25);--b1:rgba(26,26,24,.42);
+  --bs:#0f6e56;--bp:#6b3fa0;
+  --rm:8px;--rl:12px;--rxl:16px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --t1:#f0efe8;--t2:#9a9a90;--t3:#68685f;
+  --ti:#85b7eb;--ts:#5dcaa5;--tw:#f0997b;--tp:#c49ee8;
+  --bg1:#1c1c1a;--bg2:#262623;--bg3:#2e2e2b;
+  --bgs:#085041;--bgp:#2e1e45;
+  --b3:rgba(240,239,232,.13);--b2:rgba(240,239,232,.25);--b1:rgba(240,239,232,.42);
+  --bs:#5dcaa5;--bp:#c49ee8;
+}}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--sans);background:var(--bg2);color:var(--t1);min-height:100vh;}
+/* header */
+.hdr{background:var(--bg1);border-bottom:.5px solid var(--b3);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.hdr-l h1{font-size:17px;font-weight:600;}
+.hdr-l p{font-size:12px;color:var(--t3);margin-top:2px;}
+.hdr-steps{display:flex;align-items:center;gap:0;}
+.step-pill{display:flex;align-items:center;gap:6px;padding:5px 12px;font-size:12px;font-weight:500;color:var(--t3);border-radius:99px;}
+.step-pill.active{background:var(--bg2);color:var(--t1);}
+.step-pill.done{color:var(--ts);}
+.step-num{width:18px;height:18px;border-radius:50%;border:.5px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;}
+.step-pill.done .step-num{background:var(--ts);border-color:var(--ts);color:#fff;}
+.step-arrow{font-size:11px;color:var(--b2);margin:0 2px;}
+/* main */
+.main{max-width:780px;margin:0 auto;padding:28px 16px 80px;}
+/* card */
+.card{background:var(--bg1);border:.5px solid var(--b3);border-radius:var(--rxl);padding:28px;margin-bottom:16px;}
+.card-title{font-size:15px;font-weight:600;margin-bottom:4px;}
+.card-sub{font-size:13px;color:var(--t2);margin-bottom:20px;}
+/* format picker */
+.format-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
+.fmt-card{border:.5px solid var(--b3);border-radius:var(--rl);padding:18px;cursor:pointer;transition:border-color .15s,background .15s;position:relative;}
+.fmt-card:hover{border-color:var(--b2);background:var(--bg2);}
+.fmt-card.sel{border-color:var(--bp);background:var(--bgp);}
+.fmt-card.sel-green{border-color:var(--bs);background:var(--bgs);}
+.fmt-icon{font-size:22px;margin-bottom:8px;}
+.fmt-name{font-size:14px;font-weight:600;margin-bottom:4px;}
+.fmt-desc{font-size:12px;color:var(--t2);line-height:1.5;}
+.fmt-tag{position:absolute;top:10px;right:10px;font-size:10px;padding:2px 7px;border-radius:99px;font-weight:500;}
+.tag-built{background:var(--bgs);color:var(--ts);}
+.tag-new{background:var(--bgp);color:var(--tp);}
+/* sub-format */
+.subfmt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.subfmt-card{border:.5px solid var(--b3);border-radius:var(--rl);padding:16px;cursor:pointer;transition:border-color .15s,background .15s;}
+.subfmt-card:hover{border-color:var(--b2);background:var(--bg2);}
+.subfmt-card.sel{border-color:var(--bp);background:var(--bgp);}
+.subfmt-icon{font-size:18px;margin-bottom:6px;}
+.subfmt-name{font-size:13px;font-weight:600;margin-bottom:3px;}
+.subfmt-desc{font-size:11px;color:var(--t2);line-height:1.4;}
+/* section label */
+.sec-label{font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;}
+/* roster mode */
+.roster-mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
+.rm-card{border:.5px solid var(--b3);border-radius:var(--rl);padding:16px;cursor:pointer;transition:border-color .15s,background .15s;}
+.rm-card:hover{border-color:var(--b2);background:var(--bg2);}
+.rm-card.sel{border-color:var(--bp);background:var(--bgp);}
+.rm-name{font-size:13px;font-weight:600;margin-bottom:3px;}
+.rm-example{font-size:11px;color:var(--tp);font-weight:500;margin-bottom:4px;}
+.rm-desc{font-size:11px;color:var(--t2);line-height:1.4;}
+/* roster inputs */
+.roster-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.roster-single{display:grid;grid-template-columns:1fr;gap:14px;}
+.roster-lbl{font-size:12px;font-weight:600;color:var(--t2);margin-bottom:5px;display:flex;justify-content:space-between;align-items:center;}
+.roster-count{font-size:11px;color:var(--t3);font-weight:400;}
+textarea{width:100%;height:300px;font-family:var(--mono);font-size:12.5px;line-height:1.85;padding:10px 12px;resize:vertical;background:var(--bg2);border:.5px solid var(--b3);border-radius:var(--rm);color:var(--t1);outline:none;}
+textarea:focus{border-color:var(--b2);}
+/* courts */
+.courts-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.court-row{display:flex;gap:8px;align-items:center;}
+.court-num{font-size:11px;color:var(--t3);width:20px;flex-shrink:0;}
+input[type=text],input[type=number],select{font-family:var(--sans);font-size:13px;padding:7px 10px;border:.5px solid var(--b3);border-radius:var(--rm);background:var(--bg2);color:var(--t1);outline:none;width:100%;}
+input[type=text]:focus,input[type=number]:focus,select:focus{border-color:var(--b2);}
+.sess-badge{font-size:11px;padding:2px 8px;border-radius:99px;background:var(--bg3);border:.5px solid var(--b3);color:var(--t2);cursor:pointer;white-space:nowrap;}
+.sess-badge.sel{background:var(--bgp);border-color:var(--bp);color:var(--tp);}
+/* score presets */
+.score-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;}
+.score-card{border:.5px solid var(--b3);border-radius:var(--rm);padding:12px 10px;cursor:pointer;text-align:center;transition:border-color .15s,background .15s;}
+.score-card:hover{border-color:var(--b2);background:var(--bg2);}
+.score-card.sel{border-color:var(--bs);background:var(--bgs);}
+.score-name{font-size:12px;font-weight:600;margin-bottom:3px;}
+.score-detail{font-size:10px;color:var(--t2);}
+/* cap input */
+.cap-row{display:flex;align-items:center;gap:10px;margin-bottom:20px;}
+.cap-row label{font-size:13px;color:var(--t2);}
+.cap-row input{width:80px;}
+.cap-hint{font-size:11px;color:var(--t3);}
+/* config rows */
+.cfg-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+.cfg-item label{font-size:12px;color:var(--t2);font-weight:500;display:block;margin-bottom:5px;}
+/* bracket type */
+.brk-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.brk-card{border:.5px solid var(--b3);border-radius:var(--rm);padding:14px;cursor:pointer;transition:border-color .15s,background .15s;}
+.brk-card:hover{border-color:var(--b2);background:var(--bg2);}
+.brk-card.sel{border-color:var(--bs);background:var(--bgs);}
+.brk-name{font-size:13px;font-weight:600;margin-bottom:2px;}
+.brk-desc{font-size:11px;color:var(--t2);}
+/* sessions */
+.sess-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+.sess-input-row{display:flex;gap:8px;margin-bottom:12px;}
+.sess-input-row input{max-width:200px;}
+.add-btn{padding:7px 14px;font-size:12px;font-family:var(--sans);cursor:pointer;border-radius:var(--rm);border:.5px solid var(--b2);background:transparent;color:var(--t2);}
+.add-btn:hover{background:var(--bg2);}
+/* btn */
+.btn{padding:10px 22px;font-size:14px;font-weight:500;font-family:var(--sans);cursor:pointer;border-radius:var(--rm);border:.5px solid var(--b2);background:var(--bg2);color:var(--t1);}
+.btn:hover{opacity:.85;}
+.btn.primary{background:var(--t1);border-color:var(--t1);color:var(--bg1);}
+.btn.green{color:var(--ts);border-color:var(--bs);}
+.btn.green:hover{background:var(--bgs);}
+.btn-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:20px;}
+/* nav */
+.step-nav{display:flex;justify-content:space-between;align-items:center;padding-top:20px;border-top:.5px solid var(--b3);margin-top:20px;}
+/* warning */
+.warn{font-size:12px;color:var(--tw);padding:8px 12px;border-radius:var(--rm);border:.5px solid var(--tw);background:var(--bgw,#faece7);margin-top:8px;display:none;}
+/* summary */
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.sum-item{background:var(--bg2);border-radius:var(--rm);padding:12px;}
+.sum-key{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;}
+.sum-val{font-size:14px;font-weight:500;color:var(--t1);}
+.sum-val.big{font-size:18px;}
+/* divider */
+.divider{height:.5px;background:var(--b3);margin:20px 0;}
+/* responsive */
+@media(max-width:580px){
+  .format-grid,.subfmt-grid,.roster-grid,.courts-grid,.cfg-grid,.brk-grid,.roster-mode-grid{grid-template-columns:1fr;}
+  .score-grid{grid-template-columns:repeat(2,1fr);}
+  .summary-grid{grid-template-columns:1fr;}
+  .hdr-steps{display:none;}
+  .main{padding:16px 10px 60px;}
+  .card{padding:16px;}
+}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-l">
+    <h1>KOB Generator</h1>
+    <p>Configure your event &amp; download a ready-to-deploy viewer</p>
+  </div>
+  <div class="hdr-steps" id="step-header"></div>
+</header>
+
+<main class="main">
+
+  <!-- ── STEP 1: Format Type ── -->
+  <div id="step-1" class="card">
+    <p class="card-title">What type of event are you running?</p>
+    <p class="card-sub">This determines the overall structure — single day vs multi-week season.</p>
+    <div style="margin-bottom:20px;">
+      <label style="font-size:12px;font-weight:600;color:var(--t2);display:block;margin-bottom:5px;">Event title</label>
+      <input type="text" id="event-title" placeholder="e.g. KOB Summer League 2025" style="max-width:400px;" oninput="state.eventTitle=this.value">
+    </div>
+    <div class="format-grid">
+      <div class="fmt-card" id="ft-tournament" onclick="selectFormatType('tournament')">
+        <div class="fmt-icon">🏆</div>
+        <div class="fmt-name">Tournament</div>
+        <div class="fmt-desc">Single-day event. Pool play, brackets, or KOB seeded pools. Entries are individuals or pre-formed pairs.</div>
+        <span class="fmt-tag tag-new">New</span>
+      </div>
+      <div class="fmt-card" id="ft-league" onclick="selectFormatType('league')">
+        <div class="fmt-icon">📅</div>
+        <div class="fmt-name">League</div>
+        <div class="fmt-desc">Multi-week season. Weekly rounds, season standings, and an end-of-season finale.</div>
+        <span class="fmt-tag tag-built">KOB built ✓</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STEP 2: Sub-format ── -->
+  <div id="step-2" class="card" style="display:none">
+    <p class="card-title" id="step2-title">Choose a format</p>
+    <p class="card-sub" id="step2-sub"></p>
+    <div id="subfmt-container"></div>
+  </div>
+
+  <!-- ── STEP 3: Roster Mode (KOB only) ── -->
+  <div id="step-3" class="card" style="display:none">
+    <p class="card-title">Roster mode</p>
+    <p class="card-sub">How are participants signing up?</p>
+    <div class="roster-mode-grid">
+      <div class="rm-card" id="rm-ab" onclick="selectRosterMode('ab')">
+        <div class="rm-name">Group A + Group B</div>
+        <div class="rm-example">KOED Mixed Doubles</div>
+        <div class="rm-desc">Individuals sign up by group (gender, skill tier, etc). System creates cross-group pairings each round.</div>
+      </div>
+      <div class="rm-card" id="rm-seed" onclick="selectRosterMode('seed')">
+        <div class="rm-name">Seeded single list</div>
+        <div class="rm-example">KOED Mixed Quads</div>
+        <div class="rm-desc">Pre-formed pairs (or solos) register as one entry. Seed order drives pool placement and partner assignments.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STEP 4: Courts & Sessions ── -->
+  <div id="step-4" class="card" style="display:none">
+    <p class="card-title">Courts &amp; sessions</p>
+    <p class="card-sub">Name your courts and optionally group them into time sessions.</p>
+
+    <div class="sec-label">Sessions (optional time slots)</div>
+    <div class="sess-input-row">
+      <input type="text" id="sess-input" placeholder="e.g. Morning, Afternoon..." style="max-width:220px;">
+      <button class="add-btn" onclick="addSession()">Add session</button>
+    </div>
+    <div class="sess-row" id="sess-list"></div>
+
+    <div class="divider"></div>
+
+    <div class="sec-label" style="margin-bottom:8px;">
+      Number of courts: <input type="number" id="court-count" min="1" max="40" value="11" style="width:70px;display:inline-block;margin-left:8px;" oninput="buildCourtRows()">
+    </div>
+    <div class="courts-grid" id="court-rows"></div>
+    <div id="warn-courts" class="warn">Court count must be between 1 and 40.</div>
+  </div>
+
+  <!-- ── STEP 5: Scoring Format ── -->
+  <div id="step-5" class="card" style="display:none">
+    <p class="card-title">Scoring format</p>
+    <p class="card-sub">Applies to all matches in this event. Win-by-2 is always on.</p>
+
+    <div class="sec-label" style="margin-bottom:8px;">Format type</div>
+    <div class="brk-grid" style="margin-bottom:20px;">
+      <div class="brk-card sel" id="score-mode-sets" onclick="selectScoreMode('sets')">
+        <div class="brk-name">Sets</div>
+        <div class="brk-desc">Play a fixed number of sets. Each set is independent.</div>
+      </div>
+      <div class="brk-card" id="score-mode-match" onclick="selectScoreMode('match')">
+        <div class="brk-name">Match</div>
+        <div class="brk-desc">Best-of format. Win a majority of sets to win the match. Tiebreaker set is always to 15.</div>
+      </div>
+    </div>
+
+    <div id="score-sets-config">
+      <div class="cfg-grid" style="margin-bottom:14px;">
+        <div class="cfg-item">
+          <label>Number of sets</label>
+          <input type="number" id="score-num-sets" min="1" max="10" value="1" oninput="updateScoreState()">
+        </div>
+        <div class="cfg-item">
+          <label>Score limit per set</label>
+          <input type="number" id="score-limit" min="5" max="99" value="21" oninput="updateScoreState()">
+        </div>
+      </div>
+    </div>
+
+    <div id="score-match-config" style="display:none">
+      <div class="cfg-grid" style="margin-bottom:14px;">
+        <div class="cfg-item">
+          <label>Sets in match (e.g. 3 = best of 3)</label>
+          <input type="number" id="score-match-sets" min="3" max="9" step="2" value="3" oninput="updateScoreState()">
+        </div>
+        <div class="cfg-item">
+          <label>Score limit per set</label>
+          <input type="number" id="score-match-limit" min="5" max="99" value="21" oninput="updateScoreState()">
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--t2);padding:10px 12px;background:var(--bg2);border-radius:var(--rm);border:.5px solid var(--b3);">
+        Tiebreaker set is always played to <strong>15</strong> (win-by-2).
+      </div>
+    </div>
+
+    <div id="warn-score" class="warn" style="margin-top:10px;"></div>
+  </div>
+
+  <!-- ── STEP 6: Event Config ── -->
+  <div id="step-6" class="card" style="display:none">
+    <p class="card-title" id="step6-title">Event configuration</p>
+    <p class="card-sub" id="step6-sub"></p>
+    <div id="cfg-container"></div>
+  </div>
+
+  <!-- ── STEP 7: Roster Entry ── -->
+  <div id="step-7" class="card" style="display:none">
+    <p class="card-title" id="step7-title">Enter roster</p>
+    <p class="card-sub" id="step7-sub">One entry per line.</p>
+
+    <div class="sec-label" style="margin-bottom:8px;">List type</div>
+    <div class="brk-grid" style="margin-bottom:20px;">
+      <div class="brk-card sel" id="roster-mode-single" onclick="selectListMode('single')">
+        <div class="brk-name">Single list</div>
+        <div class="brk-desc">All entries in one list. Standard for most events.</div>
+      </div>
+      <div class="brk-card" id="roster-mode-double" onclick="selectListMode('double')">
+        <div class="brk-name">Two lists</div>
+        <div class="brk-desc">Separate Group A and Group B. Required for coed signup events where pairings are assigned across groups.</div>
+      </div>
+    </div>
+
+    <div id="roster-container"></div>
+    <div id="warn-roster" class="warn"></div>
+  </div>
+
+  <!-- ── STEP 8: Summary + Generate ── -->
+  <div id="step-8" class="card" style="display:none">
+    <p class="card-title">Ready to generate</p>
+    <p class="card-sub">Review your configuration before generating the schedule.</p>
+    <div class="summary-grid" id="summary-grid"></div>
+    <div id="bracket-preview" style="display:none;margin-top:20px;">
+      <p class="sec-label" style="margin-bottom:10px;">Bracket preview</p>
+      <div id="bracket-preview-inner" style="font-size:12px;color:var(--t2);padding:14px;background:var(--bg2);border-radius:var(--rm);border:.5px solid var(--b3);line-height:2;white-space:pre-line;font-family:var(--mono);"></div>
+    </div>
+    <div id="warn-summary" class="warn"></div>
+    <div class="btn-row">
+      <button class="btn primary" onclick="generateSchedule()">Generate schedule &amp; download viewer</button>
+      <button class="btn" onclick="goToStep(1)">Start over</button>
+    </div>
+    <p style="font-size:12px;color:var(--t3);margin-top:12px;">
+      Downloads <strong>kob-viewer.html</strong> — drag it to <strong>netlify.com/drop</strong> to publish instantly.
+    </p>
+  </div>
+
+  <!-- ── Nav buttons ── -->
+  <div id="bottom-nav" style="display:none">
+    <div class="step-nav">
+      <button class="btn" id="btn-back" onclick="navBack()">← Back</button>
+      <button class="btn primary" id="btn-next" onclick="navNext()">Continue →</button>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+var state = {
+  formatType: null,    // 'tournament' | 'league'
+  subFormat: null,     // 'traditional_tournament'|'kob_randomized'|'kob_mixed_playoffs'|'traditional_league'|'kob_league'
+  rosterMode: 'single', // 'single' | 'double'
+  courts: [],          // [{name, session}]
+  sessions: [],        // [string]
+  scoring: { mode: 'sets', numSets: 1, scoreLimit: 21 }, // mode: 'sets'|'match'; match tiebreaker always 15
+  config: {},          // format-specific (weeks, rounds, stages, byeRule, bracketType, qualifiers)
+  rosterA: [],
+  rosterB: [],
+  rosterSeed: [],
+  eventTitle: ''
+};
+var currentStep = 1;
+var maxStep = 8;
+
+// Which steps are shown for each format — step 3 removed (list mode is now in step 7)
+function stepsFor(fmt) {
+  return [1,2,4,5,6,7,8];
+}
+function visibleSteps(){ return stepsFor(state.subFormat); }
+function stepIndex(s){ var v=visibleSteps(); return v.indexOf(s); }
+function nextStep(s){ var v=visibleSteps(),i=v.indexOf(s); return i>=0&&i<v.length-1?v[i+1]:null; }
+function prevStep(s){ var v=visibleSteps(),i=v.indexOf(s); return i>0?v[i-1]:null; }
+
+// ── Step header ────────────────────────────────────────────────────────────
+var STEP_LABELS = {1:'Format',2:'Type',4:'Courts',5:'Scoring',6:'Config',7:'Roster',8:'Review'};
+function updateStepHeader(){
+  var v=visibleSteps();
+  var h='';
+  v.forEach(function(s,i){
+    var done=s<currentStep, active=s===currentStep;
+    h+='<div class="step-pill'+(done?' done':active?' active':'')+'">'+
+      '<span class="step-num">'+(done?'✓':(i+1))+'</span>'+
+      '<span>'+(STEP_LABELS[s]||s)+'</span>'+
+    '</div>';
+    if(i<v.length-1) h+='<span class="step-arrow">›</span>';
+  });
+  document.getElementById('step-header').innerHTML=h;
+}
+
+// ── Navigation ─────────────────────────────────────────────────────────────
+function goToStep(s){
+  var all=[1,2,3,4,5,6,7,8];
+  all.forEach(function(n){ var el=document.getElementById('step-'+n); if(el) el.style.display=n===s?'':'none'; });
+  document.getElementById('bottom-nav').style.display=s>1?'':'none';
+  var btnBack=document.getElementById('btn-back');
+  var btnNext=document.getElementById('btn-next');
+  if(btnBack) btnBack.style.display=prevStep(s)!==null?'':'none';
+  if(btnNext) btnNext.style.display=s<8?'':'none';
+  currentStep=s;
+  updateStepHeader();
+  if(s===4) buildCourtRows();
+  if(s===6) buildConfigForm();
+  if(s===7) buildRosterForm();
+  if(s===8) buildSummary();
+  window.scrollTo(0,0);
+}
+function navNext(){
+  if(!validateStep(currentStep)) return;
+  var n=nextStep(currentStep); if(n) goToStep(n);
+}
+function navBack(){
+  var p=prevStep(currentStep); if(p) goToStep(p);
+}
+
+// ── Validation ─────────────────────────────────────────────────────────────
+function validateStep(s){
+  if(s===4){
+    var c=parseInt(document.getElementById('court-count').value);
+    if(!c||c<1||c>40){document.getElementById('warn-courts').style.display='';return false;}
+    document.getElementById('warn-courts').style.display='none';
+    saveCourts();
+  }
+  if(s===5){
+    updateScoreState();
+    var warn5=document.getElementById('warn-score');
+    var sc=state.scoring;
+    if(sc.scoreLimit<5){warn5.textContent='Score limit must be at least 5.';warn5.style.display='';return false;}
+    if(sc.mode==='match'&&sc.numSets%2===0){warn5.textContent='Sets in match must be odd (3, 5, 7...) so there is always a winner.';warn5.style.display='';return false;}
+    warn5.style.display='none';
+  }
+  if(s===7){
+    return validateRoster();
+  }
+  return true;
+}
+
+// ── Step 1: Format type ────────────────────────────────────────────────────
+function selectFormatType(t){
+  state.formatType=t; state.subFormat=null; state.rosterMode=null;
+  document.getElementById('ft-tournament').classList.toggle('sel',t==='tournament');
+  document.getElementById('ft-league').classList.toggle('sel-green',t==='league');
+  document.getElementById('ft-tournament').classList.toggle('sel-green',false);
+  document.getElementById('ft-league').classList.toggle('sel',false);
+  buildSubFormatGrid();
+  goToStep(2);
+}
+
+// ── Step 2: Sub-format ─────────────────────────────────────────────────────
+var TOURNAMENT_FORMATS = [
+  {id:'traditional_tournament',icon:'🎯',name:'Traditional Tournament',desc:'Fixed entries, pool play, seeding, then single-elimination bracket.'},
+  {id:'kob_randomized',icon:'🔀',name:'KOB Randomized Pools',desc:'Groups of 4, rotating partners & matchups through pool stages. Final seeded pool crowns the winner.'},
+  {id:'kob_mixed_playoffs',icon:'⚡',name:'KOB Mixed Playoffs',desc:'Seeded bracket pools. Seeds 1,4,5,8 and 2,3,6,7. 2 rounds, top 2 advance.'}
+];
+var LEAGUE_FORMATS = [
+  {id:'traditional_league',icon:'🏅',name:'Traditional League',desc:'Fixed teams, weekly matchups, season standings, end-of-season bracket.'},
+  {id:'kob_league',icon:'🌿',name:'KOB League',desc:'Rotating A+B pairings across 11 nets. Season standings + end-of-season seeded pool. (Already built ✓)'}
+];
+function buildSubFormatGrid(){
+  var fmts=state.formatType==='tournament'?TOURNAMENT_FORMATS:LEAGUE_FORMATS;
+  document.getElementById('step2-title').textContent=state.formatType==='tournament'?'Tournament format':'League format';
+  document.getElementById('step2-sub').textContent=state.formatType==='tournament'?'What kind of tournament are you running?':'What kind of league are you running?';
+  var h='<div class="subfmt-grid">';
+  fmts.forEach(function(f){
+    h+='<div class="subfmt-card" id="sf-'+f.id+'" onclick="selectSubFormat(\x27'+f.id+'\x27)">'+
+      '<div class="subfmt-icon">'+f.icon+'</div>'+
+      '<div class="subfmt-name">'+f.name+'</div>'+
+      '<div class="subfmt-desc">'+f.desc+'</div>'+
+    '</div>';
+  });
+  h+='</div>';
+  document.getElementById('subfmt-container').innerHTML=h;
+}
+function selectSubFormat(id){
+  state.subFormat=id;
+  document.querySelectorAll('.subfmt-card').forEach(function(c){c.classList.remove('sel');});
+  var el=document.getElementById('sf-'+id); if(el) el.classList.add('sel');
+  var isKOB=id.indexOf('kob')===0;
+  goToStep(4);
+}
+
+// ── Step 3: Roster mode ────────────────────────────────────────────────────
+function selectRosterMode(m){
+  state.rosterMode=m;
+  document.getElementById('rm-ab').classList.toggle('sel',m==='ab');
+  document.getElementById('rm-seed').classList.toggle('sel',m==='seed');
+  setTimeout(function(){ goToStep(4); }, 200);
+}
+
+// ── Step 4: Courts ─────────────────────────────────────────────────────────
+function addSession(){
+  var v=document.getElementById('sess-input').value.trim();
+  if(!v||state.sessions.indexOf(v)>=0) return;
+  state.sessions.push(v);
+  document.getElementById('sess-input').value='';
+  renderSessions();
+  buildCourtRows();
+}
+function removeSession(s){
+  state.sessions=state.sessions.filter(function(x){return x!==s;});
+  // remove from courts
+  state.courts.forEach(function(c){if(c.session===s) c.session='';});
+  renderSessions();
+  buildCourtRows();
+}
+function renderSessions(){
+  var h='';
+  state.sessions.forEach(function(s){
+    h+='<span class="sess-badge sel" onclick="removeSession(\x27'+s+'\x27)">'+s+' \u2715</span>';
+  });
+  document.getElementById('sess-list').innerHTML=h;
+}
+function buildCourtRows(){
+  var n=parseInt(document.getElementById('court-count').value)||11;
+  n=Math.min(Math.max(n,1),40);
+  // Preserve existing names/sessions
+  while(state.courts.length<n) state.courts.push({name:'Court '+(state.courts.length+1),session:''});
+  state.courts=state.courts.slice(0,n);
+  var h='';
+  for(var i=0;i<n;i++){
+    h+='<div class="court-row">'+
+      '<span class="court-num">'+(i+1)+'</span>'+
+      '<input type="text" value="'+state.courts[i].name+'" oninput="state.courts['+i+'].name=this.value" placeholder="Court name">';
+    if(state.sessions.length>0){
+      h+='<select onchange="state.courts['+i+'].session=this.value" style="max-width:130px;">'+
+        '<option value="">No session</option>';
+      state.sessions.forEach(function(s){
+        h+='<option value="'+s+'"'+(state.courts[i].session===s?' selected':'')+'>'+s+'</option>';
+      });
+      h+='</select>';
+    }
+    h+='</div>';
+  }
+  document.getElementById('court-rows').innerHTML=h;
+}
+function saveCourts(){
+  var n=parseInt(document.getElementById('court-count').value)||11;
+  // names already bound via oninput
+  state.courts=state.courts.slice(0,n);
+}
+
+// ── Step 5: Scoring ────────────────────────────────────────────────────────
+function selectScoreMode(mode){
+  state.scoring.mode=mode;
+  document.getElementById('score-mode-sets').classList.toggle('sel',mode==='sets');
+  document.getElementById('score-mode-match').classList.toggle('sel',mode==='match');
+  document.getElementById('score-sets-config').style.display=mode==='sets'?'':'none';
+  document.getElementById('score-match-config').style.display=mode==='match'?'':'none';
+  updateScoreState();
+}
+function updateScoreState(){
+  var mode=state.scoring.mode;
+  if(mode==='sets'){
+    state.scoring.numSets=parseInt(document.getElementById('score-num-sets').value)||1;
+    state.scoring.scoreLimit=parseInt(document.getElementById('score-limit').value)||21;
+  } else {
+    state.scoring.numSets=parseInt(document.getElementById('score-match-sets').value)||3;
+    state.scoring.scoreLimit=parseInt(document.getElementById('score-match-limit').value)||21;
+  }
+}
+
+// ── Step 6: Config ─────────────────────────────────────────────────────────
+function buildConfigForm(){
+  var sf=state.subFormat, h='', title='', sub='';
+  if(sf==='traditional_tournament'){
+    title='Tournament settings'; sub='Configure pool and bracket options.';
+    h+=cfgRow('Number of pools','num-pools','number','4','2','16')+
+       cfgRow('Seeds advancing per pool','seeds-adv','number','2','1','4')+
+       cfgBracketType()+
+       cfgBye();
+  } else if(sf==='kob_randomized'){
+    title='KOB Randomized Pools settings'; sub='Configure pool stages and finals.';
+    h+=cfgRow('Number of pool stages','stages','number','2','1','4')+
+       cfgQualifiers('Final pool qualifiers (multiple of 8)','qualifiers','8')+
+       cfgBye();
+  } else if(sf==='kob_mixed_playoffs'){
+    title='KOB Mixed Playoffs settings'; sub='8-entry bracket pools. Seeds 1,4,5,8 vs 2,3,6,7.';
+    h+='<p style="font-size:13px;color:var(--t2);margin-bottom:16px;">The format is fixed: 2 rounds per pool, top 2 advance, bottom 2 consolation. Entries must be a multiple of 4 (BYEs inserted automatically to reach next multiple of 8).</p>'+
+       cfgBye();
+  } else if(sf==='traditional_league'){
+    title='League settings'; sub='Configure the season and end-of-season bracket.';
+    h+=cfgRow('Number of weeks','weeks','number','8','1','26')+
+       cfgRow('Rounds per week','rounds-per-week','number','3','1','10')+
+       cfgBracketType()+
+       cfgQualifiers('Teams entering end-of-season bracket','qualifiers','8');
+  } else if(sf==='kob_league'){
+    title='KOB League settings'; sub='Configure the season and end-of-season seeded pool.';
+    h+=cfgRow('Number of weeks','weeks','number','3','1','26')+
+       cfgRow('Rounds per week','rounds-per-week','number','5','1','10')+
+       cfgQualifiers('End-of-season pool qualifiers (multiple of 8)','qualifiers','8');
+  }
+  var hasPools=sf==='traditional_tournament'||sf==='kob_randomized';
+  h+=cfgPlayoffs(hasPools);
+  document.getElementById('step6-title').textContent=title;
+  document.getElementById('step6-sub').textContent=sub;
+  document.getElementById('cfg-container').innerHTML=h;
+}
+function cfgRow(label,id,type,def,min,max){
+  return '<div class="cfg-grid" style="grid-template-columns:1fr auto;align-items:center;margin-bottom:12px;">'+
+    '<label style="font-size:13px;color:var(--t2);">'+label+'</label>'+
+    '<input type="'+type+'" id="cfg-'+id+'" value="'+def+'" min="'+min+'" max="'+max+'" style="width:80px;" oninput="state.config[\x27'+id+'\x27]=parseInt(this.value)||'+def+'">'+
+  '</div>';
+}
+function cfgBracketType(){
+  return '<div style="margin-bottom:16px;"><p class="sec-label" style="margin-bottom:8px;">Bracket type</p>'+
+    '<div class="brk-grid">'+
+      '<div class="brk-card sel" id="brk-single" onclick="selectBracket(\'single\')"><div class="brk-name">Single Elimination</div><div class="brk-desc">One loss and you\'re out. Clean and fast.</div></div>'+
+      '<div class="brk-card" id="brk-double" onclick="selectBracket(\'double\')"><div class="brk-name">Double Elimination</div><div class="brk-desc">Two losses to go out. Winners &amp; losers bracket.</div></div>'+
+    '</div></div>';
+}
+function selectBracket(t){
+  state.config.bracketType=t;
+  document.getElementById('brk-single').classList.toggle('sel',t==='single');
+  document.getElementById('brk-double').classList.toggle('sel',t==='double');
+}
+function cfgQualifiers(label,id,def){
+  return '<div class="cfg-grid" style="grid-template-columns:1fr auto;align-items:center;margin-bottom:12px;">'+
+    '<label style="font-size:13px;color:var(--t2);">'+label+'</label>'+
+    '<input type="number" id="cfg-'+id+'" value="'+def+'" min="8" step="8" style="width:80px;" oninput="state.config[\x27'+id+'\x27]=parseInt(this.value)||'+parseInt(def)+'">'+
+  '</div>';
+}
+function cfgBye(){
+  return '<div style="margin-bottom:16px;"><p class="sec-label" style="margin-bottom:8px;">Bye rule</p>'+
+    '<div style="display:flex;gap:8px;">'+
+      '<div class="brk-card sel" id="bye-win" onclick="selectBye(\'auto_win\')" style="flex:1"><div class="brk-name">Auto-win</div><div class="brk-desc">Team with the BYE wins the match automatically.</div></div>'+
+      '<div class="brk-card" id="bye-skip" onclick="selectBye(\'skip\')" style="flex:1"><div class="brk-name">Skip</div><div class="brk-desc">Bye matches are excluded from records entirely.</div></div>'+
+    '</div></div>';
+}
+function selectBye(t){
+  state.config.byeRule=t;
+  document.getElementById('bye-win').classList.toggle('sel',t==='auto_win');
+  document.getElementById('bye-skip').classList.toggle('sel',t==='skip');
+}
+
+
+// ── Playoff config ──────────────────────────────────────────────────────────
+var BRACKET_NAMES=['Gold','Silver','Bronze','Copper','Platinum','Diamond'];
+var POOL_LETTERS=['A','B','C','D','E','F','G','H'];
+
+function cfgPlayoffs(hasPools){
+  var seedingSection='';
+  if(hasPools){
+    seedingSection=
+      '<p class="sec-label" style="margin-bottom:8px;margin-top:16px;">Seeding method</p>'+
+      '<div class="brk-grid" style="margin-bottom:14px;">'+
+        '<div class="brk-card sel" id="po-seed-flat" onclick="selectSeedingMethod(\x27flat\x27)">'+
+          '<div class="brk-name">Flat rankings</div>'+
+          '<div class="brk-desc">Overall W/L/point-diff standings seed the bracket 1\u2013N.</div>'+
+        '</div>'+
+        '<div class="brk-card" id="po-seed-pool" onclick="selectSeedingMethod(\x27pool\x27)">'+
+          '<div class="brk-name">Pool crossover</div>'+
+          '<div class="brk-desc">Top N per pool advance. Pools ranked by strength \u2014 winners cross to face runners-up from opposite pools.</div>'+
+        '</div>'+
+      '</div>'+
+      '<div id="po-pool-row" style="display:none;margin-bottom:12px;">'+
+        '<div class="cfg-grid" style="grid-template-columns:1fr auto;align-items:center;margin-bottom:10px;">'+
+          '<label style="font-size:13px;color:var(--t2);">Seeds per pool advancing</label>'+
+          '<input type="number" id="po-seeds-per-pool" min="1" max="8" value="2" style="width:80px;" oninput="state.config.seedsPerPool=parseInt(this.value)||2;renderPlayoffPreview()">'+
+        '</div>'+
+      '</div>';
+  }
+  var h='<div class="divider"></div>'+
+    '<p class="sec-label" style="margin-bottom:8px;">Playoff structure</p>'+
+    '<div class="brk-grid" style="margin-bottom:14px;">'+
+      '<div class="brk-card sel" id="po-everyone" onclick="selectPlayoffMode(\x27everyone\x27)">'+
+        '<div class="brk-name">Everyone makes playoffs</div>'+
+        '<div class="brk-desc">All entries seeded and split evenly across brackets.</div>'+
+      '</div>'+
+      '<div class="brk-card" id="po-topn" onclick="selectPlayoffMode(\x27top-n\x27)">'+
+        '<div class="brk-name">Top N only</div>'+
+        '<div class="brk-desc">Only top finishers advance. Set how many qualify.</div>'+
+      '</div>'+
+    '</div>'+
+    '<div id="po-topn-row" style="display:none;margin-bottom:12px;">'+
+      '<div class="cfg-grid" style="grid-template-columns:1fr auto;align-items:center;">'+
+        '<label style="font-size:13px;color:var(--t2);">Number of qualifiers</label>'+
+        '<input type="number" id="po-qualifiers" min="2" max="256" value="8" style="width:80px;" oninput="state.config.playoffQualifiers=parseInt(this.value)||8;renderPlayoffPreview()">'+
+      '</div>'+
+    '</div>'+
+    seedingSection+
+    '<div class="cfg-grid" style="grid-template-columns:1fr auto;align-items:center;margin-bottom:12px;">'+
+      '<label style="font-size:13px;color:var(--t2);">Number of brackets (Gold, Silver\u2026)</label>'+
+      '<input type="number" id="po-brackets" min="1" max="6" value="2" style="width:80px;" oninput="state.config.numBrackets=parseInt(this.value)||2;renderPlayoffPreview()">'+
+    '</div>'+
+    '<div id="po-preview" style="font-size:12px;color:var(--t2);padding:12px;background:var(--bg2);border-radius:var(--rm);border:.5px solid var(--b3);min-height:40px;white-space:pre-line;line-height:1.7;"></div>';
+  return h+'</div>';
+}
+
+function selectPlayoffMode(mode){
+  state.config.playoffMode=mode;
+  var eEl=document.getElementById('po-everyone');
+  var tEl=document.getElementById('po-topn');
+  var row=document.getElementById('po-topn-row');
+  if(!eEl) return;
+  eEl.classList.toggle('sel',mode==='everyone');
+  tEl.classList.toggle('sel',mode==='top-n');
+  row.style.display=mode==='top-n'?'':'none';
+  renderPlayoffPreview();
+}
+
+function selectSeedingMethod(method){
+  state.config.seedingMethod=method;
+  var fEl=document.getElementById('po-seed-flat');
+  var pEl=document.getElementById('po-seed-pool');
+  var row=document.getElementById('po-pool-row');
+  if(!fEl) return;
+  fEl.classList.toggle('sel',method==='flat');
+  pEl.classList.toggle('sel',method==='pool');
+  row.style.display=method==='pool'?'':'none';
+  renderPlayoffPreview();
+}
+
+function crossoverBracket(numPools, seedsPerPool){
+  var seeds=[];
+  for(var s=0;s<seedsPerPool;s++){
+    for(var p=0;p<numPools;p++){
+      seeds.push({pool:p, rank:s+1});
+    }
+  }
+  // Standard 1v(n), 2v(n-1)... crossover matchups
+  var n=seeds.length;
+  var matchups=[];
+  for(var i=0;i<n/2;i++){
+    var hi=seeds[i], lo=seeds[n-1-i];
+    matchups.push(POOL_LETTERS[hi.pool]+(hi.rank)+' vs '+POOL_LETTERS[lo.pool]+(lo.rank));
+  }
+  return matchups;
+}
+
+function renderPlayoffPreview(){
+  var el=document.getElementById('po-preview'); if(!el) return;
+  var mode=state.config.playoffMode||'everyone';
+  var seedMethod=state.config.seedingMethod||'flat';
+  var nb=parseInt((document.getElementById('po-brackets')||{}).value)||state.config.numBrackets||2;
+  var nq=mode==='top-n'
+    ?(parseInt((document.getElementById('po-qualifiers')||{}).value)||state.config.playoffQualifiers||8)
+    :null;
+  var total=state.rosterMode==='double'
+    ?(state.rosterA.length+state.rosterB.length)
+    :state.rosterSeed.length;
+  var pool=nq!==null?nq:(total||0);
+
+  if(seedMethod==='pool'){
+    var spp=parseInt((document.getElementById('po-seeds-per-pool')||{}).value)||state.config.seedsPerPool||2;
+    var numPools=pool>0?Math.round(pool/spp):4;
+    if(numPools<2){el.textContent='Need at least 2 pools for crossover seeding.';return;}
+    var matchups=crossoverBracket(numPools,spp);
+    var bracketName=BRACKET_NAMES[0];
+    var lines=[bracketName+' bracket \u2014 first round matchups:'];
+    matchups.forEach(function(m,i){lines.push('  Match '+(i+1)+': '+m);});
+    if(nb>1){
+      lines.push('');
+      for(var b=1;b<nb;b++){
+        var bName=b<BRACKET_NAMES.length?BRACKET_NAMES[b]:'Bracket '+(b+1);
+        var bPool=total>pool?total-pool:0;
+        lines.push(bName+(bPool?' ('+bPool+' entries)':'')+': flat ranking seeding');
+      }
+    }
+    el.textContent=lines.join('\n');
+    return;
+  }
+
+  if(!pool||pool<1){el.textContent='Enter your roster first to see the preview.';return;}
+  var perBracket=Math.ceil(pool/nb);
+  var parts=[];
+  var remaining=pool;
+  for(var i=0;i<nb;i++){
+    var size=i<nb-1?perBracket:remaining;
+    var name=i<BRACKET_NAMES.length?BRACKET_NAMES[i]:'Bracket '+(i+1);
+    parts.push(name+' ('+size+')');
+    remaining-=perBracket;
+    if(remaining<=0) break;
+  }
+  var prefix=nq!==null?'Top '+nq+' of '+total+' \u2192 ':'All '+(total||'?')+' \u2192 ';
+  el.textContent=prefix+parts.join(', ');
+}
+
+// ── Step 7: Roster ─────────────────────────────────────────────────────────
+function selectListMode(mode){
+  state.rosterMode=mode;
+  document.getElementById('roster-mode-single').classList.toggle('sel',mode==='single');
+  document.getElementById('roster-mode-double').classList.toggle('sel',mode==='double');
+  renderRosterTextareas();
+}
+function buildRosterForm(){
+  var sf=state.subFormat;
+  var isLeague=sf==='traditional_league'||sf==='kob_league';
+  var title=isLeague?'Enter teams':'Enter entries';
+  var sub=isLeague?'One team name per line.':'One entry per line.';
+  document.getElementById('step7-title').textContent=title;
+  document.getElementById('step7-sub').textContent=sub;
+  document.getElementById('roster-mode-single').classList.toggle('sel',state.rosterMode==='single');
+  document.getElementById('roster-mode-double').classList.toggle('sel',state.rosterMode==='double');
+  renderRosterTextareas();
+}
+function renderRosterTextareas(){
+  var sf=state.subFormat;
+  var isLeague=sf==='traditional_league'||sf==='kob_league';
+  var noun=isLeague?'teams':'entries';
+  var cap=noun.charAt(0).toUpperCase()+noun.slice(1);
+  var h='';
+  if(state.rosterMode==='double'){
+    h='<div class="roster-grid">'+
+      '<div><p class="roster-lbl">Group A <span class="roster-count" id="cnt-a"></span></p>'+
+      '<textarea id="roster-a" oninput="countRoster(\x27a\x27)" placeholder="One name per line..."></textarea></div>'+
+      '<div><p class="roster-lbl">Group B <span class="roster-count" id="cnt-b"></span></p>'+
+      '<textarea id="roster-b" oninput="countRoster(\x27b\x27)" placeholder="One name per line..."></textarea></div>'+
+    '</div>';
+  } else {
+    h='<div class="roster-single">'+
+      '<div><p class="roster-lbl">'+cap+' <span class="roster-count" id="cnt-seed"></span></p>'+
+      '<textarea id="roster-seed" oninput="countRoster(\x27seed\x27)" style="height:360px;" placeholder="One per line..."></textarea></div>'+
+    '</div>';
+  }
+  document.getElementById('roster-container').innerHTML=h;
+}
+function countRoster(which){
+  var id=which==='seed'?'roster-seed':'roster-'+which;
+  var el=document.getElementById(id); if(!el) return;
+  var lines=el.value.split('\n').map(function(l){return l.trim();}).filter(Boolean);
+  var cntId=which==='seed'?'cnt-seed':'cnt-'+which;
+  var cnt=document.getElementById(cntId);
+  if(cnt) cnt.textContent='('+lines.length+')';
+}
+function parseLines(id){
+  var el=document.getElementById(id); if(!el) return [];
+  return el.value.split('\n').map(function(l){return l.trim();}).filter(Boolean);
+}
+function validateRoster(){
+  var warn=document.getElementById('warn-roster');
+  if(state.rosterMode==='double'){
+    var a=parseLines('roster-a'), b=parseLines('roster-b');
+    if(!a.length||!b.length){warn.textContent='Both groups must have at least one entry.';warn.style.display='';return false;}
+    if(a.length!==b.length){warn.textContent='Group A ('+a.length+') and Group B ('+b.length+') must have the same count.';warn.style.display='';return false;}
+    state.rosterA=a; state.rosterB=b;
+  } else {
+    var s=parseLines('roster-seed');
+    if(!s.length){warn.textContent='Please enter at least one entry.';warn.style.display='';return false;}
+    state.rosterSeed=s;
+  }
+  warn.style.display='none';
+  return true;
+}
+
+var SUBFORMAT_LABELS={
+  'traditional_tournament':'Traditional Tournament',
+  'kob_randomized':'KOB Randomized Pools',
+  'kob_mixed_playoffs':'KOB Mixed Playoffs',
+  'traditional_league':'Traditional League',
+  'kob_league':'KOB League'
+};
+function playoffLabel(){
+  var mode=state.config.playoffMode||'everyone';
+  var nb=state.config.numBrackets||2;
+  var names=BRACKET_NAMES;
+  var bracketList=[];
+  for(var i=0;i<nb;i++) bracketList.push(i<names.length?names[i]:'Bracket '+(i+1));
+  if(mode==='top-n'){
+    return 'Top '+(state.config.playoffQualifiers||'?')+' → '+bracketList.join(', ');
+  }
+  return 'Everyone → '+bracketList.join(', ');
+}
+function scoringLabel(){
+  var sc=state.scoring;
+  if(sc.mode==='sets'){
+    return sc.numSets+' set'+(sc.numSets>1?'s':'')+' to '+sc.scoreLimit;
+  } else {
+    var setsToWin=Math.ceil(sc.numSets/2);
+    return 'Match: first to '+setsToWin+' sets (to '+sc.scoreLimit+', tiebreaker to 15)';
+  }
+}
+function buildSummary(){
+  var sf=state.subFormat, rm=state.rosterMode;
+  var entryCount=rm==='double'
+    ?state.rosterA.length+' + '+state.rosterB.length+' (two lists)'
+    :state.rosterSeed.length+' entries';
+  var items=[
+    ['Event title',state.eventTitle||'(untitled)'],
+    ['Event type',state.formatType==='tournament'?'Tournament':'League'],
+    ['Format',SUBFORMAT_LABELS[sf]||sf],
+    ['Lists',rm==='double'?'Two lists (Group A + B)':'Single list'],
+    ['Entries',entryCount],
+    ['Courts',state.courts.length+(state.sessions.length?' ('+state.sessions.length+' sessions)':'')],
+    ['Scoring',scoringLabel()],
+    ['Bye rule',(state.config.byeRule||'auto_win')==='auto_win'?'Auto-win':'Skip'],
+    ['Playoffs',playoffLabel()]
+  ];
+  if(state.config.weeks) items.push(['Weeks',state.config.weeks]);
+  if(state.config['rounds-per-week']) items.push(['Rounds/week',state.config['rounds-per-week']]);
+  if(state.config.stages) items.push(['Pool stages',state.config.stages]);
+  if(state.config.qualifiers) items.push(['Qualifiers',state.config.qualifiers]);
+  if(state.config.bracketType) items.push(['Bracket',state.config.bracketType==='single'?'Single elimination':'Double elimination']);
+  var h='';
+  items.forEach(function(x){ h+='<div class="sum-item"><div class="sum-key">'+x[0]+'</div><div class="sum-val">'+x[1]+'</div></div>'; });
+  document.getElementById('summary-grid').innerHTML=h;
+  buildBracketPreview();
+}
+
+
+// ── Bracket preview (Review step) ──────────────────────────────────────────
+function buildBracketPreview(){
+  var sf=state.subFormat;
+  var el=document.getElementById('bracket-preview');
+  var inner=document.getElementById('bracket-preview-inner');
+  if(!el||!inner) return;
+  var hasBracket=sf==='traditional_tournament'||sf==='traditional_league';
+  if(!hasBracket){el.style.display='none';return;}
+
+  var entries=state.rosterMode==='double'
+    ?(state.rosterA.length+state.rosterB.length)
+    :state.rosterSeed.length;
+  var numPools=parseInt(state.config['num-pools'])||4;
+  var seedsAdv=parseInt(state.config['seeds-adv'])||2;
+  var nb=state.config.numBrackets||2;
+  var bracketNames=['Gold','Silver','Bronze','Copper','Platinum','Diamond'];
+  var mode=state.config.playoffMode||'everyone';
+  var totalAdv=mode==='top-n'?(state.config.playoffQualifiers||entries):entries;
+  var perBracket=Math.ceil(totalAdv/nb);
+
+  var lines=[];
+  for(var b=0;b<nb;b++){
+    var bName=b<bracketNames.length?bracketNames[b]:'Bracket '+(b+1);
+    var bSize=b<nb-1?perBracket:totalAdv-(perBracket*(nb-1));
+    if(bSize<=0) break;
+    // Round out to next power of 2
+    var sz=1; while(sz<bSize) sz*=2;
+    var byes=sz-bSize;
+    var rounds=[];
+    var r=sz;
+    while(r>1){rounds.push(r/2);r=r/2;}
+    var roundNames=rounds.length===1?['Final']:rounds.length===2?['Semis','Final']:rounds.length===3?['QF','Semis','Final']:rounds.map(function(n,i){return i===rounds.length-1?'Final':i===rounds.length-2?'Semis':'R'+(i+1);});
+    lines.push(bName+' ('+bSize+' entries'+(byes?' + '+byes+' bye'+(byes>1?'s':'')+')':')'));
+    lines.push('  '+roundNames.join(' → '));
+    if(b<nb-1) lines.push('');
+  }
+  inner.textContent=lines.join('\n');
+  el.style.display='';
+}
+// ── Generate ───────────────────────────────────────────────────────────────
+function generateSchedule(){
+  var sf=state.subFormat;
+  document.getElementById('warn-summary').style.display='none';
+  if(sf==='kob_league') runKOBLeagueEngine();
+  else if(sf==='traditional_tournament') runTraditionalTournamentEngine();
+  else {
+    document.getElementById('warn-summary').textContent='Schedule engine for "'+SUBFORMAT_LABELS[sf]+'" is coming soon!';
+    document.getElementById('warn-summary').style.display='';
+  }
+}
+
+// ── Traditional Tournament engine ─────────────────────────────────────────
+function drawPools(entries, poolSize){
+  var numPools=Math.ceil(entries.length/poolSize);
+  var pools=[];
+  for(var i=0;i<numPools;i++) pools.push([]);
+  // Snake seeding: 1→A,2→B,3→C,4→D,5→D,6→C,7→B,8→A,...
+  for(var i=0;i<entries.length;i++){
+    var pass=Math.floor(i/numPools);
+    var pos=i%numPools;
+    var idx=pass%2===0?pos:numPools-1-pos;
+    pools[idx].push(entries[i]);
+  }
+  return pools;
+}
+function roundRobin(poolEntries){
+  // Standard fixed-pivot rotation: fix index 0, rotate rest
+  var arr=poolEntries.slice();
+  if(arr.length%2!==0) arr.push('BYE');
+  var n=arr.length, rounds=[];
+  for(var r=0;r<n-1;r++){
+    var round=[];
+    for(var i=0;i<n/2;i++){
+      var p1=arr[i], p2=arr[n-1-i];
+      var bye=p1==='BYE'||p2==='BYE';
+      round.push({p1:bye&&p1==='BYE'?p2:p1, p2:bye&&p2==='BYE'?p1:p2, isBye:bye});
+    }
+    rounds.push(round);
+    // Rotate: keep arr[0], rotate arr[1..n-1]
+    var last=arr[n-1];
+    for(var j=n-1;j>1;j--) arr[j]=arr[j-1];
+    arr[1]=last;
+  }
+  return rounds;
+}
+function assignCourts(poolRounds, courts, poolCourtStart, courtsPerPool){
+  // Each pool owns a fixed slice of courts: [poolCourtStart .. poolCourtStart+courtsPerPool-1]
+  return poolRounds.map(function(round){
+    return round.map(function(match, mi){
+      var courtIdx = (poolCourtStart + mi) % Math.max(courtsPerPool, 1);
+      return Object.assign({}, match, {court: poolCourtStart + courtIdx});
+    });
+  });
+}
+function bracketMatchupSeeds(size){
+  // Returns first-round matchup pairs as [seed1, seed2] (1-indexed)
+  // Ensures seeds 1 and 2 can only meet in the final
+  if(size===2) return [[1,2]];
+  var prev=bracketMatchupSeeds(size/2);
+  var result=[];
+  prev.forEach(function(pair){
+    result.push([pair[0], size+1-pair[0]]);
+    var opp=size+1-pair[1];
+    result.push([Math.min(opp,pair[1]), Math.max(opp,pair[1])]);
+  });
+  return result;
+}
+function runTraditionalTournamentEngine(){
+  var entries=state.rosterMode==='double'
+    ?interleave(state.rosterA, state.rosterB)
+    :state.rosterSeed;
+  var numPools=parseInt(state.config['num-pools'])||4;
+  var poolSize=Math.ceil(entries.length/numPools);
+  var seedsAdv=parseInt(state.config['seeds-adv'])||2;
+  var courts=state.courts;
+  // Courts per pool: divide courts evenly across pools
+  var courtsPerPool=Math.max(1, Math.floor(courts.length/numPools));
+
+  // Pool draw
+  var poolGroups=drawPools(entries, poolSize);
+
+  // Round-robin per pool with dedicated court assignment
+  var pools=poolGroups.map(function(pe, pi){
+    var rounds=roundRobin(pe);
+    var poolCourtStart=(pi*courtsPerPool)%courts.length;
+    var withCourts=assignCourts(rounds, courts, poolCourtStart, courtsPerPool);
+    return {name:'Pool '+String.fromCharCode(65+pi), entries:pe, rounds:withCourts};
+  });
+
+  // Bracket config (seeding happens live in viewer)
+  var totalAdv=pools.length*seedsAdv;
+  var bracketSize=1; while(bracketSize<totalAdv) bracketSize*=2;
+  var matchupSeeds=bracketMatchupSeeds(bracketSize);
+
+  var sd={
+    format:'traditional_tournament',
+    title:state.eventTitle||'Tournament',
+    courts:courts, sessions:state.sessions,
+    scoring:state.scoring, config:state.config,
+    entries:entries, pools:pools,
+    bracket:{
+      type:state.config.bracketType||'single',
+      seedsAdv:seedsAdv,
+      seedingMethod:state.config.seedingMethod||'flat',
+      seedsPerPool:state.config.seedsPerPool||2,
+      size:bracketSize,
+      matchupSeeds:matchupSeeds  // [seed1,seed2] pairs for round 1
+    }
+  };
+  downloadViewer(sd);
+}
+function interleave(a, b){
+  var out=[];
+  for(var i=0;i<Math.max(a.length,b.length);i++){
+    if(i<a.length) out.push(a[i]);
+    if(i<b.length) out.push(b[i]);
+  }
+  return out;
+}
+
+// ── KOB League engine (extracted from existing generator) ──────────────────
+function shuffle(arr){
+  var a=arr.slice();
+  for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}
+  return a;
+}
+function buildPairings(gA,gB,ph){
+  var avail=gB.slice(),pairs=[];
+  shuffle(gA).forEach(function(a){
+    var bestB=null,bestS=Infinity;
+    avail.forEach(function(b){var s=((ph[a]&&ph[a][b])||0)+Math.random()*0.8;if(s<bestS){bestS=s;bestB=b;}});
+    pairs.push({a:a,b:bestB});avail.splice(avail.indexOf(bestB),1);
+  });
+  return pairs;
+}
+function buildMatches(pairs,mh){
+  var s=shuffle(pairs),matches=[],used={};
+  for(var i=0;i<s.length;i++){
+    if(used[i]) continue;
+    var bestJ=-1,bestS=Infinity;
+    for(var j=i+1;j<s.length;j++){
+      if(used[j]) continue;
+      var key=[s[i].a,s[i].b,s[j].a,s[j].b].sort().join('|');
+      var sc=((mh[key])||0)+Math.random()*0.8;
+      if(sc<bestS){bestS=sc;bestJ=j;}
+    }
+    if(bestJ>=0){matches.push([s[i],s[bestJ]]);used[i]=true;used[bestJ]=true;}
+  }
+  return matches;
+}
+function runKOBLeagueEngine(){
+  var gA=state.rosterA, gB=state.rosterB;
+  var weeks=state.config.weeks||3, rounds=state.config['rounds-per-week']||5;
+  var courts=state.courts;
+  var ph={};
+  gA.forEach(function(a){ph[a]={};gB.forEach(function(b){ph[a][b]=0;});});
+  var mh={},sched=[];
+  for(var w=0;w<weeks;w++){
+    var week=[];
+    for(var r=0;r<rounds;r++){
+      var pairs=buildPairings(gA,gB,ph);
+      pairs.forEach(function(p){ph[p.a][p.b]++;});
+      var rawMatches=buildMatches(pairs,mh);
+      rawMatches.forEach(function(m){
+        var key=[m[0].a,m[0].b,m[1].a,m[1].b].sort().join('|');
+        mh[key]=(mh[key]||0)+1;
+      });
+      var roundMatches=rawMatches.map(function(m,i){
+        return {court:i%courts.length,p1:[m[0].a,m[0].b],p2:[m[1].a,m[1].b],isBye:false};
+      });
+      week.push(roundMatches);
+    }
+    sched.push(week);
+  }
+  var rp=0,mp=0,rpMx=0,mpMx=0;
+  gA.forEach(function(a){gB.forEach(function(b){var c=ph[a][b];if(c>1)rp+=(c-1);if(c>rpMx)rpMx=c;});});
+  Object.values(mh).forEach(function(c){if(c>1){mp+=(c-1);if(c>mpMx)mpMx=c;}});
+  var sd={
+    format:'kob_league',title:state.eventTitle||'KOB League',
+    weeks:weeks,roundsPerWeek:rounds,
+    courts:courts,sessions:state.sessions,
+    gA:gA,gB:gB,sched:sched,
+    scoring:state.scoring,
+    config:state.config,
+    stats:{rp:rp,mp:mp,rpMx:rpMx,mpMx:mpMx}
+  };
+  downloadViewer(sd);
+}
+
+// ── Download viewer ────────────────────────────────────────────────────────
+var VIEWER_B64 = [
+    "PCFET0NUWVBFIGh0bWw+CjxodG1sIGxhbmc9ImVuIj4KPGhlYWQ+CjxtZXRhIGNoYXJzZXQ9IlVURi04",
+    "Ij4KPG1ldGEgbmFtZT0idmlld3BvcnQiIGNvbnRlbnQ9IndpZHRoPWRldmljZS13aWR0aCxpbml0aWFs",
+    "LXNjYWxlPTEuMCI+Cjx0aXRsZT5LT0IgVmlld2VyPC90aXRsZT4KPGxpbmsgcmVsPSJwcmVjb25uZWN0",
+    "IiBocmVmPSJodHRwczovL2ZvbnRzLmdvb2dsZWFwaXMuY29tIj4KPGxpbmsgaHJlZj0iaHR0cHM6Ly9m",
+    "b250cy5nb29nbGVhcGlzLmNvbS9jc3MyP2ZhbWlseT1ETStTYW5zOndnaHRANDAwOzUwMDs2MDAmZmFt",
+    "aWx5PUpldEJyYWlucytNb25vJmRpc3BsYXk9c3dhcCIgcmVsPSJzdHlsZXNoZWV0Ij4KPHNjcmlwdCBz",
+    "cmM9Imh0dHBzOi8vY2RuanMuY2xvdWRmbGFyZS5jb20vYWpheC9saWJzL3hsc3gvMC4xOC41L3hsc3gu",
+    "ZnVsbC5taW4uanMiPjwvc2NyaXB0Pgo8c3R5bGU+Cjpyb290ewogIC0tc2FuczonRE0gU2Fucycsc3lz",
+    "dGVtLXVpLHNhbnMtc2VyaWY7LS1tb25vOidKZXRCcmFpbnMgTW9ubycsbW9ub3NwYWNlOwogIC0tdDE6",
+    "IzFhMWExODstLXQyOiM1ODU4NGY7LS10MzojOWE5YTkwOy0tdGk6IzE4NWZhNTstLXRzOiMwZjZlNTY7",
+    "LS10dzojOTkzYzFkOy0tdHA6IzZiM2ZhMDsKICAtLWJnMTojZmZmOy0tYmcyOiNmNGYzZWY7LS1iZzM6",
+    "I2VjZWFlNDstLWJnczojZTFmNWVlOy0tYmdwOiNmMGVhZjg7CiAgLS1iMzpyZ2JhKDI2LDI2LDI0LC4x",
+    "Myk7LS1iMjpyZ2JhKDI2LDI2LDI0LC4yNSk7LS1iMTpyZ2JhKDI2LDI2LDI0LC40Mik7CiAgLS1iczoj",
+    "MGY2ZTU2Oy0tYnA6IzZiM2ZhMDstLXJtOjhweDstLXJsOjEycHg7Cn0KQG1lZGlhKHByZWZlcnMtY29s",
+    "b3Itc2NoZW1lOmRhcmspezpyb290ewogIC0tdDE6I2YwZWZlODstLXQyOiM5YTlhOTA7LS10MzojNjg2",
+    "ODVmOy0tdGk6Izg1YjdlYjstLXRzOiM1ZGNhYTU7LS10dzojZjA5OTdiOy0tdHA6I2M0OWVlODsKICAt",
+    "LWJnMTojMWMxYzFhOy0tYmcyOiMyNjI2MjM7LS1iZzM6IzJlMmUyYjstLWJnczojMDg1MDQxOy0tYmdw",
+    "OiMyZTFlNDU7CiAgLS1iMzpyZ2JhKDI0MCwyMzksMjMyLC4xMyk7LS1iMjpyZ2JhKDI0MCwyMzksMjMy",
+    "LC4yNSk7LS1iMTpyZ2JhKDI0MCwyMzksMjMyLC40Mik7CiAgLS1iczojNWRjYWE1Oy0tYnA6I2M0OWVl",
+    "ODsKfX0KKiwqOjpiZWZvcmUsKjo6YWZ0ZXJ7Ym94LXNpemluZzpib3JkZXItYm94O21hcmdpbjowO3Bh",
+    "ZGRpbmc6MDt9CmJvZHl7Zm9udC1mYW1pbHk6dmFyKC0tc2Fucyk7YmFja2dyb3VuZDp2YXIoLS1iZzIp",
+    "O2NvbG9yOnZhcigtLXQxKTttaW4taGVpZ2h0OjEwMHZoO30KLnBhZ2UtaGRye2JhY2tncm91bmQ6dmFy",
+    "KC0tYmcxKTtib3JkZXItYm90dG9tOi41cHggc29saWQgdmFyKC0tYjMpO3BhZGRpbmc6MTRweCAyMHB4",
+    "O30KLnBhZ2UtaGRyIGgxe2ZvbnQtc2l6ZToxN3B4O2ZvbnQtd2VpZ2h0OjYwMDt9Ci5wYWdlLWhkciBz",
+    "cGFue2ZvbnQtc2l6ZToxMnB4O2NvbG9yOnZhcigtLXQzKTtkaXNwbGF5OmJsb2NrO21hcmdpbi10b3A6",
+    "MnB4O30KLnBhZ2UtbWFpbnttYXgtd2lkdGg6OTAwcHg7bWFyZ2luOjAgYXV0bztwYWRkaW5nOjIwcHgg",
+    "MTZweCA2MHB4O30KLmNhcmR7YmFja2dyb3VuZDp2YXIoLS1iZzEpO2JvcmRlcjouNXB4IHNvbGlkIHZh",
+    "cigtLWIzKTtib3JkZXItcmFkaXVzOjE2cHg7cGFkZGluZzoyNHB4O30KLnRhYnN7ZGlzcGxheTpmbGV4",
+    "O2dhcDoycHg7Ym9yZGVyLWJvdHRvbTouNXB4IHNvbGlkIHZhcigtLWIzKTttYXJnaW4tYm90dG9tOjIw",
+    "cHg7ZmxleC13cmFwOndyYXA7fQoudGFie2JhY2tncm91bmQ6dHJhbnNwYXJlbnQ7Ym9yZGVyOi41cHgg",
+    "c29saWQgdHJhbnNwYXJlbnQ7Ym9yZGVyLXJhZGl1czo4cHggOHB4IDAgMDtwYWRkaW5nOjhweCAxNnB4",
+    "O2N1cnNvcjpwb2ludGVyO2ZvbnQtc2l6ZToxM3B4O2ZvbnQtZmFtaWx5OnZhcigtLXNhbnMpO2NvbG9y",
+    "OnZhcigtLXQyKTttYXJnaW4tYm90dG9tOi0uNXB4O30KLnRhYi5hY3RpdmV7YmFja2dyb3VuZDp2YXIo",
+    "LS1iZzEpO2JvcmRlci1jb2xvcjp2YXIoLS1iMik7Ym9yZGVyLWJvdHRvbS1jb2xvcjp2YXIoLS1iZzEp",
+    "O2NvbG9yOnZhcigtLXQxKTt9Ci8qIG5hdiByb3dzICovCi5uYXYtcm93e2Rpc3BsYXk6ZmxleDtqdXN0",
+    "aWZ5LWNvbnRlbnQ6c3BhY2UtYmV0d2VlbjthbGlnbi1pdGVtczpjZW50ZXI7bWFyZ2luLWJvdHRvbTo4",
+    "cHg7ZmxleC13cmFwOndyYXA7Z2FwOjhweDt9Ci5uYXYtbHtkaXNwbGF5OmZsZXg7Z2FwOjZweDtmbGV4",
+    "LXdyYXA6d3JhcDt9Ci5yb3VuZC1yb3d7ZGlzcGxheTpmbGV4O2dhcDo2cHg7ZmxleC13cmFwOndyYXA7",
+    "bWFyZ2luLWJvdHRvbToxMHB4O30KLmJ0bi1zbXtwYWRkaW5nOjVweCAxMnB4O2ZvbnQtc2l6ZToxMnB4",
+    "O2ZvbnQtZmFtaWx5OnZhcigtLXNhbnMpO2N1cnNvcjpwb2ludGVyO2JvcmRlci1yYWRpdXM6NnB4O2Jv",
+    "cmRlcjouNXB4IHNvbGlkIHZhcigtLWIyKTtiYWNrZ3JvdW5kOnZhcigtLWJnMik7Y29sb3I6dmFyKC0t",
+    "dDIpO30KLmJ0bi1zbS5zZWwsLmJ0bi1zbTpob3ZlcntiYWNrZ3JvdW5kOnZhcigtLWJnMyk7Y29sb3I6",
+    "dmFyKC0tdDEpO30KLmJ0bi1zbS5ncmVlbntjb2xvcjp2YXIoLS10cyk7Ym9yZGVyLWNvbG9yOnZhcigt",
+    "LWJzKTt9Ci5idG4tc20uZ3JlZW46aG92ZXJ7YmFja2dyb3VuZDp2YXIoLS1iZ3MpO30KLmJ0bi14c3tw",
+    "YWRkaW5nOjNweCA5cHg7Zm9udC1zaXplOjExcHg7Zm9udC1mYW1pbHk6dmFyKC0tc2Fucyk7Y3Vyc29y",
+    "OnBvaW50ZXI7Ym9yZGVyLXJhZGl1czo2cHg7Ym9yZGVyOi41cHggc29saWQgdmFyKC0tYjIpO2JhY2tn",
+    "cm91bmQ6dmFyKC0tYmcyKTtjb2xvcjp2YXIoLS10Mik7fQouYnRuLXhzLnNlbCwuYnRuLXhzOmhvdmVy",
+    "e2JhY2tncm91bmQ6dmFyKC0tYmczKTtjb2xvcjp2YXIoLS10MSk7fQovKiBwcm9ncmVzcyAqLwoucHJv",
+    "Zy1yb3d7ZGlzcGxheTpmbGV4O2FsaWduLWl0ZW1zOmNlbnRlcjtnYXA6MTBweDttYXJnaW4tYm90dG9t",
+    "OjEycHg7fQoucHJvZy1sYmx7Zm9udC1zaXplOjEycHg7Y29sb3I6dmFyKC0tdDMpO3doaXRlLXNwYWNl",
+    "Om5vd3JhcDt9Ci5wcm9nLXdyYXB7ZmxleDoxO2hlaWdodDo0cHg7YmFja2dyb3VuZDp2YXIoLS1iZzMp",
+    "O2JvcmRlci1yYWRpdXM6MnB4O30KLnByb2ctYmFye2hlaWdodDo0cHg7YmFja2dyb3VuZDp2YXIoLS10",
+    "cyk7Ym9yZGVyLXJhZGl1czoycHg7dHJhbnNpdGlvbjp3aWR0aCAuM3M7fQovKiBtYXRjaCB0YWJsZSAq",
+    "LwoubmV0LXRhYmxle2JvcmRlcjouNXB4IHNvbGlkIHZhcigtLWIzKTtib3JkZXItcmFkaXVzOnZhcigt",
+    "LXJsKTtvdmVyZmxvdzpoaWRkZW47fQoubmV0LWhlYWQsLm5ldC1yb3d7ZGlzcGxheTpncmlkO2dyaWQt",
+    "dGVtcGxhdGUtY29sdW1uczozNnB4IDFmciA3MHB4IDI4cHggNzBweCAxZnI7Z2FwOjRweDthbGlnbi1p",
+    "dGVtczpjZW50ZXI7cGFkZGluZzo3cHggMTBweDt9Ci5uZXQtaGVhZHtiYWNrZ3JvdW5kOnZhcigtLWJn",
+    "Mik7Zm9udC1zaXplOjEwcHg7Zm9udC13ZWlnaHQ6NjAwO2NvbG9yOnZhcigtLXQzKTt0ZXh0LXRyYW5z",
+    "Zm9ybTp1cHBlcmNhc2U7bGV0dGVyLXNwYWNpbmc6LjA2ZW07fQoubmV0LXJvd3tib3JkZXItdG9wOi41",
+    "cHggc29saWQgdmFyKC0tYjMpO30KLm5ldC1yb3cuYWx0e2JhY2tncm91bmQ6dmFyKC0tYmcyKTt9Ci5u",
+    "bnVte2ZvbnQtc2l6ZToxMXB4O2NvbG9yOnZhcigtLXQzKTtmb250LWZhbWlseTp2YXIoLS1tb25vKTt9",
+    "Ci5wYWlye2Rpc3BsYXk6ZmxleDthbGlnbi1pdGVtczpjZW50ZXI7Z2FwOjRweDtmb250LXNpemU6MTNw",
+    "eDt9Ci5wYXtjb2xvcjp2YXIoLS10aSk7fQoucGJ7Y29sb3I6dmFyKC0tdHApO30KLnBsdXN7Y29sb3I6",
+    "dmFyKC0tdDMpO2ZvbnQtc2l6ZToxMXB4O30KLnZzY3tmb250LXNpemU6MTFweDtjb2xvcjp2YXIoLS10",
+    "Myk7dGV4dC1hbGlnbjpjZW50ZXI7fQouc2NvcmUtaW57d2lkdGg6NjRweDtmb250LWZhbWlseTp2YXIo",
+    "LS1tb25vKTtmb250LXNpemU6MTNweDt0ZXh0LWFsaWduOmNlbnRlcjtwYWRkaW5nOjRweCA2cHg7Ym9y",
+    "ZGVyOi41cHggc29saWQgdmFyKC0tYjMpO2JvcmRlci1yYWRpdXM6NnB4O2JhY2tncm91bmQ6dmFyKC0t",
+    "YmcyKTtjb2xvcjp2YXIoLS10MSk7fQouc2NvcmUtaW4ud2lue2JvcmRlci1jb2xvcjp2YXIoLS1icyk7",
+    "YmFja2dyb3VuZDp2YXIoLS1iZ3MpO2NvbG9yOnZhcigtLXRzKTt9Ci5zY29yZS1pbi5sb3Nle2JvcmRl",
+    "ci1jb2xvcjp2YXIoLS1iMik7fQovKiBwb29sIGhlYWRlciAqLwoucG9vbC1oZHJ7Zm9udC1zaXplOjEy",
+    "cHg7Zm9udC13ZWlnaHQ6NjAwO2NvbG9yOnZhcigtLXQyKTtwYWRkaW5nOjhweCAxMHB4O2JhY2tncm91",
+    "bmQ6dmFyKC0tYmcyKTtib3JkZXItcmFkaXVzOnZhcigtLXJtKTttYXJnaW4tYm90dG9tOjhweDtkaXNw",
+    "bGF5OmZsZXg7YWxpZ24taXRlbXM6Y2VudGVyO2dhcDo4cHg7fQoucG9vbC1iYWRnZXtmb250LXNpemU6",
+    "MTBweDtwYWRkaW5nOjFweCA3cHg7Ym9yZGVyLXJhZGl1czo5OXB4O2JhY2tncm91bmQ6dmFyKC0tYmdw",
+    "KTtjb2xvcjp2YXIoLS10cCk7Zm9udC13ZWlnaHQ6NjAwO30KLyogc3RhbmRpbmdzICovCi5zdGQtd3Jh",
+    "cHtvdmVyZmxvdy14OmF1dG87fQouc3RkLXRhYmxle3dpZHRoOjEwMCU7Ym9yZGVyLWNvbGxhcHNlOmNv",
+    "bGxhcHNlO2ZvbnQtc2l6ZToxM3B4O30KLnN0ZC10YWJsZSB0aHtmb250LXNpemU6MTBweDtmb250LXdl",
+    "aWdodDo1MDA7Y29sb3I6dmFyKC0tdDIpO3RleHQtdHJhbnNmb3JtOnVwcGVyY2FzZTtsZXR0ZXItc3Bh",
+    "Y2luZzouMDZlbTtwYWRkaW5nOjhweCAxMHB4O3RleHQtYWxpZ246bGVmdDtiYWNrZ3JvdW5kOnZhcigt",
+    "LWJnMik7Ym9yZGVyLWJvdHRvbTouNXB4IHNvbGlkIHZhcigtLWIzKTt9Ci5zdGQtdGFibGUgdGguciwu",
+    "c3RkLXRhYmxlIHRkLnJ7dGV4dC1hbGlnbjpyaWdodDt9Ci5zdGQtdGFibGUgdGR7cGFkZGluZzo4cHgg",
+    "MTBweDtib3JkZXItYm90dG9tOi41cHggc29saWQgdmFyKC0tYjMpO2NvbG9yOnZhcigtLXQxKTt9Ci5z",
+    "dGQtdGFibGUgdHI6bGFzdC1jaGlsZCB0ZHtib3JkZXItYm90dG9tOm5vbmU7fQouc3RkLXRhYmxlIHRy",
+    "LmFsdCB0ZHtiYWNrZ3JvdW5kOnZhcigtLWJnMik7fQoucm5re2Rpc3BsYXk6aW5saW5lLWZsZXg7YWxp",
+    "Z24taXRlbXM6Y2VudGVyO2p1c3RpZnktY29udGVudDpjZW50ZXI7d2lkdGg6MjJweDtoZWlnaHQ6MjJw",
+    "eDtib3JkZXItcmFkaXVzOjUwJTtmb250LXNpemU6MTFweDtmb250LXdlaWdodDo2MDA7YmFja2dyb3Vu",
+    "ZDp2YXIoLS1iZzIpO2NvbG9yOnZhcigtLXQyKTt9Ci5ybmsuZ29sZHtiYWNrZ3JvdW5kOiNmZWYzYzc7",
+    "Y29sb3I6IzkyNDAwZTt9Ci5ybmsuc2lsdmVye2JhY2tncm91bmQ6I2YzZjRmNjtjb2xvcjojMzc0MTUx",
+    "O30KLnJuay5icm9uemV7YmFja2dyb3VuZDojZmRlOGQ4O2NvbG9yOiM5MjQwMGU7fQouZ2JhZGdle2Zv",
+    "bnQtc2l6ZToxMHB4O3BhZGRpbmc6MXB4IDZweDtib3JkZXItcmFkaXVzOjk5cHg7YmFja2dyb3VuZDp2",
+    "YXIoLS1iZzIpO2JvcmRlcjouNXB4IHNvbGlkIHZhcigtLWIzKTtjb2xvcjp2YXIoLS10Mik7fQouZHBv",
+    "c3tjb2xvcjp2YXIoLS10cyk7fQouZG5lZ3tjb2xvcjp2YXIoLS10dyk7fQouZ3JwLWZpbHRlcntkaXNw",
+    "bGF5OmZsZXg7Z2FwOjZweDttYXJnaW4tYm90dG9tOjEycHg7ZmxleC13cmFwOndyYXA7fQouZm5vdGV7",
+    "Zm9udC1zaXplOjExcHg7Y29sb3I6dmFyKC0tdDMpO21hcmdpbi10b3A6MTBweDt9Ci8qIHN0YXRzIGJh",
+    "ciAqLwouc3RhdHN7ZGlzcGxheTpmbGV4O2dhcDoxNnB4O2ZsZXgtd3JhcDp3cmFwO21hcmdpbi1ib3R0",
+    "b206MTRweDt9Ci5zdGF0e2Rpc3BsYXk6ZmxleDtmbGV4LWRpcmVjdGlvbjpjb2x1bW47fQouc3RhdC1s",
+    "Ymx7Zm9udC1zaXplOjEwcHg7Y29sb3I6dmFyKC0tdDMpO3RleHQtdHJhbnNmb3JtOnVwcGVyY2FzZTts",
+    "ZXR0ZXItc3BhY2luZzouMDZlbTt9Ci5zdGF0LXZhbHtmb250LXNpemU6MTZweDtmb250LXdlaWdodDo2",
+    "MDA7Y29sb3I6dmFyKC0tdDEpO30KLyogbG9va3VwICovCi5sb29rdXAtc2Vse2ZvbnQtZmFtaWx5OnZh",
+    "cigtLXNhbnMpO2ZvbnQtc2l6ZToxM3B4O3BhZGRpbmc6NXB4IDhweDtib3JkZXI6LjVweCBzb2xpZCB2",
+    "YXIoLS1iMyk7Ym9yZGVyLXJhZGl1czp2YXIoLS1ybSk7YmFja2dyb3VuZDp2YXIoLS1iZzIpO2NvbG9y",
+    "OnZhcigtLXQxKTt9Ci5say13cmFwe2JvcmRlcjouNXB4IHNvbGlkIHZhcigtLWIzKTtib3JkZXItcmFk",
+    "aXVzOnZhcigtLXJsKTtvdmVyZmxvdzpoaWRkZW47fQoubGstaGVhZCwubGstcm93e2Rpc3BsYXk6Z3Jp",
+    "ZDtncmlkLXRlbXBsYXRlLWNvbHVtbnM6NjBweCA4MHB4IDFmciAyOHB4IDFmciA4MHB4O2dhcDo0cHg7",
+    "YWxpZ24taXRlbXM6Y2VudGVyO3BhZGRpbmc6N3B4IDEwcHg7fQoubGstaGVhZHtiYWNrZ3JvdW5kOnZh",
+    "cigtLWJnMik7Zm9udC1zaXplOjEwcHg7Zm9udC13ZWlnaHQ6NjAwO2NvbG9yOnZhcigtLXQzKTt0ZXh0",
+    "LXRyYW5zZm9ybTp1cHBlcmNhc2U7bGV0dGVyLXNwYWNpbmc6LjA2ZW07fQoubGstcm93e2JvcmRlci10",
+    "b3A6LjVweCBzb2xpZCB2YXIoLS1iMyk7fQoubGstcm93LmFsdHtiYWNrZ3JvdW5kOnZhcigtLWJnMik7",
+    "fQovKiBicmFja2V0ICovCi5icmFja2V0LXdyYXB7b3ZlcmZsb3cteDphdXRvO3BhZGRpbmctYm90dG9t",
+    "OjhweDt9Ci5icmFja2V0e2Rpc3BsYXk6ZmxleDtnYXA6MDthbGlnbi1pdGVtczpmbGV4LXN0YXJ0O30K",
+    "LmJrLXJvdW5ke2Rpc3BsYXk6ZmxleDtmbGV4LWRpcmVjdGlvbjpjb2x1bW47bWluLXdpZHRoOjE2MHB4",
+    "O30KLmJrLXJvdW5kLWhkcntmb250LXNpemU6MTBweDtmb250LXdlaWdodDo2MDA7Y29sb3I6dmFyKC0t",
+    "dDMpO3RleHQtdHJhbnNmb3JtOnVwcGVyY2FzZTtsZXR0ZXItc3BhY2luZzouMDZlbTtwYWRkaW5nOjAg",
+    "OHB4IDhweDt9Ci5iay1zcGFjZXJ7ZmxleDoxO30KLmJrLW1hdGNoe2JvcmRlcjouNXB4IHNvbGlkIHZh",
+    "cigtLWIzKTtib3JkZXItcmFkaXVzOnZhcigtLXJtKTtiYWNrZ3JvdW5kOnZhcigtLWJnMSk7bWFyZ2lu",
+    "OjAgOHB4IDRweDt9Ci5iay1tYXRjaC5ieWV7b3BhY2l0eTouNTt9Ci5iay1tYXRjaC5jb21wbGV0ZXti",
+    "b3JkZXItY29sb3I6dmFyKC0tYnMpO30KLmJrLWVudHJ5e3BhZGRpbmc6N3B4IDEwcHg7Zm9udC1zaXpl",
+    "OjEycHg7ZGlzcGxheTpmbGV4O2p1c3RpZnktY29udGVudDpzcGFjZS1iZXR3ZWVuO2FsaWduLWl0ZW1z",
+    "OmNlbnRlcjtnYXA6NnB4O30KLmJrLWVudHJ5OmZpcnN0LWNoaWxke2JvcmRlci1ib3R0b206LjVweCBz",
+    "b2xpZCB2YXIoLS1iMyk7fQouYmstZW50cnkud2lubmVye2ZvbnQtd2VpZ2h0OjYwMDtjb2xvcjp2YXIo",
+    "LS10cyk7fQouYmstbmFtZXtmbGV4OjE7b3ZlcmZsb3c6aGlkZGVuO3RleHQtb3ZlcmZsb3c6ZWxsaXBz",
+    "aXM7d2hpdGUtc3BhY2U6bm93cmFwO30KLmJrLXNjb3Jle2ZvbnQtZmFtaWx5OnZhcigtLW1vbm8pO2Zv",
+    "bnQtc2l6ZToxMnB4O3dpZHRoOjMycHg7dGV4dC1hbGlnbjpjZW50ZXI7cGFkZGluZzoycHggNHB4O2Jv",
+    "cmRlcjouNXB4IHNvbGlkIHZhcigtLWIzKTtib3JkZXItcmFkaXVzOjRweDtiYWNrZ3JvdW5kOnZhcigt",
+    "LWJnMik7Y29sb3I6dmFyKC0tdDEpO30KLmJrLXNjb3JlLndpbntib3JkZXItY29sb3I6dmFyKC0tYnMp",
+    "O2JhY2tncm91bmQ6dmFyKC0tYmdzKTtjb2xvcjp2YXIoLS10cyk7fQouYmstY29ubmVjdG9ye2Rpc3Bs",
+    "YXk6ZmxleDtmbGV4LWRpcmVjdGlvbjpjb2x1bW47anVzdGlmeS1jb250ZW50OmNlbnRlcjt3aWR0aDox",
+    "NnB4O21hcmdpbi1ib3R0b206NHB4O30KLmJrLWNvbm5lY3RvciBzdmd7b3ZlcmZsb3c6dmlzaWJsZTt9",
+    "Ci5iay1ncm91cHtkaXNwbGF5OmZsZXg7YWxpZ24taXRlbXM6Y2VudGVyO21hcmdpbi1ib3R0b206OHB4",
+    "O30KLmJrLWVtcHR5e2ZvbnQtc2l6ZToxMnB4O2NvbG9yOnZhcigtLXQzKTtwYWRkaW5nOjEycHggMTBw",
+    "eDt0ZXh0LWFsaWduOmNlbnRlcjt9Ci8qIHBvb2wgc3RhbmRpbmdzIHNlY3Rpb24gKi8KLnBvb2wtc2Vj",
+    "dGlvbnttYXJnaW4tYm90dG9tOjIwcHg7fQoucG9vbC1zZWN0aW9uLWhkcntmb250LXNpemU6MTJweDtm",
+    "b250LXdlaWdodDo2MDA7Y29sb3I6dmFyKC0tdDIpO21hcmdpbi1ib3R0b206OHB4O3BhZGRpbmctYm90",
+    "dG9tOjZweDtib3JkZXItYm90dG9tOi41cHggc29saWQgdmFyKC0tYjMpO30KLyogZW1wdHkgc3RhdGUg",
+    "Ki8KLmVtcHR5e3BhZGRpbmc6NDBweDt0ZXh0LWFsaWduOmNlbnRlcjtjb2xvcjp2YXIoLS10Myk7fQpA",
+    "bWVkaWEobWF4LXdpZHRoOjU4MHB4KXsKICAubmV0LWhlYWQsLm5ldC1yb3d7Z3JpZC10ZW1wbGF0ZS1j",
+    "b2x1bW5zOjI4cHggMWZyIDU4cHggMjJweCA1OHB4IDFmcjtwYWRkaW5nOjZweCA2cHg7fQogIC5say1o",
+    "ZWFkLC5say1yb3d7Z3JpZC10ZW1wbGF0ZS1jb2x1bW5zOjQ0cHggNjBweCAxZnIgMjJweCAxZnIgNjBw",
+    "eDt9CiAgLmJrLXJvdW5ke21pbi13aWR0aDoxMzBweDt9CiAgLmNhcmR7cGFkZGluZzoxNHB4O30KfQo8",
+    "L3N0eWxlPgo8L2hlYWQ+Cjxib2R5Pgo8aGVhZGVyIGNsYXNzPSJwYWdlLWhkciI+CiAgPGgxIGlkPSJw",
+    "YWdlLXRpdGxlIj5LT0IgVmlld2VyPC9oMT4KICA8c3BhbiBpZD0icGFnZS1zdWIiPjwvc3Bhbj4KPC9o",
+    "ZWFkZXI+CjxtYWluIGNsYXNzPSJwYWdlLW1haW4iPgo8ZGl2IGNsYXNzPSJjYXJkIj4KICA8ZGl2IGNs",
+    "YXNzPSJ0YWJzIiBpZD0idGFicyI+PC9kaXY+CiAgPGRpdiBpZD0idGFiLXNjaGVkdWxlIiBzdHlsZT0i",
+    "ZGlzcGxheTpub25lIj4KICAgIDxkaXYgaWQ9InN0YXRzLWJhciIgY2xhc3M9InN0YXRzIj48L2Rpdj4K",
+    "ICAgIDxkaXYgY2xhc3M9Im5hdi1yb3ciPjxkaXYgY2xhc3M9Im5hdi1sIiBpZD0id2Vlay1idG5zIj48",
+    "L2Rpdj48ZGl2IGNsYXNzPSJuYXYtciI+PGJ1dHRvbiBjbGFzcz0iYnRuLXNtIGdyZWVuIiBvbmNsaWNr",
+    "PSJleHBvcnRYTFNYKCkiPkV4cG9ydCAueGxzeDwvYnV0dG9uPjwvZGl2PjwvZGl2PgogICAgPGRpdiBj",
+    "bGFzcz0icm91bmQtcm93IiBpZD0icm91bmQtYnRucyI+PC9kaXY+CiAgICA8ZGl2IGNsYXNzPSJwcm9n",
+    "LXJvdyI+PHNwYW4gY2xhc3M9InByb2ctbGJsIiBpZD0icHJvZy1sYmwiPjwvc3Bhbj48ZGl2IGNsYXNz",
+    "PSJwcm9nLXdyYXAiPjxkaXYgY2xhc3M9InByb2ctYmFyIiBpZD0icHJvZy1iYXIiIHN0eWxlPSJ3aWR0",
+    "aDowJSI+PC9kaXY+PC9kaXY+PC9kaXY+CiAgICA8ZGl2IGNsYXNzPSJuZXQtdGFibGUiIGlkPSJuZXQt",
+    "dGFibGUiPjwvZGl2PgogICAgPHAgY2xhc3M9ImZub3RlIiBpZD0iZm5vdGUiPjwvcD4KICA8L2Rpdj4K",
+    "ICA8ZGl2IGlkPSJ0YWItcG9vbHMiIHN0eWxlPSJkaXNwbGF5Om5vbmUiPgogICAgPGRpdiBjbGFzcz0i",
+    "bmF2LXJvdyI+PGRpdiBjbGFzcz0ibmF2LWwiIGlkPSJwb29sLWJ0bnMiPjwvZGl2PjxkaXYgY2xhc3M9",
+    "Im5hdi1yIj48YnV0dG9uIGNsYXNzPSJidG4tc20gZ3JlZW4iIG9uY2xpY2s9ImV4cG9ydFhMU1goKSI+",
+    "RXhwb3J0IC54bHN4PC9idXR0b24+PC9kaXY+PC9kaXY+CiAgICA8ZGl2IGNsYXNzPSJyb3VuZC1yb3ci",
+    "IGlkPSJwb29sLXJvdW5kLWJ0bnMiPjwvZGl2PgogICAgPGRpdiBjbGFzcz0icHJvZy1yb3ciPjxzcGFu",
+    "IGNsYXNzPSJwcm9nLWxibCIgaWQ9InBvb2wtcHJvZy1sYmwiPjwvc3Bhbj48ZGl2IGNsYXNzPSJwcm9n",
+    "LXdyYXAiPjxkaXYgY2xhc3M9InByb2ctYmFyIiBpZD0icG9vbC1wcm9nLWJhciIgc3R5bGU9IndpZHRo",
+    "OjAlIj48L2Rpdj48L2Rpdj48L2Rpdj4KICAgIDxkaXYgaWQ9InBvb2wtdGFibGUiPjwvZGl2PgogIDwv",
+    "ZGl2PgogIDxkaXYgaWQ9InRhYi1zdGFuZGluZ3MiIHN0eWxlPSJkaXNwbGF5Om5vbmUiPgogICAgPGRp",
+    "diBjbGFzcz0iZ3JwLWZpbHRlciIgaWQ9InN0ZC1maWx0ZXIiPjwvZGl2PgogICAgPGRpdiBjbGFzcz0i",
+    "c3RkLXdyYXAiPjx0YWJsZSBjbGFzcz0ic3RkLXRhYmxlIiBpZD0ic3RkLXRhYmxlIj48L3RhYmxlPjwv",
+    "ZGl2PgogICAgPHAgY2xhc3M9ImZub3RlIiBpZD0ic3RkLW5vdGUiPjwvcD4KICA8L2Rpdj4KICA8ZGl2",
+    "IGlkPSJ0YWItYnJhY2tldCIgc3R5bGU9ImRpc3BsYXk6bm9uZSI+CiAgICA8ZGl2IGNsYXNzPSJuYXYt",
+    "cm93IiBzdHlsZT0ibWFyZ2luLWJvdHRvbToxNHB4OyI+CiAgICAgIDxkaXYgaWQ9ImJyYWNrZXQtc3Vi",
+    "LW5hdiIgY2xhc3M9Im5hdi1sIj48L2Rpdj4KICAgICAgPGJ1dHRvbiBjbGFzcz0iYnRuLXNtIiBvbmNs",
+    "aWNrPSJzZWVkQnJhY2tldCgpIiBpZD0iYnRuLXNlZWQtYnJhY2tldCI+U2VlZCBicmFja2V0IGZyb20g",
+    "cG9vbCByZXN1bHRzPC9idXR0b24+CiAgICA8L2Rpdj4KICAgIDxkaXYgaWQ9ImJyYWNrZXQtd3JhcCI+",
+    "PC9kaXY+CiAgPC9kaXY+CiAgPGRpdiBpZD0idGFiLWxvb2t1cCIgc3R5bGU9ImRpc3BsYXk6bm9uZSI+",
+    "CiAgICA8ZGl2IHN0eWxlPSJkaXNwbGF5OmZsZXg7YWxpZ24taXRlbXM6Y2VudGVyO2dhcDoxMHB4O21h",
+    "cmdpbi1ib3R0b206MTBweDsiPgogICAgICA8bGFiZWwgc3R5bGU9ImZvbnQtc2l6ZToxM3B4O2NvbG9y",
+    "OnZhcigtLXQyKTsiPlBsYXllcjo8L2xhYmVsPgogICAgICA8c2VsZWN0IGlkPSJsb29rdXAtc2VsIiBj",
+    "bGFzcz0ibG9va3VwLXNlbCIgb25jaGFuZ2U9InJlbmRlckxvb2t1cCgpIj48L3NlbGVjdD4KICAgIDwv",
+    "ZGl2PgogICAgPGRpdiBpZD0ibG9va3VwLXJlcyI+PC9kaXY+CiAgPC9kaXY+CjwvZGl2Pgo8L21haW4+",
+    "CjxzY3JpcHQ+CnZhciBTRCA9ICJTQ0hFRFVMRV9EQVRBX1BMQUNFSE9MREVSIjsKdmFyIHNjb3JlcyA9",
+    "IHt9OyAgIC8vIGtleeKGkntzMSxzMn0gZm9yIGFsbCBmb3JtYXRzCnZhciBiU2NvcmVzID0ge307ICAv",
+    "LyBicmFja2V0IHNjb3JlczogJ2ItcntyfS1te219J+KGkntzMSxzMn0KdmFyIGJTZWVkcyA9IFtdOyAg",
+    "IC8vIHNlZWRlZCBlbnRyaWVzIGZvciBicmFja2V0IChzZXQgYnkgc2VlZEJyYWNrZXQoKSkKdmFyIGJS",
+    "b3VuZHMgPSBbXTsgIC8vIFt7cDEscDIsaXNCeWUsd2lubmVyfV0gcGVyIHJvdW5kLCBjb21wdXRlZCBs",
+    "aXZlCnZhciBzZWxQb29sPTAsIHNlbFJvdW5kPTAsIHNlbFdlZWs9MCwgc2VsTGdSb3VuZD0wLCBnZj0n",
+    "YWxsJywgc2VsQnJhY2tldD0wOwp2YXIgZm10PSdrb2JfbGVhZ3VlJzsKCi8qIOKUgOKUgCBUYWJzIOKU",
+    "gOKUgCAqLwpmdW5jdGlvbiBidWlsZFRhYnModGFiRGVmcyl7CiAgdmFyIGg9Jyc7CiAgdGFiRGVmcy5m",
+    "b3JFYWNoKGZ1bmN0aW9uKHQsaSl7CiAgICBoKz0nPGJ1dHRvbiBjbGFzcz0idGFiJysoaT09PTA/JyBh",
+    "Y3RpdmUnOicnKSsnIiBvbmNsaWNrPSJzd2l0Y2hUYWIoXCcnK3QuaWQrJ1wnKSI+Jyt0LmxhYmVsKyc8",
+    "L2J1dHRvbj4nOwogIH0pOwogIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCd0YWJzJykuaW5uZXJIVE1M",
+    "PWg7Cn0KZnVuY3Rpb24gc3dpdGNoVGFiKHQpewogIHZhciBhbGxUYWJzPVsnc2NoZWR1bGUnLCdwb29s",
+    "cycsJ3N0YW5kaW5ncycsJ2JyYWNrZXQnLCdsb29rdXAnXTsKICBhbGxUYWJzLmZvckVhY2goZnVuY3Rp",
+    "b24oeCl7CiAgICB2YXIgZWw9ZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3RhYi0nK3gpOwogICAgaWYo",
+    "ZWwpIGVsLnN0eWxlLmRpc3BsYXk9eD09PXQ/Jyc6J25vbmUnOwogIH0pOwogIGRvY3VtZW50LnF1ZXJ5",
+    "U2VsZWN0b3JBbGwoJy50YWInKS5mb3JFYWNoKGZ1bmN0aW9uKGIpewogICAgYi5jbGFzc0xpc3QudG9n",
+    "Z2xlKCdhY3RpdmUnLCBiLnRleHRDb250ZW50LnRvTG93ZXJDYXNlKCk9PT10fHxiLmdldEF0dHJpYnV0",
+    "ZSgnb25jbGljaycpLmluZGV4T2YoIiciK3QrIiciKT49MCk7CiAgfSk7CiAgaWYodD09PSdzdGFuZGlu",
+    "Z3MnKSByZW5kZXJTdGFuZGluZ3MoKTsKICBpZih0PT09J2JyYWNrZXQnKSByZW5kZXJCcmFja2V0KCk7",
+    "CiAgaWYodD09PSdsb29rdXAnKSByZW5kZXJMb29rdXBTZWxlY3QoKTsKfQoKLyog4pWQ4pWQ4pWQ4pWQ",
+    "4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ",
+    "4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ",
+    "4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQCiAgIEtPQiBMRUFHVUUK4pWQ4pWQ4pWQ4pWQ",
+    "4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ",
+    "4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ",
+    "4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQICovCmZ1bmN0aW9uIGluaXRLT0JMZWFndWUo",
+    "KXsKICB2YXIgc2Q9U0Q7CiAgYnVpbGRUYWJzKFt7aWQ6J3NjaGVkdWxlJyxsYWJlbDonU2NoZWR1bGUn",
+    "fSx7aWQ6J3N0YW5kaW5ncycsbGFiZWw6J1N0YW5kaW5ncyd9LHtpZDonbG9va3VwJyxsYWJlbDonUGxh",
+    "eWVyIGxvb2t1cCd9XSk7CiAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3BhZ2Utc3ViJykudGV4dENv",
+    "bnRlbnQ9c2Qud2Vla3MrJ3cgwrcgJysoc2Qucm91bmRzUGVyV2Vla3x8NSkrJ3IvdyDCtyAnK3NkLmNv",
+    "dXJ0cy5sZW5ndGgrJyBjb3VydHMgwrcgJytzZC5nQS5sZW5ndGgrJysnK3NkLmdCLmxlbmd0aCsnIHBs",
+    "YXllcnMnOwogIHZhciBzYj1kb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnc3RhdHMtYmFyJyk7CiAgdmFy",
+    "IHRvdGFsPXNkLndlZWtzKihzZC5yb3VuZHNQZXJXZWVrfHw1KSpzZC5jb3VydHMubGVuZ3RoOwogIHZh",
+    "ciBzYkh0bWw9JzxkaXYgY2xhc3M9InN0YXQiPjxkaXYgY2xhc3M9InN0YXQtbGJsIj5Ub3RhbCBtYXRj",
+    "aGVzPC9kaXY+PGRpdiBjbGFzcz0ic3RhdC12YWwiPicrdG90YWwrJzwvZGl2PjwvZGl2Pic7CiAgaWYo",
+    "c2Quc3RhdHMpIHNiSHRtbCs9JzxkaXYgY2xhc3M9InN0YXQiPjxkaXYgY2xhc3M9InN0YXQtbGJsIj5S",
+    "ZXBlYXQgcGFydG5lcnM8L2Rpdj48ZGl2IGNsYXNzPSJzdGF0LXZhbCI+JytzZC5zdGF0cy5ycCsnPC9k",
+    "aXY+PC9kaXY+PGRpdiBjbGFzcz0ic3RhdCI+PGRpdiBjbGFzcz0ic3RhdC1sYmwiPlJlcGVhdCBtYXRj",
+    "aHVwczwvZGl2PjxkaXYgY2xhc3M9InN0YXQtdmFsIj4nK3NkLnN0YXRzLm1wKyc8L2Rpdj48L2Rpdj4n",
+    "OwogIHNiLmlubmVySFRNTD1zYkh0bWw7CiAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3RhYi1zY2hl",
+    "ZHVsZScpLnN0eWxlLmRpc3BsYXk9Jyc7CiAgcmVuZGVyTGdTY2hlZHVsZSgpOwp9CmZ1bmN0aW9uIHJl",
+    "bmRlckxnU2NoZWR1bGUoKXsKICB2YXIgc2Q9U0Q7CiAgdmFyIHdlZWtzPXNkLndlZWtzfHxzZC5zY2hl",
+    "ZC5sZW5ndGg7CiAgdmFyIHJvdW5kc1BlcldlZWs9c2Qucm91bmRzUGVyV2Vla3x8c2Quc2NoZWRbMF0u",
+    "bGVuZ3RoOwogIHZhciB3Yj0nJzsKICBmb3IodmFyIHc9MDt3PHdlZWtzO3crKykgd2IrPSc8YnV0dG9u",
+    "IGNsYXNzPSJidG4tc20nKyh3PT09c2VsV2Vlaz8nIHNlbCc6JycpKyciIG9uY2xpY2s9InNlbFdlZWs9",
+    "Jyt3Kyc7c2VsTGdSb3VuZD0wO3JlbmRlckxnU2NoZWR1bGUoKSI+V2VlayAnKyh3KzEpKyc8L2J1dHRv",
+    "bj4nOwogIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCd3ZWVrLWJ0bnMnKS5pbm5lckhUTUw9d2I7CiAg",
+    "dmFyIHJiPScnOwogIGZvcih2YXIgcj0wO3I8cm91bmRzUGVyV2VlaztyKyspIHJiKz0nPGJ1dHRvbiBj",
+    "bGFzcz0iYnRuLXhzJysocj09PXNlbExnUm91bmQ/JyBzZWwnOicnKSsnIiBvbmNsaWNrPSJzZWxMZ1Jv",
+    "dW5kPScrcisnO3JlbmRlckxnU2NoZWR1bGUoKSI+Um91bmQgJysocisxKSsnPC9idXR0b24+JzsKICBk",
+    "b2N1bWVudC5nZXRFbGVtZW50QnlJZCgncm91bmQtYnRucycpLmlubmVySFRNTD1yYjsKICB2YXIgcm91",
+    "bmQ9c2Quc2NoZWRbc2VsV2Vla11bc2VsTGdSb3VuZF07CiAgdmFyIHJvd3M9JzxkaXYgY2xhc3M9Im5l",
+    "dC1oZWFkIj48c3Bhbj5OZXQ8L3NwYW4+PHNwYW4+UGFpciAxPC9zcGFuPjxzcGFuIHN0eWxlPSJ0ZXh0",
+    "LWFsaWduOmNlbnRlciI+U2NvcmU8L3NwYW4+PHNwYW4+PC9zcGFuPjxzcGFuIHN0eWxlPSJ0ZXh0LWFs",
+    "aWduOmNlbnRlciI+U2NvcmU8L3NwYW4+PHNwYW4+UGFpciAyPC9zcGFuPjwvZGl2Pic7CiAgZm9yKHZh",
+    "ciBpPTA7aTxyb3VuZC5sZW5ndGg7aSsrKXsKICAgIHZhciBtPXJvdW5kW2ldLCBrZXk9c2VsV2Vlaysn",
+    "LScrc2VsTGdSb3VuZCsnLScraTsKICAgIHZhciBzYz1zY29yZXNba2V5XXx8e3MxOicnLHMyOicnfTsK",
+    "ICAgIHZhciBzMW49cGFyc2VJbnQoc2MuczEpLHMybj1wYXJzZUludChzYy5zMik7CiAgICB2YXIgaGFz",
+    "PXNjLnMxIT09JycmJnNjLnMyIT09JycmJiFpc05hTihzMW4pJiYhaXNOYU4oczJuKTsKICAgIHZhciBj",
+    "MT1oYXM/KHMxbj5zMm4/J3dpbic6czFuPHMybj8nbG9zZSc6JycpOicnOwogICAgdmFyIGMyPWhhcz8o",
+    "czJuPnMxbj8nd2luJzpzMm48czFuPydsb3NlJzonJyk6Jyc7CiAgICByb3dzKz0nPGRpdiBjbGFzcz0i",
+    "bmV0LXJvdycrKGklMj8nIGFsdCc6JycpKyciPicgKwogICAgICAnPHNwYW4gY2xhc3M9Im5udW0iPicr",
+    "KHNkLmNvdXJ0c1tpJXNkLmNvdXJ0cy5sZW5ndGhdP3NkLmNvdXJ0c1tpJXNkLmNvdXJ0cy5sZW5ndGhd",
+    "Lm5hbWU6aSsxKSsnPC9zcGFuPicgKwogICAgICAnPHNwYW4gY2xhc3M9InBhaXIiPjxzcGFuIGNsYXNz",
+    "PSJwYSI+JyttLnAxWzBdKyc8L3NwYW4+PHNwYW4gY2xhc3M9InBsdXMiPis8L3NwYW4+PHNwYW4gY2xh",
+    "c3M9InBiIj4nK20ucDFbMV0rJzwvc3Bhbj48L3NwYW4+JyArCiAgICAgICc8aW5wdXQgdHlwZT0ibnVt",
+    "YmVyIiBtaW49IjAiIG1heD0iOTkiIGNsYXNzPSJzY29yZS1pbiAnK2MxKyciIHZhbHVlPSInK3NjLnMx",
+    "KyciIG9uaW5wdXQ9Im9uTGdTY29yZSgnK3NlbFdlZWsrJywnK3NlbExnUm91bmQrJywnK2krJywwLHRo",
+    "aXMudmFsdWUpIj4nICsKICAgICAgJzxzcGFuIGNsYXNzPSJ2c2MiPnZzPC9zcGFuPicgKwogICAgICAn",
+    "PGlucHV0IHR5cGU9Im51bWJlciIgbWluPSIwIiBtYXg9Ijk5IiBjbGFzcz0ic2NvcmUtaW4gJytjMisn",
+    "IiB2YWx1ZT0iJytzYy5zMisnIiBvbmlucHV0PSJvbkxnU2NvcmUoJytzZWxXZWVrKycsJytzZWxMZ1Jv",
+    "dW5kKycsJytpKycsMSx0aGlzLnZhbHVlKSI+JyArCiAgICAgICc8c3BhbiBjbGFzcz0icGFpciI+PHNw",
+    "YW4gY2xhc3M9InBhIj4nK20ucDJbMF0rJzwvc3Bhbj48c3BhbiBjbGFzcz0icGx1cyI+Kzwvc3Bhbj48",
+    "c3BhbiBjbGFzcz0icGIiPicrbS5wMlsxXSsnPC9zcGFuPjwvc3Bhbj4nICsKICAgICAgJzwvZGl2Pic7",
+    "CiAgfQogIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCduZXQtdGFibGUnKS5pbm5lckhUTUw9cm93czsK",
+    "ICB1cGRhdGVMZ1Byb2dyZXNzKCk7Cn0KZnVuY3Rpb24gb25MZ1Njb3JlKHdpLHJpLG5pLHNpZGUsdmFs",
+    "KXsKICB2YXIga2V5PXdpKyctJytyaSsnLScrbmk7CiAgaWYoIXNjb3Jlc1trZXldKSBzY29yZXNba2V5",
+    "XT17czE6JycsczI6Jyd9OwogIGlmKHNpZGU9PT0wKSBzY29yZXNba2V5XS5zMT12YWw7IGVsc2Ugc2Nv",
+    "cmVzW2tleV0uczI9dmFsOwogIHZhciBzYz1zY29yZXNba2V5XTsKICB2YXIgczFuPXBhcnNlSW50KHNj",
+    "LnMxKSxzMm49cGFyc2VJbnQoc2MuczIpOwogIHZhciBoYXM9c2MuczEhPT0nJyYmc2MuczIhPT0nJyYm",
+    "IWlzTmFOKHMxbikmJiFpc05hTihzMm4pOwogIC8vIFVwZGF0ZSBoaWdobGlnaHQgZm9yIHRoaXMgcm93",
+    "CiAgcmVuZGVyTGdTY2hlZHVsZSgpOwp9CmZ1bmN0aW9uIHVwZGF0ZUxnUHJvZ3Jlc3MoKXsKICB2YXIg",
+    "c2Q9U0Q7IHZhciB0b3RhbD0wLGRvbmU9MDsKICBzZC5zY2hlZC5mb3JFYWNoKGZ1bmN0aW9uKHdlZWss",
+    "d2kpe3dlZWsuZm9yRWFjaChmdW5jdGlvbihyb3VuZCxyaSl7cm91bmQuZm9yRWFjaChmdW5jdGlvbiht",
+    "LG5pKXsKICAgIHRvdGFsKys7CiAgICB2YXIgc2M9c2NvcmVzW3dpKyctJytyaSsnLScrbmldOwogICAg",
+    "aWYoc2MmJnNjLnMxIT09JycmJnNjLnMyIT09JycmJiFpc05hTihwYXJzZUludChzYy5zMSkpJiYhaXNO",
+    "YU4ocGFyc2VJbnQoc2MuczIpKSkgZG9uZSsrOwogIH0pO30pO30pOwogIGRvY3VtZW50LmdldEVsZW1l",
+    "bnRCeUlkKCdwcm9nLWxibCcpLnRleHRDb250ZW50PWRvbmUrJyAvICcrdG90YWwrJyBzY29yZWQnOwog",
+    "IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdwcm9nLWJhcicpLnN0eWxlLndpZHRoPXRvdGFsP01hdGgu",
+    "cm91bmQoZG9uZS90b3RhbCoxMDApKyclJzonMCUnOwp9CmZ1bmN0aW9uIGNhbGNMZ1N0YW5kaW5ncygp",
+    "ewogIHZhciBzZD1TRCxwbGF5ZXJzPXt9OwogIHNkLmdBLmZvckVhY2goZnVuY3Rpb24obil7cGxheWVy",
+    "c1tuXT17bmFtZTpuLGdycDonQScsdzowLGw6MCxwZjowLHBhOjB9O30pOwogIHNkLmdCLmZvckVhY2go",
+    "ZnVuY3Rpb24obil7cGxheWVyc1tuXT17bmFtZTpuLGdycDonQicsdzowLGw6MCxwZjowLHBhOjB9O30p",
+    "OwogIHNkLnNjaGVkLmZvckVhY2goZnVuY3Rpb24od2Vlayx3aSl7d2Vlay5mb3JFYWNoKGZ1bmN0aW9u",
+    "KHJvdW5kLHJpKXtyb3VuZC5mb3JFYWNoKGZ1bmN0aW9uKG0sbmkpewogICAgdmFyIHNjPXNjb3Jlc1t3",
+    "aSsnLScrcmkrJy0nK25pXTsKICAgIGlmKCFzY3x8c2MuczE9PT0nJ3x8c2MuczI9PT0nJykgcmV0dXJu",
+    "OwogICAgdmFyIHMxPXBhcnNlSW50KHNjLnMxKSxzMj1wYXJzZUludChzYy5zMik7CiAgICBpZihpc05h",
+    "TihzMSl8fGlzTmFOKHMyKSkgcmV0dXJuOwogICAgbS5wMS5mb3JFYWNoKGZ1bmN0aW9uKHApe3BsYXll",
+    "cnNbcF0ucGYrPXMxO3BsYXllcnNbcF0ucGErPXMyO2lmKHMxPnMyKXBsYXllcnNbcF0udysrO2Vsc2Ug",
+    "aWYoczI+czEpcGxheWVyc1twXS5sKys7fSk7CiAgICBtLnAyLmZvckVhY2goZnVuY3Rpb24ocCl7cGxh",
+    "eWVyc1twXS5wZis9czI7cGxheWVyc1twXS5wYSs9czE7aWYoczI+czEpcGxheWVyc1twXS53Kys7ZWxz",
+    "ZSBpZihzMT5zMilwbGF5ZXJzW3BdLmwrKzt9KTsKICB9KTt9KTt9KTsKICByZXR1cm4gT2JqZWN0LnZh",
+    "bHVlcyhwbGF5ZXJzKS5zb3J0KGZ1bmN0aW9uKGEsYil7aWYoYi53IT09YS53KXJldHVybiBiLnctYS53",
+    "O3ZhciBkYT1hLnBmLWEucGEsZGI9Yi5wZi1iLnBhO2lmKGRiIT09ZGEpcmV0dXJuIGRiLWRhO3JldHVy",
+    "biBiLnBmLWEucGY7fSk7Cn0KCi8qIOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKV",
+    "kOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKV",
+    "kOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKV",
+    "kOKVkOKVkAogICBUUkFESVRJT05BTCBUT1VSTkFNRU5UCuKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKV",
+    "kOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKV",
+    "kOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKV",
+    "kOKVkOKVkOKVkOKVkOKVkOKVkCAqLwpmdW5jdGlvbiBpbml0VG91cm5hbWVudCgpewogIHZhciBzZD1T",
+    "RDsKICBidWlsZFRhYnMoW3tpZDoncG9vbHMnLGxhYmVsOidQb29sIHBsYXknfSx7aWQ6J3N0YW5kaW5n",
+    "cycsbGFiZWw6J1N0YW5kaW5ncyd9LHtpZDonYnJhY2tldCcsbGFiZWw6J0JyYWNrZXQnfSx7aWQ6J2xv",
+    "b2t1cCcsbGFiZWw6J0xvb2t1cCd9XSk7CiAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3BhZ2Utc3Vi",
+    "JykudGV4dENvbnRlbnQ9c2QucG9vbHMubGVuZ3RoKycgcG9vbHMgwrcgJytzZC5lbnRyaWVzLmxlbmd0",
+    "aCsnIGVudHJpZXMgwrcgJytzZC5jb3VydHMubGVuZ3RoKycgY291cnRzJzsKICBkb2N1bWVudC5nZXRF",
+    "bGVtZW50QnlJZCgndGFiLXBvb2xzJykuc3R5bGUuZGlzcGxheT0nJzsKICByZW5kZXJQb29sU2NoZWR1",
+    "bGUoKTsKICAvLyBCdWlsZCBicmFja2V0IHN1Yi1uYXYgKEdvbGQsIFNpbHZlciwgZXRjLikKICB2YXIg",
+    "bmI9c2QuY29uZmlnLm51bUJyYWNrZXRzfHwyOwogIHZhciBuYW1lcz1bJ0dvbGQnLCdTaWx2ZXInLCdC",
+    "cm9uemUnLCdDb3BwZXInLCdQbGF0aW51bScsJ0RpYW1vbmQnXTsKICB2YXIgaD0nJzsKICBmb3IodmFy",
+    "IGk9MDtpPG5iO2krKykgaCs9JzxidXR0b24gY2xhc3M9ImJ0bi1zbScrKGk9PT0wPycgc2VsJzonJykr",
+    "JyIgb25jbGljaz0ic2VsQnJhY2tldD0nK2krJztyZW5kZXJCcmFja2V0KCkiPicrKCBpPG5hbWVzLmxl",
+    "bmd0aD9uYW1lc1tpXTonQnJhY2tldCAnKyhpKzEpKSsnPC9idXR0b24+JzsKICBkb2N1bWVudC5nZXRF",
+    "bGVtZW50QnlJZCgnYnJhY2tldC1zdWItbmF2JykuaW5uZXJIVE1MPWg7Cn0KZnVuY3Rpb24gcmVuZGVy",
+    "UG9vbFNjaGVkdWxlKCl7CiAgdmFyIHNkPVNEOwogIC8vIFBvb2wgdGFicyBvbmx5IOKAlCBubyByb3Vu",
+    "ZCBuYXYKICB2YXIgcGI9Jyc7CiAgc2QucG9vbHMuZm9yRWFjaChmdW5jdGlvbihwLHBpKXsKICAgIHBi",
+    "Kz0nPGJ1dHRvbiBjbGFzcz0iYnRuLXNtJysocGk9PT1zZWxQb29sPycgc2VsJzonJykrJyIgb25jbGlj",
+    "az0ic2VsUG9vbD0nK3BpKyc7cmVuZGVyUG9vbFNjaGVkdWxlKCkiPicrcC5uYW1lKyc8L2J1dHRvbj4n",
+    "OwogIH0pOwogIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdwb29sLWJ0bnMnKS5pbm5lckhUTUw9cGI7",
+    "CiAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3Bvb2wtcm91bmQtYnRucycpLmlubmVySFRNTD0nJzsK",
+    "ICB2YXIgcG9vbD1zZC5wb29sc1tzZWxQb29sXTsKICAvLyBBbGwgbWF0Y2hlcyBmb3IgdGhpcyBwb29s",
+    "LCBncm91cGVkIGJ5IHJvdW5kIGxhYmVsCiAgdmFyIG1hdGNoTnVtPTA7CiAgdmFyIHJvd3M9JzxkaXYg",
+    "Y2xhc3M9Im5ldC10YWJsZSI+PGRpdiBjbGFzcz0ibmV0LWhlYWQiPjxzcGFuPiM8L3NwYW4+PHNwYW4+",
+    "RW50cnkgMTwvc3Bhbj48c3BhbiBzdHlsZT0idGV4dC1hbGlnbjpjZW50ZXIiPlNjb3JlPC9zcGFuPjxz",
+    "cGFuPjwvc3Bhbj48c3BhbiBzdHlsZT0idGV4dC1hbGlnbjpjZW50ZXIiPlNjb3JlPC9zcGFuPjxzcGFu",
+    "PkVudHJ5IDI8L3NwYW4+PC9kaXY+JzsKICBwb29sLnJvdW5kcy5mb3JFYWNoKGZ1bmN0aW9uKHJvdW5k",
+    "LHJpKXsKICAgIHJvd3MrPSc8ZGl2IHN0eWxlPSJwYWRkaW5nOjVweCAxMHB4O2ZvbnQtc2l6ZToxMHB4",
+    "O2ZvbnQtd2VpZ2h0OjYwMDtjb2xvcjp2YXIoLS10Myk7dGV4dC10cmFuc2Zvcm06dXBwZXJjYXNlO2xl",
+    "dHRlci1zcGFjaW5nOi4wNmVtO2JhY2tncm91bmQ6dmFyKC0tYmcyKTtib3JkZXItdG9wOi41cHggc29s",
+    "aWQgdmFyKC0tYjMpOyI+Um91bmQgJysocmkrMSkrJzwvZGl2Pic7CiAgICByb3VuZC5mb3JFYWNoKGZ1",
+    "bmN0aW9uKG0sbWkpewogICAgICBtYXRjaE51bSsrOwogICAgICB2YXIga2V5PSdwJytzZWxQb29sKyct",
+    "cicrcmkrJy1tJyttaTsKICAgICAgdmFyIHNjPXNjb3Jlc1trZXldfHx7czE6JycsczI6Jyd9OwogICAg",
+    "ICB2YXIgczFuPXBhcnNlSW50KHNjLnMxKSxzMm49cGFyc2VJbnQoc2MuczIpOwogICAgICB2YXIgaGFz",
+    "PXNjLnMxIT09JycmJnNjLnMyIT09JycmJiFpc05hTihzMW4pJiYhaXNOYU4oczJuKTsKICAgICAgdmFy",
+    "IGMxPWhhcz8oczFuPnMybj8nd2luJzpzMW48czJuPydsb3NlJzonJyk6Jyc7CiAgICAgIHZhciBjMj1o",
+    "YXM/KHMybj5zMW4/J3dpbic6czJuPHMxbj8nbG9zZSc6JycpOicnOwogICAgICBpZihtLmlzQnllKXsK",
+    "ICAgICAgICByb3dzKz0nPGRpdiBjbGFzcz0ibmV0LXJvdycrKG1hdGNoTnVtJTI/JyBhbHQnOicnKSsn",
+    "Ij48c3BhbiBjbGFzcz0ibm51bSI+JyttYXRjaE51bSsnPC9zcGFuPjxzcGFuIGNsYXNzPSJwYWlyIiBz",
+    "dHlsZT0iY29sb3I6dmFyKC0tdDIpIj4nK20ucDErJzwvc3Bhbj48c3BhbiBzdHlsZT0iZm9udC1zaXpl",
+    "OjExcHg7Y29sb3I6dmFyKC0tdDMpO3RleHQtYWxpZ246Y2VudGVyO2dyaWQtY29sdW1uOjMvNyI+QllF",
+    "PC9zcGFuPjwvZGl2Pic7CiAgICAgIH0gZWxzZSB7CiAgICAgICAgcm93cys9JzxkaXYgY2xhc3M9Im5l",
+    "dC1yb3cnKyhtYXRjaE51bSUyPycgYWx0JzonJykrJyI+JyArCiAgICAgICAgICAnPHNwYW4gY2xhc3M9",
+    "Im5udW0iPicrbWF0Y2hOdW0rJzwvc3Bhbj4nICsKICAgICAgICAgICc8c3BhbiBjbGFzcz0icGFpciI+",
+    "PHNwYW4gY2xhc3M9InBhIj4nK20ucDErJzwvc3Bhbj48L3NwYW4+JyArCiAgICAgICAgICAnPGlucHV0",
+    "IHR5cGU9Im51bWJlciIgbWluPSIwIiBtYXg9Ijk5IiBjbGFzcz0ic2NvcmUtaW4gJytjMSsnIiB2YWx1",
+    "ZT0iJytzYy5zMSsnIiBkYXRhLWtleT0iJytrZXkrJyIgZGF0YS1zaWRlPSIwIiBvbmlucHV0PSJvblBv",
+    "b2xTY29yZSh0aGlzKSI+JyArCiAgICAgICAgICAnPHNwYW4gY2xhc3M9InZzYyI+dnM8L3NwYW4+JyAr",
+    "CiAgICAgICAgICAnPGlucHV0IHR5cGU9Im51bWJlciIgbWluPSIwIiBtYXg9Ijk5IiBjbGFzcz0ic2Nv",
+    "cmUtaW4gJytjMisnIiB2YWx1ZT0iJytzYy5zMisnIiBkYXRhLWtleT0iJytrZXkrJyIgZGF0YS1zaWRl",
+    "PSIxIiBvbmlucHV0PSJvblBvb2xTY29yZSh0aGlzKSI+JyArCiAgICAgICAgICAnPHNwYW4gY2xhc3M9",
+    "InBhaXIiPjxzcGFuIGNsYXNzPSJwYiI+JyttLnAyKyc8L3NwYW4+PC9zcGFuPicgKwogICAgICAgICAg",
+    "JzwvZGl2Pic7CiAgICAgIH0KICAgIH0pOwogIH0pOwogIHJvd3MrPSc8L2Rpdj4nOwogIGRvY3VtZW50",
+    "LmdldEVsZW1lbnRCeUlkKCdwb29sLXRhYmxlJykuaW5uZXJIVE1MPXJvd3M7CiAgdXBkYXRlUG9vbFBy",
+    "b2dyZXNzKCk7Cn0KZnVuY3Rpb24gb25Qb29sU2NvcmUoaW5wdXQpewogIHZhciBrZXk9aW5wdXQuZGF0",
+    "YXNldC5rZXksIHNpZGU9cGFyc2VJbnQoaW5wdXQuZGF0YXNldC5zaWRlKTsKICBpZighc2NvcmVzW2tl",
+    "eV0pIHNjb3Jlc1trZXldPXtzMTonJyxzMjonJ307CiAgaWYoc2lkZT09PTApIHNjb3Jlc1trZXldLnMx",
+    "PWlucHV0LnZhbHVlOyBlbHNlIHNjb3Jlc1trZXldLnMyPWlucHV0LnZhbHVlOwogIHZhciBzYz1zY29y",
+    "ZXNba2V5XTsKICB2YXIgczFuPXBhcnNlSW50KHNjLnMxKSxzMm49cGFyc2VJbnQoc2MuczIpOwogIHZh",
+    "ciBoYXM9c2MuczEhPT0nJyYmc2MuczIhPT0nJyYmIWlzTmFOKHMxbikmJiFpc05hTihzMm4pOwogIHZh",
+    "ciBjMT1oYXM/KHMxbj5zMm4/J3dpbic6czFuPHMybj8nbG9zZSc6JycpOicnOwogIHZhciBjMj1oYXM/",
+    "KHMybj5zMW4/J3dpbic6czJuPHMxbj8nbG9zZSc6JycpOicnOwogIC8vIFVwZGF0ZSBjbGFzc2VzIGlu",
+    "LXBsYWNlIOKAlCBubyByZS1yZW5kZXIsIGZvY3VzIHByZXNlcnZlZAogIHZhciBpbnB1dHM9ZG9jdW1l",
+    "bnQucXVlcnlTZWxlY3RvckFsbCgnW2RhdGEta2V5PSInK2tleSsnIl0nKTsKICBpZihpbnB1dHNbMF0p",
+    "IGlucHV0c1swXS5jbGFzc05hbWU9J3Njb3JlLWluICcrYzE7CiAgaWYoaW5wdXRzWzFdKSBpbnB1dHNb",
+    "MV0uY2xhc3NOYW1lPSdzY29yZS1pbiAnK2MyOwogIHVwZGF0ZVBvb2xQcm9ncmVzcygpOwp9Cn0KZnVu",
+    "Y3Rpb24gdXBkYXRlUG9vbFByb2dyZXNzKCl7CiAgdmFyIHNkPVNEOyB2YXIgdG90YWw9MCxkb25lPTA7",
+    "CiAgc2QucG9vbHMuZm9yRWFjaChmdW5jdGlvbihwb29sLHBpKXtwb29sLnJvdW5kcy5mb3JFYWNoKGZ1",
+    "bmN0aW9uKHJvdW5kLHJpKXtyb3VuZC5mb3JFYWNoKGZ1bmN0aW9uKG0sbWkpewogICAgaWYobS5pc0J5",
+    "ZSkgcmV0dXJuOwogICAgdG90YWwrKzsKICAgIHZhciBzYz1zY29yZXNbJ3AnK3BpKyctcicrcmkrJy1t",
+    "JyttaV07CiAgICBpZihzYyYmc2MuczEhPT0nJyYmc2MuczIhPT0nJyYmIWlzTmFOKHBhcnNlSW50KHNj",
+    "LnMxKSkmJiFpc05hTihwYXJzZUludChzYy5zMikpKSBkb25lKys7CiAgfSk7fSk7fSk7CiAgZG9jdW1l",
+    "bnQuZ2V0RWxlbWVudEJ5SWQoJ3Bvb2wtcHJvZy1sYmwnKS50ZXh0Q29udGVudD1kb25lKycgLyAnK3Rv",
+    "dGFsKycgc2NvcmVkJzsKICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgncG9vbC1wcm9nLWJhcicpLnN0",
+    "eWxlLndpZHRoPXRvdGFsP01hdGgucm91bmQoZG9uZS90b3RhbCoxMDApKyclJzonMCUnOwp9CmZ1bmN0",
+    "aW9uIGNhbGNQb29sU3RhbmRpbmdzKHBvb2xJZHgpewogIHZhciBzZD1TRCwgcG9vbD1zZC5wb29sc1tw",
+    "b29sSWR4XTsKICB2YXIgcGxheWVycz17fTsKICBwb29sLmVudHJpZXMuZm9yRWFjaChmdW5jdGlvbihl",
+    "KXtwbGF5ZXJzW2VdPXtuYW1lOmUsdzowLGw6MCx0OjAscGY6MCxwYTowfTt9KTsKICBwb29sLnJvdW5k",
+    "cy5mb3JFYWNoKGZ1bmN0aW9uKHJvdW5kLHJpKXtyb3VuZC5mb3JFYWNoKGZ1bmN0aW9uKG0sbWkpewog",
+    "ICAgaWYobS5pc0J5ZSkgcmV0dXJuOwogICAgdmFyIHNjPXNjb3Jlc1sncCcrcG9vbElkeCsnLXInK3Jp",
+    "KyctbScrbWldOwogICAgaWYoIXNjfHxzYy5zMT09PScnfHxzYy5zMj09PScnKSByZXR1cm47CiAgICB2",
+    "YXIgczE9cGFyc2VJbnQoc2MuczEpLHMyPXBhcnNlSW50KHNjLnMyKTsKICAgIGlmKGlzTmFOKHMxKXx8",
+    "aXNOYU4oczIpKSByZXR1cm47CiAgICBwbGF5ZXJzW20ucDFdLnBmKz1zMTsgcGxheWVyc1ttLnAxXS5w",
+    "YSs9czI7CiAgICBwbGF5ZXJzW20ucDJdLnBmKz1zMjsgcGxheWVyc1ttLnAyXS5wYSs9czE7CiAgICBp",
+    "ZihzMT5zMil7cGxheWVyc1ttLnAxXS53Kys7cGxheWVyc1ttLnAyXS5sKys7fQogICAgZWxzZSBpZihz",
+    "Mj5zMSl7cGxheWVyc1ttLnAyXS53Kys7cGxheWVyc1ttLnAxXS5sKys7fQogICAgZWxzZXtwbGF5ZXJz",
+    "W20ucDFdLnQrKztwbGF5ZXJzW20ucDJdLnQrKzt9CiAgfSk7fSk7CiAgcmV0dXJuIE9iamVjdC52YWx1",
+    "ZXMocGxheWVycykuc29ydChmdW5jdGlvbihhLGIpewogICAgaWYoYi53IT09YS53KSByZXR1cm4gYi53",
+    "LWEudzsKICAgIGlmKChiLnBmLWIucGEpIT09KGEucGYtYS5wYSkpIHJldHVybiAoYi5wZi1iLnBhKS0o",
+    "YS5wZi1hLnBhKTsKICAgIHJldHVybiBiLnBmLWEucGY7CiAgfSk7Cn0KZnVuY3Rpb24gc2VlZEJyYWNr",
+    "ZXQoKXsKICB2YXIgc2Q9U0Q7CiAgdmFyIG1ldGhvZD1zZC5icmFja2V0LnNlZWRpbmdNZXRob2R8fCdm",
+    "bGF0JzsKICB2YXIgc2VlZHNBZHY9c2QuYnJhY2tldC5zZWVkc0Fkdnx8MjsKICBpZihtZXRob2Q9PT0n",
+    "cG9vbCcpewogICAgLy8gUG9vbCBjcm9zc292ZXI6IHBvb2wgc3RhbmRpbmdzIGludGVybGVhdmVkCiAg",
+    "ICB2YXIgYnlQb29sPXNkLnBvb2xzLm1hcChmdW5jdGlvbihwLHBpKXtyZXR1cm4gY2FsY1Bvb2xTdGFu",
+    "ZGluZ3MocGkpLnNsaWNlKDAsc2VlZHNBZHYpO30pOwogICAgdmFyIHNlZWRzPVtdOwogICAgZm9yKHZh",
+    "ciBzPTA7czxzZWVkc0FkdjtzKyspIGZvcih2YXIgcD0wO3A8c2QucG9vbHMubGVuZ3RoO3ArKykgaWYo",
+    "YnlQb29sW3BdW3NdKSBzZWVkcy5wdXNoKGJ5UG9vbFtwXVtzXS5uYW1lKTsKICAgIGJTZWVkcz1zZWVk",
+    "czsKICB9IGVsc2UgewogICAgLy8gRmxhdDogYWdncmVnYXRlIGFsbCBwb29sIHN0YW5kaW5ncwogICAg",
+    "dmFyIGFsbFBsYXllcnM9e307CiAgICBzZC5wb29scy5mb3JFYWNoKGZ1bmN0aW9uKHBvb2wscGkpewog",
+    "ICAgICBjYWxjUG9vbFN0YW5kaW5ncyhwaSkuZm9yRWFjaChmdW5jdGlvbihwLHJhbmspewogICAgICAg",
+    "IGFsbFBsYXllcnNbcC5uYW1lXT17bmFtZTpwLm5hbWUsdzpwLncsbDpwLmwscGY6cC5wZixwYTpwLnBh",
+    "LHBvb2xSYW5rOnJhbmsscG9vbDpwaX07CiAgICAgIH0pOwogICAgfSk7CiAgICBiU2VlZHM9T2JqZWN0",
+    "LnZhbHVlcyhhbGxQbGF5ZXJzKS5zb3J0KGZ1bmN0aW9uKGEsYil7CiAgICAgIGlmKGIudyE9PWEudykg",
+    "cmV0dXJuIGIudy1hLnc7CiAgICAgIGlmKChiLnBmLWIucGEpIT09KGEucGYtYS5wYSkpIHJldHVybiAo",
+    "Yi5wZi1iLnBhKS0oYS5wZi1hLnBhKTsKICAgICAgcmV0dXJuIGIucGYtYS5wZjsKICAgIH0pLm1hcChm",
+    "dW5jdGlvbihwKXtyZXR1cm4gcC5uYW1lO30pOwogIH0KICAvLyBCdWlsZCByb3VuZCAwCiAgYlJvdW5k",
+    "cz1bXTsKICB2YXIgbWF0Y2h1cFNlZWRzPXNkLmJyYWNrZXQubWF0Y2h1cFNlZWRzfHxbXTsKICB2YXIg",
+    "cm91bmQwPW1hdGNodXBTZWVkcy5tYXAoZnVuY3Rpb24ocGFpcil7CiAgICB2YXIgZTE9YlNlZWRzW3Bh",
+    "aXJbMF0tMV18fG51bGwsIGUyPWJTZWVkc1twYWlyWzFdLTFdfHxudWxsOwogICAgdmFyIGlzQnllPSFl",
+    "MXx8IWUyOwogICAgcmV0dXJuIHtwMTplMXx8KGUyfHwnVEJEJykscDI6aXNCeWU/bnVsbDplMixpc0J5",
+    "ZTppc0J5ZSx3aW5uZXI6aXNCeWU/KGUxfHxlMik6bnVsbH07CiAgfSk7CiAgYlJvdW5kcy5wdXNoKHJv",
+    "dW5kMCk7CiAgLy8gQWRkIGVtcHR5IHN1YnNlcXVlbnQgcm91bmRzCiAgdmFyIHN6PXJvdW5kMC5sZW5n",
+    "dGg7CiAgd2hpbGUoc3o+MSl7c3o9TWF0aC5jZWlsKHN6LzIpO3ZhciByPVtdO2Zvcih2YXIgaT0wO2k8",
+    "c3o7aSsrKXIucHVzaCh7cDE6bnVsbCxwMjpudWxsLGlzQnllOmZhbHNlLHdpbm5lcjpudWxsfSk7YlJv",
+    "dW5kcy5wdXNoKHIpO30KICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnYnRuLXNlZWQtYnJhY2tldCcp",
+    "LnRleHRDb250ZW50PSdSZS1zZWVkIGJyYWNrZXQnOwogIHJlbmRlckJyYWNrZXQoKTsKfQoKZnVuY3Rp",
+    "b24gb25CcmFja2V0U2NvcmUocmksbWksc2lkZSx2YWwpewogIHZhciBrZXk9J2ItcicrcmkrJy1tJytt",
+    "aTsKICBpZighYlNjb3Jlc1trZXldKSBiU2NvcmVzW2tleV09e3MxOicnLHMyOicnfTsKICBpZihzaWRl",
+    "PT09MCkgYlNjb3Jlc1trZXldLnMxPXZhbDsgZWxzZSBiU2NvcmVzW2tleV0uczI9dmFsOwogIC8vIERl",
+    "dGVybWluZSB3aW5uZXIgYW5kIGFkdmFuY2UKICB2YXIgc2M9YlNjb3Jlc1trZXldOwogIHZhciBzMT1w",
+    "YXJzZUludChzYy5zMSksczI9cGFyc2VJbnQoc2MuczIpOwogIGlmKHNjLnMxIT09JycmJnNjLnMyIT09",
+    "JycmJiFpc05hTihzMSkmJiFpc05hTihzMikmJnMxIT09czIpewogICAgdmFyIG09YlJvdW5kc1tyaV1b",
+    "bWldOwogICAgdmFyIHdpbm5lcj1zMT5zMj9tLnAxOm0ucDI7CiAgICBiUm91bmRzW3JpXVttaV0ud2lu",
+    "bmVyPXdpbm5lcjsKICAgIC8vIEFkdmFuY2UgdG8gbmV4dCByb3VuZAogICAgaWYocmkrMTxiUm91bmRz",
+    "Lmxlbmd0aCl7CiAgICAgIHZhciBuZXh0TWF0Y2hJZHg9TWF0aC5mbG9vcihtaS8yKTsKICAgICAgdmFy",
+    "IGlzVG9wPW1pJTI9PT0wOwogICAgICBpZighYlJvdW5kc1tyaSsxXVtuZXh0TWF0Y2hJZHhdKSBiUm91",
+    "bmRzW3JpKzFdW25leHRNYXRjaElkeF09e3AxOm51bGwscDI6bnVsbCxpc0J5ZTpmYWxzZSx3aW5uZXI6",
+    "bnVsbH07CiAgICAgIGlmKGlzVG9wKSBiUm91bmRzW3JpKzFdW25leHRNYXRjaElkeF0ucDE9d2lubmVy",
+    "OwogICAgICBlbHNlIGJSb3VuZHNbcmkrMV1bbmV4dE1hdGNoSWR4XS5wMj13aW5uZXI7CiAgICB9CiAg",
+    "fSBlbHNlIHsKICAgIGJSb3VuZHNbcmldW21pXS53aW5uZXI9bnVsbDsKICB9CiAgcmVuZGVyQnJhY2tl",
+    "dCgpOwp9CgpmdW5jdGlvbiByZW5kZXJCcmFja2V0KCl7CiAgdmFyIGVsPWRvY3VtZW50LmdldEVsZW1l",
+    "bnRCeUlkKCdicmFja2V0LXdyYXAnKTsKICBpZighYlJvdW5kcy5sZW5ndGgpewogICAgZWwuaW5uZXJI",
+    "VE1MPSc8ZGl2IGNsYXNzPSJiay1lbXB0eSI+Q2xpY2sgIlNlZWQgYnJhY2tldCBmcm9tIHBvb2wgcmVz",
+    "dWx0cyIgb25jZSBwb29sIHBsYXkgaXMgY29tcGxldGUuPC9kaXY+JzsKICAgIHJldHVybjsKICB9CiAg",
+    "dmFyIHJvdW5kTGFiZWxzPVsnUm91bmQgMScsJ1F1YXJ0ZXJmaW5hbHMnLCdTZW1pZmluYWxzJywnRmlu",
+    "YWwnLCdDaGFtcGlvbiddOwogIHZhciBucj1iUm91bmRzLmxlbmd0aDsKICB2YXIgaHRtbD0nPGRpdiBj",
+    "bGFzcz0iYnJhY2tldC13cmFwIj48ZGl2IGNsYXNzPSJicmFja2V0Ij4nOwogIGJSb3VuZHMuZm9yRWFj",
+    "aChmdW5jdGlvbihyb3VuZCxyaSl7CiAgICB2YXIgbGFiZWw9bnI8PTI/KFsnRmluYWwnLCdDaGFtcGlv",
+    "biddW3JpXSk6bnI9PT0zPyhbJ1NlbWlmaW5hbHMnLCdGaW5hbCcsJ0NoYW1waW9uJ11bcmldKToocm91",
+    "bmRMYWJlbHNbcmldfHwnUm91bmQgJysocmkrMSkpOwogICAgaHRtbCs9JzxkaXYgY2xhc3M9ImJrLXJv",
+    "dW5kIj48ZGl2IGNsYXNzPSJiay1yb3VuZC1oZHIiPicrbGFiZWwrJzwvZGl2Pic7CiAgICByb3VuZC5m",
+    "b3JFYWNoKGZ1bmN0aW9uKG0sbWkpewogICAgICBpZighbSkgcmV0dXJuOwogICAgICB2YXIga2V5PSdi",
+    "LXInK3JpKyctbScrbWk7CiAgICAgIHZhciBzYz1iU2NvcmVzW2tleV18fHtzMTonJyxzMjonJ307CiAg",
+    "ICAgIHZhciBzMT1wYXJzZUludChzYy5zMSksczI9cGFyc2VJbnQoc2MuczIpOwogICAgICB2YXIgaGFz",
+    "PXNjLnMxIT09JycmJnNjLnMyIT09JycmJiFpc05hTihzMSkmJiFpc05hTihzMik7CiAgICAgIHZhciB3",
+    "MT1oYXMmJnMxPnMyLHcyPWhhcyYmczI+czE7CiAgICAgIHZhciBjbHM9J2JrLW1hdGNoJysobS5pc0J5",
+    "ZT8nIGJ5ZSc6JycpKyhoYXM/JyBjb21wbGV0ZSc6JycpOwogICAgICB2YXIgcDFuYW1lPW0ucDF8fCdU",
+    "QkQnLCBwMm5hbWU9bS5wMnx8J1RCRCc7CiAgICAgIGlmKG0uaXNCeWUpewogICAgICAgIGh0bWwrPSc8",
+    "ZGl2IGNsYXNzPSInK2NscysnIj48ZGl2IGNsYXNzPSJiay1lbnRyeSB3aW5uZXIiPjxzcGFuIGNsYXNz",
+    "PSJiay1uYW1lIj4nK3AxbmFtZSsnPC9zcGFuPjxzcGFuIHN0eWxlPSJmb250LXNpemU6MTBweDtjb2xv",
+    "cjp2YXIoLS10MykiPmJ5ZTwvc3Bhbj48L2Rpdj48L2Rpdj4nOwogICAgICB9IGVsc2UgewogICAgICAg",
+    "IGh0bWwrPSc8ZGl2IGNsYXNzPSInK2NscysnIj4nKwogICAgICAgICAgJzxkaXYgY2xhc3M9ImJrLWVu",
+    "dHJ5JysodzE/JyB3aW5uZXInOicnKSsnIj48c3BhbiBjbGFzcz0iYmstbmFtZSI+JytwMW5hbWUrJzwv",
+    "c3Bhbj4nKwogICAgICAgICAgKHJpPGJSb3VuZHMubGVuZ3RoLTE/JzxpbnB1dCB0eXBlPSJudW1iZXIi",
+    "IG1pbj0iMCIgbWF4PSI5OSIgY2xhc3M9ImJrLXNjb3JlJysodzE/JyB3aW4nOicnKSsnIiB2YWx1ZT0i",
+    "JytzYy5zMSsnIiBvbmlucHV0PSJvbkJyYWNrZXRTY29yZSgnK3JpKycsJyttaSsnLDAsdGhpcy52YWx1",
+    "ZSkiPic6JzxzcGFuIGNsYXNzPSJiay1zY29yZSI+JysoaGFzP3NjLnMxOicnKSsnPC9zcGFuPicpKwog",
+    "ICAgICAgICAgJzwvZGl2PicrCiAgICAgICAgICAnPGRpdiBjbGFzcz0iYmstZW50cnknKyh3Mj8nIHdp",
+    "bm5lcic6JycpKyciPjxzcGFuIGNsYXNzPSJiay1uYW1lIj4nK3AybmFtZSsnPC9zcGFuPicrCiAgICAg",
+    "ICAgICAocmk8YlJvdW5kcy5sZW5ndGgtMT8nPGlucHV0IHR5cGU9Im51bWJlciIgbWluPSIwIiBtYXg9",
+    "Ijk5IiBjbGFzcz0iYmstc2NvcmUnKyh3Mj8nIHdpbic6JycpKyciIHZhbHVlPSInK3NjLnMyKyciIG9u",
+    "aW5wdXQ9Im9uQnJhY2tldFNjb3JlKCcrcmkrJywnK21pKycsMSx0aGlzLnZhbHVlKSI+JzonPHNwYW4g",
+    "Y2xhc3M9ImJrLXNjb3JlIj4nKyhoYXM/c2MuczI6JycpKyc8L3NwYW4+JykrCiAgICAgICAgICAnPC9k",
+    "aXY+PC9kaXY+JzsKICAgICAgfQogICAgICBodG1sKz0nPGRpdiBzdHlsZT0iaGVpZ2h0OjhweDsiPjwv",
+    "ZGl2Pic7CiAgICB9KTsKICAgIGh0bWwrPSc8L2Rpdj4nOwogIH0pOwogIGh0bWwrPSc8L2Rpdj48L2Rp",
+    "dj4nOwogIGVsLmlubmVySFRNTD1odG1sOwp9CgovKiDilZDilZDilZDilZDilZDilZDilZDilZDilZDi",
+    "lZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDi",
+    "lZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDi",
+    "lZDilZDilZDilZDilZDilZAKICAgU0hBUkVEOiBTVEFORElOR1MK4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ",
+    "4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ",
+    "4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ",
+    "4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQICovCmZ1bmN0aW9uIHJlbmRlclN0YW5kaW5ncygpewogIGlm",
+    "KGZtdD09PSdrb2JfbGVhZ3VlJykgcmVuZGVyTGdTdGFuZGluZ3MoKTsKICBlbHNlIGlmKGZtdD09PSd0",
+    "cmFkaXRpb25hbF90b3VybmFtZW50JykgcmVuZGVyVG91cm5hbWVudFN0YW5kaW5ncygpOwp9CmZ1bmN0",
+    "aW9uIHJlbmRlckxnU3RhbmRpbmdzKCl7CiAgdmFyIGFsbD1jYWxjTGdTdGFuZGluZ3MoKTsKICB2YXIg",
+    "ZkVsPWRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdzdGQtZmlsdGVyJyk7CiAgaWYoZkVsJiYhZkVsLmlu",
+    "bmVySFRNTCkgZkVsLmlubmVySFRNTD0nPGJ1dHRvbiBjbGFzcz0iYnRuLXhzIHNlbCIgb25jbGljaz0i",
+    "c2V0R0YoXCdhbGxcJyx0aGlzKSI+QWxsPC9idXR0b24+PGJ1dHRvbiBjbGFzcz0iYnRuLXhzIiBvbmNs",
+    "aWNrPSJzZXRHRihcJ0FcJyx0aGlzKSI+R3JvdXAgQTwvYnV0dG9uPjxidXR0b24gY2xhc3M9ImJ0bi14",
+    "cyIgb25jbGljaz0ic2V0R0YoXCdCXCcsdGhpcykiPkdyb3VwIEI8L2J1dHRvbj4nOwogIHZhciBsaXN0",
+    "PWdmPT09J2FsbCc/YWxsOmFsbC5maWx0ZXIoZnVuY3Rpb24ocCl7cmV0dXJuIHAuZ3JwPT09Z2Y7fSk7",
+    "CiAgdmFyIHRib2R5PScnOwogIGxpc3QuZm9yRWFjaChmdW5jdGlvbihwLGkpewogICAgdmFyIHJhbms9",
+    "aSsxLGRpZmY9cC5wZi1wLnBhOwogICAgdmFyIG09cmFuaz09PTE/J2dvbGQnOnJhbms9PT0yPydzaWx2",
+    "ZXInOnJhbms9PT0zPydicm9uemUnOicnOwogICAgdGJvZHkrPSc8dHIgY2xhc3M9IicrKHJhbmslMj09",
+    "PTA/J2FsdCc6JycpKyciPicgKwogICAgICAnPHRkPjxzcGFuIGNsYXNzPSJybmsgJyttKyciPicrcmFu",
+    "aysnPC9zcGFuPjwvdGQ+PHRkPicrcC5uYW1lKyc8L3RkPicgKwogICAgICAnPHRkPjxzcGFuIGNsYXNz",
+    "PSJnYmFkZ2UiPicrcC5ncnArJzwvc3Bhbj48L3RkPicgKwogICAgICAnPHRkIGNsYXNzPSJyIj4nK3Au",
+    "dysnPC90ZD48dGQgY2xhc3M9InIiPicrcC5sKyc8L3RkPjx0ZCBjbGFzcz0iciI+JysocC53K3AubCkr",
+    "JzwvdGQ+JyArCiAgICAgICc8dGQgY2xhc3M9InIiPicrcC5wZisnPC90ZD48dGQgY2xhc3M9InIiPicr",
+    "cC5wYSsnPC90ZD4nICsKICAgICAgJzx0ZCBjbGFzcz0iciI+PHNwYW4gY2xhc3M9IicrKGRpZmY+MD8n",
+    "ZHBvcyc6ZGlmZjwwPydkbmVnJzonJykrJyI+JysoIGRpZmY+MD8nKyc6JycpK2RpZmYrJzwvc3Bhbj48",
+    "L3RkPjwvdHI+JzsKICB9KTsKICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnc3RkLXRhYmxlJykuaW5u",
+    "ZXJIVE1MPSc8dGhlYWQ+PHRyPjx0aD4jPC90aD48dGg+UGxheWVyPC90aD48dGg+R3JwPC90aD48dGgg",
+    "Y2xhc3M9InIiPlc8L3RoPjx0aCBjbGFzcz0iciI+TDwvdGg+PHRoIGNsYXNzPSJyIj5NUDwvdGg+PHRo",
+    "IGNsYXNzPSJyIj5QRjwvdGg+PHRoIGNsYXNzPSJyIj5QQTwvdGg+PHRoIGNsYXNzPSJyIj4rLy08L3Ro",
+    "PjwvdHI+PC90aGVhZD48dGJvZHk+Jyt0Ym9keSsnPC90Ym9keT4nOwp9CmZ1bmN0aW9uIHNldEdGKGYs",
+    "YnRuKXsKICBnZj1mOwogIGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3JBbGwoJyNzdGQtZmlsdGVyIC5idG4t",
+    "eHMnKS5mb3JFYWNoKGZ1bmN0aW9uKGIpe2IuY2xhc3NMaXN0LnJlbW92ZSgnc2VsJyk7fSk7CiAgYnRu",
+    "LmNsYXNzTGlzdC5hZGQoJ3NlbCcpOwogIHJlbmRlclN0YW5kaW5ncygpOwp9CmZ1bmN0aW9uIGNhbGNB",
+    "bGxQb29sU3RhbmRpbmdzKCl7CiAgLy8gQWdncmVnYXRlIGFsbCBwb29scyBpbnRvIG9uZSBnbG9iYWxs",
+    "eS1yYW5rZWQgbGlzdAogIHZhciBzZD1TRCwgYWxsUGxheWVycz1bXTsKICBzZC5wb29scy5mb3JFYWNo",
+    "KGZ1bmN0aW9uKHBvb2wscGkpewogICAgY2FsY1Bvb2xTdGFuZGluZ3MocGkpLmZvckVhY2goZnVuY3Rp",
+    "b24ocCl7CiAgICAgIGFsbFBsYXllcnMucHVzaChPYmplY3QuYXNzaWduKHt9LHAse3Bvb2w6cG9vbC5u",
+    "YW1lfSkpOwogICAgfSk7CiAgfSk7CiAgcmV0dXJuIGFsbFBsYXllcnMuc29ydChmdW5jdGlvbihhLGIp",
+    "ewogICAgaWYoYi53IT09YS53KSByZXR1cm4gYi53LWEudzsKICAgIGlmKChiLnBmLWIucGEpIT09KGEu",
+    "cGYtYS5wYSkpIHJldHVybiAoYi5wZi1iLnBhKS0oYS5wZi1hLnBhKTsKICAgIHJldHVybiBiLnBmLWEu",
+    "cGY7CiAgfSk7Cn0KZnVuY3Rpb24gcmVuZGVyVG91cm5hbWVudFN0YW5kaW5ncygpewogIHZhciBzZD1T",
+    "RDsKICB2YXIgZkVsPWRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdzdGQtZmlsdGVyJyk7CiAgaWYoIWZF",
+    "bC5pbm5lckhUTUwpewogICAgdmFyIGg9JzxidXR0b24gY2xhc3M9ImJ0bi14cyBzZWwiIG9uY2xpY2s9",
+    "InNldFRvdXJuU3RkRmlsdGVyKC0xLHRoaXMpIj5BbGw8L2J1dHRvbj4nOwogICAgc2QucG9vbHMuZm9y",
+    "RWFjaChmdW5jdGlvbihwLHBpKXtoKz0nPGJ1dHRvbiBjbGFzcz0iYnRuLXhzIiBvbmNsaWNrPSJzZXRU",
+    "b3VyblN0ZEZpbHRlcignK3BpKycsdGhpcykiPicrcC5uYW1lKyc8L2J1dHRvbj4nO30pOwogICAgZkVs",
+    "LmlubmVySFRNTD1oOwogIH0KICB2YXIgcG9vbEZpbHRlcj10eXBlb2Ygd2luZG93Ll9wb29sRmlsdGVy",
+    "PT09J3VuZGVmaW5lZCc/LTE6d2luZG93Ll9wb29sRmlsdGVyOwogIHZhciB0Ym9keT0nJyx0aGVhZD0n",
+    "PHRoZWFkPjx0cj48dGg+IzwvdGg+PHRoPkVudHJ5PC90aD48dGg+UG9vbDwvdGg+PHRoIGNsYXNzPSJy",
+    "Ij5XPC90aD48dGggY2xhc3M9InIiPkw8L3RoPjx0aCBjbGFzcz0iciI+UEY8L3RoPjx0aCBjbGFzcz0i",
+    "ciI+UEE8L3RoPjx0aCBjbGFzcz0iciI+Ky8tPC90aD48L3RyPjwvdGhlYWQ+JzsKICBpZihwb29sRmls",
+    "dGVyPT09LTEpewogICAgLy8gQ29tYmluZWQgZ2xvYmFsIHJhbmtpbmcg4oCUIG9uZSB0YWJsZSwgcG9v",
+    "bCBiYWRnZSBwZXIgcm93CiAgICB2YXIgYWxsPWNhbGNBbGxQb29sU3RhbmRpbmdzKCk7CiAgICBhbGwu",
+    "Zm9yRWFjaChmdW5jdGlvbihwLGkpewogICAgICB2YXIgcmFuaz1pKzEsZGlmZj1wLnBmLXAucGE7CiAg",
+    "ICAgIHZhciBtPXJhbms9PT0xPydnb2xkJzpyYW5rPT09Mj8nc2lsdmVyJzpyYW5rPT09Mz8nYnJvbnpl",
+    "JzonJzsKICAgICAgdGJvZHkrPSc8dHIgY2xhc3M9IicrKHJhbmslMj09PTA/J2FsdCc6JycpKyciPicg",
+    "KwogICAgICAgICc8dGQ+PHNwYW4gY2xhc3M9InJuayAnK20rJyI+JytyYW5rKyc8L3NwYW4+PC90ZD4n",
+    "ICsKICAgICAgICAnPHRkPicrcC5uYW1lKyc8L3RkPicgKwogICAgICAgICc8dGQ+PHNwYW4gY2xhc3M9",
+    "ImdiYWRnZSI+JytwLnBvb2wrJzwvc3Bhbj48L3RkPicgKwogICAgICAgICc8dGQgY2xhc3M9InIiPicr",
+    "cC53Kyc8L3RkPjx0ZCBjbGFzcz0iciI+JytwLmwrJzwvdGQ+JyArCiAgICAgICAgJzx0ZCBjbGFzcz0i",
+    "ciI+JytwLnBmKyc8L3RkPjx0ZCBjbGFzcz0iciI+JytwLnBhKyc8L3RkPicgKwogICAgICAgICc8dGQg",
+    "Y2xhc3M9InIiPjxzcGFuIGNsYXNzPSInKyhkaWZmPjA/J2Rwb3MnOmRpZmY8MD8nZG5lZyc6JycpKyci",
+    "PicrKCBkaWZmPjA/JysnOicnKStkaWZmKyc8L3NwYW4+PC90ZD48L3RyPic7CiAgICB9KTsKICB9IGVs",
+    "c2UgewogICAgLy8gU2luZ2xlIHBvb2wgdmlldwogICAgdGhlYWQ9Jzx0aGVhZD48dHI+PHRoPiM8L3Ro",
+    "Pjx0aD5FbnRyeTwvdGg+PHRoIGNsYXNzPSJyIj5XPC90aD48dGggY2xhc3M9InIiPkw8L3RoPjx0aCBj",
+    "bGFzcz0iciI+UEY8L3RoPjx0aCBjbGFzcz0iciI+UEE8L3RoPjx0aCBjbGFzcz0iciI+Ky8tPC90aD48",
+    "L3RyPjwvdGhlYWQ+JzsKICAgIGNhbGNQb29sU3RhbmRpbmdzKHBvb2xGaWx0ZXIpLmZvckVhY2goZnVu",
+    "Y3Rpb24ocCxpKXsKICAgICAgdmFyIHJhbms9aSsxLGRpZmY9cC5wZi1wLnBhOwogICAgICB2YXIgbT1y",
+    "YW5rPT09MT8nZ29sZCc6cmFuaz09PTI/J3NpbHZlcic6cmFuaz09PTM/J2Jyb256ZSc6Jyc7CiAgICAg",
+    "IHRib2R5Kz0nPHRyIGNsYXNzPSInKyhyYW5rJTI9PT0wPydhbHQnOicnKSsnIj4nICsKICAgICAgICAn",
+    "PHRkPjxzcGFuIGNsYXNzPSJybmsgJyttKyciPicrcmFuaysnPC9zcGFuPjwvdGQ+PHRkPicrcC5uYW1l",
+    "Kyc8L3RkPicgKwogICAgICAgICc8dGQgY2xhc3M9InIiPicrcC53Kyc8L3RkPjx0ZCBjbGFzcz0iciI+",
+    "JytwLmwrJzwvdGQ+JyArCiAgICAgICAgJzx0ZCBjbGFzcz0iciI+JytwLnBmKyc8L3RkPjx0ZCBjbGFz",
+    "cz0iciI+JytwLnBhKyc8L3RkPicgKwogICAgICAgICc8dGQgY2xhc3M9InIiPjxzcGFuIGNsYXNzPSIn",
+    "KyhkaWZmPjA/J2Rwb3MnOmRpZmY8MD8nZG5lZyc6JycpKyciPicrKCBkaWZmPjA/JysnOicnKStkaWZm",
+    "Kyc8L3NwYW4+PC90ZD48L3RyPic7CiAgICB9KTsKICB9CiAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQo",
+    "J3N0ZC10YWJsZScpLmlubmVySFRNTD10aGVhZCsnPHRib2R5PicrdGJvZHkrJzwvdGJvZHk+JzsKfQpm",
+    "dW5jdGlvbiBzZXRUb3VyblN0ZEZpbHRlcihwaSxidG4pewogIHdpbmRvdy5fcG9vbEZpbHRlcj1waTsK",
+    "ICBkb2N1bWVudC5xdWVyeVNlbGVjdG9yQWxsKCcjc3RkLWZpbHRlciAuYnRuLXhzJykuZm9yRWFjaChm",
+    "dW5jdGlvbihiKXtiLmNsYXNzTGlzdC5yZW1vdmUoJ3NlbCcpO30pOwogIGJ0bi5jbGFzc0xpc3QuYWRk",
+    "KCdzZWwnKTsKICByZW5kZXJUb3VybmFtZW50U3RhbmRpbmdzKCk7Cn0KCi8qIOKVkOKVkOKVkOKVkOKV",
+    "kOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKV",
+    "kOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKV",
+    "kOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkOKVkAogICBTSEFSRUQ6IExPT0tVUArilZDilZDilZDi",
+    "lZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDi",
+    "lZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDi",
+    "lZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZAgKi8KZnVuY3Rpb24gcmVuZGVyTG9va3Vw",
+    "U2VsZWN0KCl7CiAgdmFyIHNkPVNELCBvcHQ9JzxvcHRpb24gdmFsdWU9IiI+LS0gc2VsZWN0IC0tPC9v",
+    "cHRpb24+JzsKICBpZihmbXQ9PT0na29iX2xlYWd1ZScpewogICAgc2QuZ0EuZm9yRWFjaChmdW5jdGlv",
+    "bihuKXtvcHQrPSc8b3B0aW9uIHZhbHVlPSInK24rJ3xBIj4nK24rJyAoQSk8L29wdGlvbj4nO30pOwog",
+    "ICAgc2QuZ0IuZm9yRWFjaChmdW5jdGlvbihuKXtvcHQrPSc8b3B0aW9uIHZhbHVlPSInK24rJ3xCIj4n",
+    "K24rJyAoQik8L29wdGlvbj4nO30pOwogIH0gZWxzZSB7CiAgICBzZC5lbnRyaWVzLmZvckVhY2goZnVu",
+    "Y3Rpb24oZSl7b3B0Kz0nPG9wdGlvbiB2YWx1ZT0iJytlKyciPicrZSsnPC9vcHRpb24+Jzt9KTsKICB9",
+    "CiAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2xvb2t1cC1zZWwnKS5pbm5lckhUTUw9b3B0Owp9CmZ1",
+    "bmN0aW9uIHJlbmRlckxvb2t1cCgpewogIHZhciB2YWw9ZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2xv",
+    "b2t1cC1zZWwnKS52YWx1ZTsKICBpZighdmFsKXtkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnbG9va3Vw",
+    "LXJlcycpLmlubmVySFRNTD0nJztyZXR1cm47fQogIGlmKGZtdD09PSdrb2JfbGVhZ3VlJykgcmVuZGVy",
+    "TGdMb29rdXAodmFsKTsKICBlbHNlIHJlbmRlclRvdXJuTG9va3VwKHZhbCk7Cn0KZnVuY3Rpb24gcmVu",
+    "ZGVyTGdMb29rdXAodmFsKXsKICB2YXIgcGFydHM9dmFsLnNwbGl0KCd8JyksbmFtZT1wYXJ0c1swXSxn",
+    "cnA9cGFydHNbMV07CiAgdmFyIHNkPVNELCByb3dzPVtdOwogIHNkLnNjaGVkLmZvckVhY2goZnVuY3Rp",
+    "b24od2Vlayx3aSl7d2Vlay5mb3JFYWNoKGZ1bmN0aW9uKHJvdW5kLHJpKXtyb3VuZC5mb3JFYWNoKGZ1",
+    "bmN0aW9uKG0sbmkpewogICAgdmFyIHBhcnRuZXI9bnVsbCxvcHAxPW51bGwsb3BwMj1udWxsLG15U2M9",
+    "bnVsbCxvcHBTYz1udWxsOwogICAgdmFyIHNjPXNjb3Jlc1t3aSsnLScrcmkrJy0nK25pXTsKICAgIGlm",
+    "KGdycD09PSdBJyl7CiAgICAgIGlmKG0ucDFbMF09PT1uYW1lKXtwYXJ0bmVyPW0ucDFbMV07b3BwMT1t",
+    "LnAyWzBdO29wcDI9bS5wMlsxXTtpZihzYyYmc2MuczEhPT0nJyYmc2MuczIhPT0nJyl7bXlTYz1wYXJz",
+    "ZUludChzYy5zMSk7b3BwU2M9cGFyc2VJbnQoc2MuczIpO319CiAgICAgIGVsc2UgaWYobS5wMlswXT09",
+    "PW5hbWUpe3BhcnRuZXI9bS5wMlsxXTtvcHAxPW0ucDFbMF07b3BwMj1tLnAxWzFdO2lmKHNjJiZzYy5z",
+    "MSE9PScnJiZzYy5zMiE9PScnKXtteVNjPXBhcnNlSW50KHNjLnMyKTtvcHBTYz1wYXJzZUludChzYy5z",
+    "MSk7fX0KICAgIH0gZWxzZSB7CiAgICAgIGlmKG0ucDFbMV09PT1uYW1lKXtwYXJ0bmVyPW0ucDFbMF07",
+    "b3BwMT1tLnAyWzBdO29wcDI9bS5wMlsxXTtpZihzYyYmc2MuczEhPT0nJyYmc2MuczIhPT0nJyl7bXlT",
+    "Yz1wYXJzZUludChzYy5zMSk7b3BwU2M9cGFyc2VJbnQoc2MuczIpO319CiAgICAgIGVsc2UgaWYobS5w",
+    "MlsxXT09PW5hbWUpe3BhcnRuZXI9bS5wMlswXTtvcHAxPW0ucDFbMF07b3BwMj1tLnAxWzFdO2lmKHNj",
+    "JiZzYy5zMSE9PScnJiZzYy5zMiE9PScnKXtteVNjPXBhcnNlSW50KHNjLnMyKTtvcHBTYz1wYXJzZUlu",
+    "dChzYy5zMSk7fX0KICAgIH0KICAgIGlmKHBhcnRuZXIpIHJvd3MucHVzaCh7bGFiZWw6J1cnKyh3aSsx",
+    "KSsnIFInKyhyaSsxKSxwYXJ0bmVyOnBhcnRuZXIsb3BwMTpvcHAxLG9wcDI6b3BwMixteVNjOm15U2Ms",
+    "b3BwU2M6b3BwU2N9KTsKICB9KTt9KTt9KTsKICB2YXIgaHRtbD0nPGRpdiBjbGFzcz0ibGstd3JhcCI+",
+    "PGRpdiBjbGFzcz0ibGstaGVhZCI+PHNwYW4+Um91bmQ8L3NwYW4+PHNwYW4+TmV0PC9zcGFuPjxzcGFu",
+    "PlBhcnRuZXI8L3NwYW4+PHNwYW4+PC9zcGFuPjxzcGFuPk9wcG9uZW50czwvc3Bhbj48c3Bhbj5SZXN1",
+    "bHQ8L3NwYW4+PC9kaXY+JzsKICByb3dzLmZvckVhY2goZnVuY3Rpb24ocixpKXsKICAgIHZhciByZXNI",
+    "dG1sPSc8c3BhbiBzdHlsZT0iY29sb3I6dmFyKC0tdDMpO2ZvbnQtc2l6ZToxMnB4OyI+4oCUPC9zcGFu",
+    "Pic7CiAgICBpZihyLm15U2MhPT1udWxsJiYhaXNOYU4oci5teVNjKSl7dmFyIHdpbj1yLm15U2M+ci5v",
+    "cHBTYyxjb2w9d2luPyd2YXIoLS10cyknOnIubXlTYzxyLm9wcFNjPyd2YXIoLS10dyknOid2YXIoLS10",
+    "MiknO3Jlc0h0bWw9JzxzcGFuIHN0eWxlPSJmb250LWZhbWlseTp2YXIoLS1tb25vKTtmb250LXNpemU6",
+    "MTJweDtjb2xvcjonK2NvbCsnIj4nK3IubXlTYysnLScrci5vcHBTYysnPC9zcGFuPic7fQogICAgaHRt",
+    "bCs9JzxkaXYgY2xhc3M9ImxrLXJvdycrKGklMj8nIGFsdCc6JycpKyciPjxzcGFuIHN0eWxlPSJmb250",
+    "LXNpemU6MTJweDtjb2xvcjp2YXIoLS10Mik7Ij4nK3IubGFiZWwrJzwvc3Bhbj48c3Bhbj48L3NwYW4+",
+    "PHNwYW4gY2xhc3M9InBhaXIiPjxzcGFuIGNsYXNzPSJwYSI+JytyLnBhcnRuZXIrJzwvc3Bhbj48L3Nw",
+    "YW4+PHNwYW4gY2xhc3M9InZzYyI+dnM8L3NwYW4+PHNwYW4gY2xhc3M9InBhaXIiPjxzcGFuIGNsYXNz",
+    "PSJwYSI+JytyLm9wcDErJzwvc3Bhbj48c3BhbiBjbGFzcz0icGx1cyI+Kzwvc3Bhbj48c3BhbiBjbGFz",
+    "cz0icGIiPicrci5vcHAyKyc8L3NwYW4+PC9zcGFuPicrcmVzSHRtbCsnPC9kaXY+JzsKICB9KTsKICBk",
+    "b2N1bWVudC5nZXRFbGVtZW50QnlJZCgnbG9va3VwLXJlcycpLmlubmVySFRNTD1odG1sKyc8L2Rpdj4n",
+    "Owp9CmZ1bmN0aW9uIHJlbmRlclRvdXJuTG9va3VwKG5hbWUpewogIHZhciBzZD1TRCwgcm93cz1bXTsK",
+    "ICBzZC5wb29scy5mb3JFYWNoKGZ1bmN0aW9uKHBvb2wscGkpe3Bvb2wucm91bmRzLmZvckVhY2goZnVu",
+    "Y3Rpb24ocm91bmQscmkpe3JvdW5kLmZvckVhY2goZnVuY3Rpb24obSxtaSl7CiAgICBpZihtLnAxIT09",
+    "bmFtZSYmbS5wMiE9PW5hbWUpIHJldHVybjsKICAgIHZhciBzYz1zY29yZXNbJ3AnK3BpKyctcicrcmkr",
+    "Jy1tJyttaV07CiAgICB2YXIgbXlTYz1udWxsLG9wcFNjPW51bGwsb3BwPW0ucDE9PT1uYW1lP20ucDI6",
+    "bS5wMTsKICAgIGlmKHNjJiZzYy5zMSE9PScnJiZzYy5zMiE9PScnKXsKICAgICAgbXlTYz1tLnAxPT09",
+    "bmFtZT9wYXJzZUludChzYy5zMSk6cGFyc2VJbnQoc2MuczIpOwogICAgICBvcHBTYz1tLnAxPT09bmFt",
+    "ZT9wYXJzZUludChzYy5zMik6cGFyc2VJbnQoc2MuczEpOwogICAgfQogICAgcm93cy5wdXNoKHtsYWJl",
+    "bDpwb29sLm5hbWUrJyBSJysocmkrMSksb3BwOm9wcCxteVNjOm15U2Msb3BwU2M6b3BwU2MsaXNCeWU6",
+    "bS5pc0J5ZX0pOwogIH0pO30pO30pOwogIHZhciBodG1sPSc8ZGl2IGNsYXNzPSJsay13cmFwIj48ZGl2",
+    "IGNsYXNzPSJsay1oZWFkIiBzdHlsZT0iZ3JpZC10ZW1wbGF0ZS1jb2x1bW5zOjgwcHggMWZyIDI4cHgg",
+    "MWZyIDgwcHggMWZyIj48c3Bhbj5Sb3VuZDwvc3Bhbj48c3Bhbj5FbnRyeTwvc3Bhbj48c3Bhbj48L3Nw",
+    "YW4+PHNwYW4+T3Bwb25lbnQ8L3NwYW4+PHNwYW4+UmVzdWx0PC9zcGFuPjxzcGFuPjwvc3Bhbj48L2Rp",
+    "dj4nOwogIHJvd3MuZm9yRWFjaChmdW5jdGlvbihyLGkpewogICAgdmFyIHJlc0h0bWw9JzxzcGFuIHN0",
+    "eWxlPSJjb2xvcjp2YXIoLS10MykiPuKAlDwvc3Bhbj4nOwogICAgaWYoIXIuaXNCeWUmJnIubXlTYyE9",
+    "PW51bGwmJiFpc05hTihyLm15U2MpKXt2YXIgd2luPXIubXlTYz5yLm9wcFNjLGNvbD13aW4/J3Zhcigt",
+    "LXRzKSc6ci5teVNjPHIub3BwU2M/J3ZhcigtLXR3KSc6J3ZhcigtLXQyKSc7cmVzSHRtbD0nPHNwYW4g",
+    "c3R5bGU9ImZvbnQtZmFtaWx5OnZhcigtLW1vbm8pO2ZvbnQtc2l6ZToxMnB4O2NvbG9yOicrY29sKyci",
+    "Picrci5teVNjKyctJytyLm9wcFNjKyc8L3NwYW4+Jzt9CiAgICBodG1sKz0nPGRpdiBjbGFzcz0ibGst",
+    "cm93JysoaSUyPycgYWx0JzonJykrJyIgc3R5bGU9ImdyaWQtdGVtcGxhdGUtY29sdW1uczo4MHB4IDFm",
+    "ciAyOHB4IDFmciA4MHB4IDFmciI+PHNwYW4gc3R5bGU9ImZvbnQtc2l6ZToxMnB4O2NvbG9yOnZhcigt",
+    "LXQyKSI+JytyLmxhYmVsKyc8L3NwYW4+PHNwYW4gY2xhc3M9InBhaXIiPjxzcGFuIGNsYXNzPSJwYSI+",
+    "JytuYW1lKyc8L3NwYW4+PC9zcGFuPjxzcGFuIGNsYXNzPSJ2c2MiPicrKHIuaXNCeWU/Jyc6J3ZzJykr",
+    "Jzwvc3Bhbj48c3BhbiBjbGFzcz0icGFpciI+PHNwYW4gY2xhc3M9InBiIj4nK3Iub3BwKyc8L3NwYW4+",
+    "PC9zcGFuPicrcmVzSHRtbCsnPHNwYW4+PC9zcGFuPjwvZGl2Pic7CiAgfSk7CiAgZG9jdW1lbnQuZ2V0",
+    "RWxlbWVudEJ5SWQoJ2xvb2t1cC1yZXMnKS5pbm5lckhUTUw9aHRtbCsnPC9kaXY+JzsKfQoKLyog4pWQ",
+    "4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ",
+    "4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ",
+    "4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQCiAgIEVYUE9SVArilZDilZDi",
+    "lZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDi",
+    "lZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDi",
+    "lZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZDilZAgKi8KZnVuY3Rpb24gZXhwb3J0WExT",
+    "WCgpewogIGlmKGZtdD09PSdrb2JfbGVhZ3VlJykgZXhwb3J0TGdYTFNYKCk7CiAgZWxzZSBpZihmbXQ9",
+    "PT0ndHJhZGl0aW9uYWxfdG91cm5hbWVudCcpIGV4cG9ydFRvdXJuWExTWCgpOwp9CmZ1bmN0aW9uIGV4",
+    "cG9ydExnWExTWCgpewogIHZhciBzZD1TRCx3Yj1YTFNYLnV0aWxzLmJvb2tfbmV3KCk7CiAgdmFyIHN0",
+    "YW5kaW5ncz1jYWxjTGdTdGFuZGluZ3MoKTsKICB2YXIgc3VtUm93cz1bW3NkLnRpdGxlfHwnS09CIExl",
+    "YWd1ZSddLFtdXTsKICBpZihzZC5zdGF0cykgc3VtUm93cy5wdXNoKFsnUmVwZWF0IHBhcnRuZXJzJyxz",
+    "ZC5zdGF0cy5ycF0sWydSZXBlYXQgbWF0Y2h1cHMnLHNkLnN0YXRzLm1wXSxbXSk7CiAgc3VtUm93cy5w",
+    "dXNoKFsnR3JvdXAgQScsJ0dyb3VwIEInXSk7CiAgZm9yKHZhciBpPTA7aTxNYXRoLm1heChzZC5nQS5s",
+    "ZW5ndGgsc2QuZ0IubGVuZ3RoKTtpKyspIHN1bVJvd3MucHVzaChbc2QuZ0FbaV18fCcnLHNkLmdCW2ld",
+    "fHwnJ10pOwogIHZhciBzdz1YTFNYLnV0aWxzLmFvYV90b19zaGVldChzdW1Sb3dzKTtzd1snIWNvbHMn",
+    "XT1be3djaDoyOH0se3djaDoyMn1dOwogIFhMU1gudXRpbHMuYm9va19hcHBlbmRfc2hlZXQod2Isc3cs",
+    "J1N1bW1hcnknKTsKICBzZC5zY2hlZC5mb3JFYWNoKGZ1bmN0aW9uKHdlZWssd2kpewogICAgdmFyIHJv",
+    "d3M9W1snV2VlayAnKyh3aSsxKV0sW11dOwogICAgd2Vlay5mb3JFYWNoKGZ1bmN0aW9uKHJvdW5kLHJp",
+    "KXsKICAgICAgcm93cy5wdXNoKFsnUm91bmQgJysocmkrMSldKTsKICAgICAgcm93cy5wdXNoKFsnQ291",
+    "cnQnLCdQMWEnLCdQMWInLCdTY29yZScsJycsJ1Njb3JlJywnUDJhJywnUDJiJ10pOwogICAgICByb3Vu",
+    "ZC5mb3JFYWNoKGZ1bmN0aW9uKG0sbmkpewogICAgICAgIHZhciBzYz1zY29yZXNbd2krJy0nK3JpKyct",
+    "JytuaV18fHtzMTonJyxzMjonJ307CiAgICAgICAgdmFyIGNvdXJ0PXNkLmNvdXJ0c1tuaSVzZC5jb3Vy",
+    "dHMubGVuZ3RoXT9zZC5jb3VydHNbbmklc2QuY291cnRzLmxlbmd0aF0ubmFtZTpuaSsxOwogICAgICAg",
+    "IHJvd3MucHVzaChbY291cnQsbS5wMVswXSxtLnAxWzFdLHNjLnMxLCctJyxzYy5zMixtLnAyWzBdLG0u",
+    "cDJbMV1dKTsKICAgICAgfSk7CiAgICAgIHJvd3MucHVzaChbXSk7CiAgICB9KTsKICAgIHZhciB3cz1Y",
+    "TFNYLnV0aWxzLmFvYV90b19zaGVldChyb3dzKTt3c1snIWNvbHMnXT1be3djaDoxMH0se3djaDoxNn0s",
+    "e3djaDoxNn0se3djaDo3fSx7d2NoOjN9LHt3Y2g6N30se3djaDoxNn0se3djaDoxNn1dOwogICAgWExT",
+    "WC51dGlscy5ib29rX2FwcGVuZF9zaGVldCh3Yix3cywnV2VlayAnKyh3aSsxKSk7CiAgfSk7CiAgdmFy",
+    "IHN0Um93cz1bWydSYW5rJywnUGxheWVyJywnR3JvdXAnLCdXJywnTCcsJ01QJywnUEYnLCdQQScsJysv",
+    "LSddXTsKICBzdGFuZGluZ3MuZm9yRWFjaChmdW5jdGlvbihwLGkpe3N0Um93cy5wdXNoKFtpKzEscC5u",
+    "YW1lLHAuZ3JwLHAudyxwLmwscC53K3AubCxwLnBmLHAucGEscC5wZi1wLnBhXSk7fSk7CiAgdmFyIHN0",
+    "V3M9WExTWC51dGlscy5hb2FfdG9fc2hlZXQoc3RSb3dzKTtzdFdzWychY29scyddPVt7d2NoOjV9LHt3",
+    "Y2g6MTh9LHt3Y2g6N30se3djaDo1fSx7d2NoOjV9LHt3Y2g6Nn0se3djaDo3fSx7d2NoOjd9LHt3Y2g6",
+    "N31dOwogIFhMU1gudXRpbHMuYm9va19hcHBlbmRfc2hlZXQod2Isc3RXcywnU3RhbmRpbmdzJyk7CiAg",
+    "WExTWC53cml0ZUZpbGUod2IsKHNkLnRpdGxlfHwnS09CJykrJ19TY2hlZHVsZS54bHN4Jyk7Cn0KZnVu",
+    "Y3Rpb24gZXhwb3J0VG91cm5YTFNYKCl7CiAgdmFyIHNkPVNELHdiPVhMU1gudXRpbHMuYm9va19uZXco",
+    "KTsKICAvLyBTdW1tYXJ5CiAgdmFyIHN1bVJvd3M9W1tzZC50aXRsZXx8J1RvdXJuYW1lbnQnXSxbXSxb",
+    "J1Bvb2xzJyxzZC5wb29scy5sZW5ndGhdLFsnRW50cmllcycsc2QuZW50cmllcy5sZW5ndGhdLFsnQ291",
+    "cnRzJyxzZC5jb3VydHMubGVuZ3RoXV07CiAgdmFyIHN3PVhMU1gudXRpbHMuYW9hX3RvX3NoZWV0KHN1",
+    "bVJvd3MpO3N3WychY29scyddPVt7d2NoOjIwfSx7d2NoOjIwfV07CiAgWExTWC51dGlscy5ib29rX2Fw",
+    "cGVuZF9zaGVldCh3YixzdywnU3VtbWFyeScpOwogIC8vIFBvb2wgc2hlZXRzCiAgc2QucG9vbHMuZm9y",
+    "RWFjaChmdW5jdGlvbihwb29sLHBpKXsKICAgIHZhciByb3dzPVtbcG9vbC5uYW1lXSxbXSxbJ0VudHJ5",
+    "IDEnLCdTY29yZScsJ1Njb3JlJywnRW50cnkgMicsJ0NvdXJ0JywnUmVzdWx0J11dOwogICAgcG9vbC5y",
+    "b3VuZHMuZm9yRWFjaChmdW5jdGlvbihyb3VuZCxyaSl7CiAgICAgIHJvd3MucHVzaChbJ1JvdW5kICcr",
+    "KHJpKzEpXSk7CiAgICAgIHJvdW5kLmZvckVhY2goZnVuY3Rpb24obSxtaSl7CiAgICAgICAgdmFyIHNj",
+    "PXNjb3Jlc1sncCcrcGkrJy1yJytyaSsnLW0nK21pXXx8e3MxOicnLHMyOicnfTsKICAgICAgICB2YXIg",
+    "Y291cnQ9c2QuY291cnRzW20uY291cnRdP3NkLmNvdXJ0c1ttLmNvdXJ0XS5uYW1lOihtLmNvdXJ0KzEp",
+    "OwogICAgICAgIHJvd3MucHVzaChbbS5wMSxzYy5zMSxzYy5zMixtLmlzQnllPydCWUUnOm0ucDIsY291",
+    "cnQsbS5pc0J5ZT8nQllFJzooKHNjLnMxIT09JycmJnNjLnMyIT09JycpP3BhcnNlSW50KHNjLnMxKT5w",
+    "YXJzZUludChzYy5zMik/bS5wMSsnIHdpbnMnOm0ucDIrJyB3aW5zJzonJyldKTsKICAgICAgfSk7CiAg",
+    "ICAgIHJvd3MucHVzaChbXSk7CiAgICB9KTsKICAgIC8vIFBvb2wgc3RhbmRpbmdzCiAgICByb3dzLnB1",
+    "c2goWydTdGFuZGluZ3MnXSxbJ1JhbmsnLCdFbnRyeScsJ1cnLCdMJywnUEYnLCdQQScsJysvLSddKTsK",
+    "ICAgIGNhbGNQb29sU3RhbmRpbmdzKHBpKS5mb3JFYWNoKGZ1bmN0aW9uKHAsaSl7cm93cy5wdXNoKFtp",
+    "KzEscC5uYW1lLHAudyxwLmwscC5wZixwLnBhLHAucGYtcC5wYV0pO30pOwogICAgdmFyIHdzPVhMU1gu",
+    "dXRpbHMuYW9hX3RvX3NoZWV0KHJvd3MpO3dzWychY29scyddPVt7d2NoOjE4fSx7d2NoOjd9LHt3Y2g6",
+    "N30se3djaDoxOH0se3djaDoxMH0se3djaDoyMH1dOwogICAgWExTWC51dGlscy5ib29rX2FwcGVuZF9z",
+    "aGVldCh3Yix3cyxwb29sLm5hbWUpOwogIH0pOwogIFhMU1gud3JpdGVGaWxlKHdiLChzZC50aXRsZXx8",
+    "J1RvdXJuYW1lbnQnKSsnX1NjaGVkdWxlLnhsc3gnKTsKfQoKLyog4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ",
+    "4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ",
+    "4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ",
+    "4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQCiAgIElOSVQK4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ",
+    "4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ",
+    "4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ4pWQ",
+    "4pWQ4pWQ4pWQ4pWQ4pWQ4pWQICovCihmdW5jdGlvbigpewogIGlmKCFTRHx8U0Q9PT0nU0NIRURVTEVf",
+    "REFUQV9QTEFDRUhPTERFUicpewogICAgZG9jdW1lbnQucXVlcnlTZWxlY3RvcignLmNhcmQnKS5pbm5l",
+    "ckhUTUw9JzxkaXYgY2xhc3M9ImVtcHR5Ij48cD5ObyBzY2hlZHVsZSBsb2FkZWQuPC9wPjxwIHN0eWxl",
+    "PSJtYXJnaW4tdG9wOjhweDtmb250LXNpemU6MTJweDtjb2xvcjp2YXIoLS10Myk7Ij5Vc2UgdGhlIGdl",
+    "bmVyYXRvciB0byBwcm9kdWNlIGEgcG9wdWxhdGVkIHZpZXdlci48L3A+PC9kaXY+JzsKICAgIHJldHVy",
+    "bjsKICB9CiAgZm10PVNELmZvcm1hdHx8J2tvYl9sZWFndWUnOwogIGRvY3VtZW50LmdldEVsZW1lbnRC",
+    "eUlkKCdwYWdlLXRpdGxlJykudGV4dENvbnRlbnQ9U0QudGl0bGV8fCdLT0IgVmlld2VyJzsKICBpZihm",
+    "bXQ9PT0na29iX2xlYWd1ZScpIGluaXRLT0JMZWFndWUoKTsKICBlbHNlIGlmKGZtdD09PSd0cmFkaXRp",
+    "b25hbF90b3VybmFtZW50JykgaW5pdFRvdXJuYW1lbnQoKTsKfSkoKTsKPC9zY3JpcHQ+CjwvYm9keT4K",
+    "PC9odG1sPgo="
+];
+function downloadViewer(sd){
+  var b64str=Array.isArray(VIEWER_B64)?VIEWER_B64.join(''):VIEWER_B64;
+  var bytes=atob(b64str);
+  var dataJson=JSON.stringify(sd);
+  var html=bytes.replace('var SD = "SCHEDULE_DATA_PLACEHOLDER"','var SD = '+dataJson);
+  var blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='kob-viewer.html';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+(function(){
+  state.config.bracketType='single';
+  state.config.byeRule='auto_win';
+  state.config.playoffMode='everyone';
+  state.config.numBrackets=2;
+  state.config.playoffQualifiers=null;
+  state.config.seedingMethod='flat';
+  state.config.seedsPerPool=2;
+  updateStepHeader();
+  buildCourtRows();
+})();
+</script>
+</body>
+</html>
