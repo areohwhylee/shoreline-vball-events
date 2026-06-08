@@ -79,7 +79,8 @@ async function boot(){
 
   // 6. Override store functions BEFORE viewer boots
   window._storeSaveOverride=async function(){
-    if(!isOwner) return;
+    // Save if admin mode is active (PIN already verified by toggleAdmin)
+    if(!window.adminMode) return;
     var toUpsert=Object.keys(window.scores||{}).map(function(k){
       var sc=window.scores[k];
       return {event_id:eventId,score_key:k,
@@ -101,7 +102,7 @@ async function boot(){
     window.nameMap=Object.assign({},dbNameMap);
   };
   window._storeClearOverride=async function(){
-    if(!isOwner){alert('Only the event owner can clear scores.');return;}
+    if(!window.adminMode){alert('Enter admin mode first.');return;}
     var t=prompt('Type CLEAR to confirm:');
     if(t!=='CLEAR') return;
     await sb.from('scores').delete().eq('event_id',eventId);
