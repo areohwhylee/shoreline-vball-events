@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KOB Viewer</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  background:#0f1a14;color:#e8f0eb;min-height:100vh;}
+#kob-loading{display:flex;align-items:center;justify-content:center;
+  min-height:100vh;flex-direction:column;gap:10px;}
+#kob-loading h2{font-size:18px;color:#fff;}
+#kob-loading p{font-size:13px;color:#7a9e82;}
+.err-msg{color:#e57373 !important;}
+</style>
+</head>
+<body>
+<div id="kob-loading">
+  <h2>KOB Platform</h2>
+  <p id="load-status">Loading event...</p>
+</div>
+
+<script>
+var SUPABASE_URL='https://bdxsvlcojqmushnndaxz.supabase.co';
+var SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkeHN2bGNvanFtdXNobm5kYXh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5MTgyMTgsImV4cCI6MjA5NjQ5NDIxOH0.E7WEfw0GuQ8-iFFP6jpmDMEmDV2X24XJrI3AZ01Vnco';
+var sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON);
+var eventId=new URLSearchParams(window.location.search).get('event');
+
+function setStatus(msg,isErr){
+  var el=document.getElementById('load-status');
+  if(el){el.textContent=msg;if(isErr)el.className='err-msg';}
+}
+
+async function boot(){
+  if(!eventId){setStatus('No event ID in URL.',true);return;}
+
+  // 1. Fetch event
+  setStatus('Fetching event data...');
+  var res=await sb.from('events').select('*').eq('id',eventId).single();
+  if(res.error||!res.data){
+    setStatus('Event not found: '+(res.error?res.error.message:'unknown error'),true);
+    return;
+  }
+  var ev=res.data;
+  document.title=(ev.title||'KOB Event')+' | KOB Platform';
+
+  // 2. Fetch scores
+  setStatus('Loading scores...');
+  var scRes=await sb.from('scores').select('score_key,s1,s2').eq('event_id',eventId);
+  var dbScores={};
+  (scRes.data||[]).forEach(function(r){
+    dbScores[r.score_key]={s1:r.s1!=null?String(r.s1):'',s2:r.s2!=null?String(r.s2):''};
+  });
+
+  // 3. Fetch name map
+  var nmRes=await sb.from('name_maps').select('original,display').eq('event_id',eventId);
+  var dbNameMap={};
+  (nmRes.data||[]).forEach(function(r){dbNameMap[r.original]=r.display;});
+
+  // 4. Check ownership
+  var isOwner=false;
+  var userRes=await sb.auth.getUser();
+  if(userRes.data&&userRes.data.user){
+    var ownerRes=await sb.from('events').select('id')
+      .eq('id',eventId).eq('owner_id',userRes.data.user.id).single();
+    if(!ownerRes.error) isOwner=true;
+  }
+
+  // 5. Set globals the viewer needs
+  window.SD=ev.sd_json;
+  window.SD.adminPin=ev.admin_pin;
+  window._eventId=eventId;
+  window._isOwner=isOwner;
+  window._dbScores=dbScores;
+  window._dbNameMap=dbNameMap;
+  window._storeKey='kob_cloud_'+eventId.slice(0,8);
+
+  // 6. Override store functions BEFORE viewer boots
+  window._storeSaveOverride=async function(){
+    if(!isOwner) return;
+    var toUpsert=Object.keys(window.scores||{}).map(function(k){
+      var sc=window.scores[k];
+      return {event_id:eventId,score_key:k,
+        s1:sc.s1!==''?parseInt(sc.s1):null,
+        s2:sc.s2!==''?parseInt(sc.s2):null};
+    }).filter(function(r){return r.s1!=null||r.s2!=null;});
+    if(toUpsert.length)
+      await sb.from('scores').upsert(toUpsert,{onConflict:'event_id,score_key'});
+    if(window.nameMap){
+      var nm=Object.keys(window.nameMap).map(function(o){
+        return {event_id:eventId,original:o,display:window.nameMap[o]};
+      });
+      if(nm.length)
+        await sb.from('name_maps').upsert(nm,{onConflict:'event_id,original'});
+    }
+  };
+  window._storeLoadOverride=function(){
+    window.scores=Object.assign({},dbScores);
+    window.nameMap=Object.assign({},dbNameMap);
+  };
+  window._storeClearOverride=async function(){
+    if(!isOwner){alert('Only the event owner can clear scores.');return;}
+    var t=prompt('Type CLEAR to confirm:');
+    if(t!=='CLEAR') return;
+    await sb.from('scores').delete().eq('event_id',eventId);
+    await sb.from('name_maps').delete().eq('event_id',eventId);
+    location.reload();
+  };
+  window._storeExportOverride=function(){
+    var b=new Blob([JSON.stringify({scores:window.scores,nameMap:window.nameMap},null,2)],
+      {type:'application/json'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(b);
+    a.download=(ev.title||'event')+'-backup.json';
+    a.click();
+  };
+
+  // 7. Remove loading screen
+  var loading=document.getElementById('kob-loading');
+  if(loading) loading.remove();
+
+  // 8. Load viewer core
+  setStatus('Loading viewer...');
+  var s=document.createElement('script');
+  // Path relative to this page's location
+  var base=window.location.pathname.substring(0,window.location.pathname.lastIndexOf('/')+1);
+  s.src=base+'viewer-core.js?v=3.18';
+  s.onload=function(){console.log('KOB viewer loaded');};
+  s.onerror=function(){
+    document.body.innerHTML='<div style="color:#e57373;padding:40px;font-family:sans-serif;">'
+      +'<h2>Could not load viewer</h2>'
+      +'<p>viewer-core.js failed to load from: '+s.src+'</p>'
+      +'</div>';
+  };
+  document.head.appendChild(s);
+
+  // 9. Realtime score updates
+  sb.channel('ev:'+eventId)
+    .on('postgres_changes',{event:'*',schema:'public',table:'scores',
+      filter:'event_id=eq.'+eventId},
+      function(p){
+        var r=p.new;if(!r||!window.scores) return;
+        window.scores[r.score_key]={
+          s1:r.s1!=null?String(r.s1):'',
+          s2:r.s2!=null?String(r.s2):''
+        };
+        // Refresh current view
+        try{
+          if(typeof renderPoolSchedule==='function') renderPoolSchedule();
+          else if(typeof renderLgSchedule==='function') renderLgSchedule();
+          else if(typeof renderTradLeagueSchedule==='function') renderTradLeagueSchedule();
+        }catch(e){}
+      })
+    .subscribe();
+}
+
+boot().catch(function(e){
+  setStatus('Error: '+e.message,true);
+  console.error(e);
+});
+</script>
+</body>
+</html>
