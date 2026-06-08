@@ -127,6 +127,7 @@ async function boot(){
   // Path relative to this page's location
   var base=window.location.pathname.substring(0,window.location.pathname.lastIndexOf('/')+1);
   s.src=base+'viewer-core.js?v=3.18';
+  console.log('Loading viewer from:',s.src);
   s.onload=function(){console.log('KOB viewer loaded');};
   s.onerror=function(){
     document.body.innerHTML='<div style="color:#e57373;padding:40px;font-family:sans-serif;">'
