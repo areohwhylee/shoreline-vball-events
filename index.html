@@ -160,7 +160,8 @@ async function uploadEvent(input){
 
 // ── Copy shareable link ───────────────────────────────────────────────────────
 function copyLink(id){
-  var url=window.location.origin+window.location.pathname.replace('dashboard.html','viewer.html')+'?event='+id;
+  var base=window.location.href.replace(/[^\/]*$/,'').replace('index.html','');
+  var url=base+'viewer.html?event='+id;
   navigator.clipboard.writeText(url).then(function(){
     alert('Link copied!\n\n'+url);
   });
