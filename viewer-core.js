@@ -23,8 +23,7 @@ var nameMap={};  // originalName -> displayName
 var adminMode=false;
 var _storeKey='';  // localStorage key prefix, set at init from event title
 
-function storeSave(){
-  if(typeof window._storeSaveOverride==="function"){window._storeSaveOverride();return;}
+function storeSave(){if(typeof window._storeSaveOverride==="function"){window._storeSaveOverride();return;}
   if(!_storeKey) return;
   try{
     localStorage.setItem(_storeKey+'.scores', JSON.stringify(scores));
@@ -49,8 +48,7 @@ function extractWins(bk){
   return wins;
 }
 
-function storeLoad(){
-  if(typeof window._storeLoadOverride==="function"){window._storeLoadOverride();return;}
+function storeLoad(){if(typeof window._storeLoadOverride==="function"){window._storeLoadOverride();return;}
   if(!_storeKey) return;
   try{
     var sc=localStorage.getItem(_storeKey+'.scores');
@@ -77,8 +75,7 @@ function storeLoadBrackets(){
   }catch(e){}
 }
 
-function storeClear(){
-  if(typeof window._storeClearOverride==="function"){window._storeClearOverride();return;}
+function storeClear(){if(typeof window._storeClearOverride==="function"){window._storeClearOverride();return;}
   if(!_storeKey) return;
   var confirm1=window.confirm('WARNING: This will permanently delete all saved scores, team names, and bracket picks for this event.\n\nDo you want to download a backup first?');
   if(confirm1) storeExport();
@@ -96,8 +93,7 @@ function storeClear(){
   }catch(e){}
 }
 
-function storeExport(){
-  if(typeof window._storeExportOverride==="function"){window._storeExportOverride();return;}
+function storeExport(){if(typeof window._storeExportOverride==="function"){window._storeExportOverride();return;}
   if(!_storeKey) return;
   var backup={
     key:_storeKey,
@@ -115,8 +111,7 @@ function storeExport(){
   URL.revokeObjectURL(a.href);
 }
 
-function storeImport(){
-  if(typeof window._storeImportOverride==="function"){window._storeImportOverride();return;}
+function storeImport(){if(typeof window._storeImportOverride==="function"){window._storeImportOverride();return;}
   var input=document.createElement('input');
   input.type='file'; input.accept='.json';
   input.onchange=function(){
@@ -2375,5 +2370,36 @@ function _buildCombinedStandings(sd,allPools){
   else if(fmt==='kob_random_mix') initKOBRandomMix();
 })();
 
+
+// Expose all interactive functions to global window scope
+// (needed because onclick="" handlers call global functions)
+if(typeof toggleAdmin!=="undefined") window.toggleAdmin=toggleAdmin;
+if(typeof seedBracket!=="undefined") window.seedBracket=seedBracket;
+if(typeof pickWinner!=="undefined") window.pickWinner=pickWinner;
+if(typeof switchTab!=="undefined") window.switchTab=switchTab;
+if(typeof applyRenames!=="undefined") window.applyRenames=applyRenames;
+if(typeof resetRenames!=="undefined") window.resetRenames=resetRenames;
+if(typeof confirmSeedEdit!=="undefined") window.confirmSeedEdit=confirmSeedEdit;
+if(typeof cancelSeedEdit!=="undefined") window.cancelSeedEdit=cancelSeedEdit;
+if(typeof toggleSeedEditor!=="undefined") window.toggleSeedEditor=toggleSeedEditor;
+if(typeof renderTeamsTab!=="undefined") window.renderTeamsTab=renderTeamsTab;
+if(typeof onPoolScore!=="undefined") window.onPoolScore=onPoolScore;
+if(typeof onLgScore!=="undefined") window.onLgScore=onLgScore;
+if(typeof onTradLgScore!=="undefined") window.onTradLgScore=onTradLgScore;
+if(typeof onQuadsScore!=="undefined") window.onQuadsScore=onQuadsScore;
+if(typeof onMixScore!=="undefined") window.onMixScore=onMixScore;
+if(typeof renderLookup!=="undefined") window.renderLookup=renderLookup;
+if(typeof renderLookupSelect!=="undefined") window.renderLookupSelect=renderLookupSelect;
+if(typeof exportXLSX!=="undefined") window.exportXLSX=exportXLSX;
+if(typeof exportSheetsXLSX!=="undefined") window.exportSheetsXLSX=exportSheetsXLSX;
+if(typeof storeClear!=="undefined") window.storeClear=storeClear;
+if(typeof storeExport!=="undefined") window.storeExport=storeExport;
+if(typeof storeImport!=="undefined") window.storeImport=storeImport;
+if(typeof renderBracket!=="undefined") window.renderBracket=renderBracket;
+if(typeof renderBracketNav!=="undefined") window.renderBracketNav=renderBracketNav;
+if(typeof renderStandings!=="undefined") window.renderStandings=renderStandings;
+if(typeof renderPoolSchedule!=="undefined") window.renderPoolSchedule=renderPoolSchedule;
+if(typeof renderLgSchedule!=="undefined") window.renderLgSchedule=renderLgSchedule;
+if(typeof renderTradLeagueSchedule!=="undefined") window.renderTradLeagueSchedule=renderTradLeagueSchedule;
 
 })();
