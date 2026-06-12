@@ -6,21 +6,272 @@
 <title>KOB Viewer</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-  background:#0f1a14;color:#e8f0eb;min-height:100vh;}
-#kob-loading{display:flex;align-items:center;justify-content:center;
-  min-height:100vh;flex-direction:column;gap:10px;}
-#kob-loading h2{font-size:18px;color:#fff;}
-#kob-loading p{font-size:13px;color:#7a9e82;}
-.err-msg{color:#e57373 !important;}
+:root{
+  --sans:'DM Sans',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;
+  --t1:#1a1a18;--t2:#58584f;--t3:#9a9a90;--ti:#185fa5;--ts:#0f6e56;--tw:#993c1d;--tp:#6b3fa0;
+  --bg1:#fff;--bg2:#f4f3ef;--bg3:#eceae4;--bgs:#e1f5ee;--bgp:#f0eaf8;
+  --b3:rgba(26,26,24,.13);--b2:rgba(26,26,24,.25);--b1:rgba(26,26,24,.42);
+  --bs:#0f6e56;--bp:#6b3fa0;--rm:8px;--rl:12px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --t1:#f0efe8;--t2:#9a9a90;--t3:#68685f;--ti:#85b7eb;--ts:#5dcaa5;--tw:#f0997b;--tp:#c49ee8;
+  --bg1:#1c1c1a;--bg2:#262623;--bg3:#2e2e2b;--bgs:#085041;--bgp:#2e1e45;
+  --b3:rgba(240,239,232,.13);--b2:rgba(240,239,232,.25);--b1:rgba(240,239,232,.42);
+  --bs:#5dcaa5;--bp:#c49ee8;
+}}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--sans);background:var(--bg2);color:var(--t1);min-height:100vh;}
+.page-hdr{background:var(--bg1);border-bottom:.5px solid var(--b3);padding:14px 20px;}
+.page-hdr h1{font-size:17px;font-weight:600;}
+.page-hdr span{font-size:12px;color:var(--t3);display:block;margin-top:2px;}
+.page-main{max-width:900px;margin:0 auto;padding:20px 16px 60px;}
+.card{background:var(--bg1);border:.5px solid var(--b3);border-radius:16px;padding:24px;}
+.tabs{display:flex;gap:2px;border-bottom:.5px solid var(--b3);margin-bottom:20px;flex-wrap:wrap;}
+.tab{background:transparent;border:.5px solid transparent;border-radius:8px 8px 0 0;padding:8px 16px;cursor:pointer;font-size:13px;font-family:var(--sans);color:var(--t2);margin-bottom:-.5px;}
+.tab.active{background:var(--bg1);border-color:var(--b2);border-bottom-color:var(--bg1);color:var(--t1);}
+/* nav rows */
+.nav-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;}
+.nav-l{display:flex;gap:6px;flex-wrap:wrap;}
+.round-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+.btn-sm{padding:5px 12px;font-size:12px;font-family:var(--sans);cursor:pointer;border-radius:6px;border:.5px solid var(--b2);background:var(--bg2);color:var(--t2);}
+.btn-sm.sel,.btn-sm:hover{background:var(--bg3);color:var(--t1);}
+.btn-sm.green{color:var(--ts);border-color:var(--bs);}
+.btn-sm.green:hover{background:var(--bgs);}
+.btn-xs{padding:3px 9px;font-size:11px;font-family:var(--sans);cursor:pointer;border-radius:6px;border:.5px solid var(--b2);background:var(--bg2);color:var(--t2);}
+.btn-xs.sel,.btn-xs:hover{background:var(--bg3);color:var(--t1);}
+/* progress */
+.prog-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.prog-lbl{font-size:12px;color:var(--t3);white-space:nowrap;}
+.prog-wrap{flex:1;height:4px;background:var(--bg3);border-radius:2px;}
+.prog-bar{height:4px;background:var(--ts);border-radius:2px;transition:width .3s;}
+/* match table */
+.net-table{border:.5px solid var(--b3);border-radius:var(--rl);overflow:hidden;}
+.net-head,.net-row{display:grid;grid-template-columns:64px 1fr 70px 28px 70px 1fr 80px;gap:4px;align-items:center;padding:7px 10px;}
+.net-head{background:var(--bg2);font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;}
+.net-row{border-top:.5px solid var(--b3);}
+.net-row.alt{background:var(--bg2);}
+.nnum{font-size:11px;color:var(--t3);font-family:var(--mono);}
+.pair{display:flex;align-items:center;gap:4px;font-size:13px;}
+.pa{color:var(--ti);}
+.pb{color:var(--tp);}
+.plus{color:var(--t3);font-size:11px;}
+.vsc{font-size:11px;color:var(--t3);text-align:center;}
+.score-in{width:64px;font-family:var(--mono);font-size:13px;text-align:center;padding:4px 6px;border:.5px solid var(--b3);border-radius:6px;background:var(--bg2);color:var(--t1);}
+.score-in.win{border-color:var(--bs);background:var(--bgs);color:var(--ts);}
+.score-in.lose{border-color:var(--b2);}
+/* pool header */
+.pool-hdr{font-size:12px;font-weight:600;color:var(--t2);padding:8px 10px;background:var(--bg2);border-radius:var(--rm);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.pool-badge{font-size:10px;padding:1px 7px;border-radius:99px;background:var(--bgp);color:var(--tp);font-weight:600;}
+/* standings */
+.std-wrap{overflow-x:auto;}
+.std-table{width:100%;border-collapse:collapse;font-size:13px;}
+.std-table th{font-size:10px;font-weight:500;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;padding:8px 10px;text-align:left;background:var(--bg2);border-bottom:.5px solid var(--b3);}
+.std-table th.r,.std-table td.r{text-align:right;}
+.std-table td{padding:8px 10px;border-bottom:.5px solid var(--b3);color:var(--t1);}
+.std-table tr:last-child td{border-bottom:none;}
+.std-table tr.alt td{background:var(--bg2);}
+.rnk{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:600;background:var(--bg2);color:var(--t2);}
+.rnk.gold{background:#fef3c7;color:#92400e;}
+.rnk.silver{background:#f3f4f6;color:#374151;}
+.rnk.bronze{background:#fde8d8;color:#92400e;}
+.gbadge{font-size:10px;padding:1px 6px;border-radius:99px;background:var(--bg2);border:.5px solid var(--b3);color:var(--t2);}
+.dpos{color:var(--ts);}
+.dneg{color:var(--tw);}
+.grp-filter{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
+.fnote{font-size:11px;color:var(--t3);margin-top:10px;}
+/* stats bar */
+.stats{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;}
+.stat{display:flex;flex-direction:column;}
+.stat-lbl{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;}
+.stat-val{font-size:16px;font-weight:600;color:var(--t1);}
+/* lookup */
+.lookup-sel{font-family:var(--sans);font-size:13px;padding:5px 8px;border:.5px solid var(--b3);border-radius:var(--rm);background:var(--bg2);color:var(--t1);}
+.lk-wrap{border:.5px solid var(--b3);border-radius:var(--rl);overflow:hidden;}
+.lk-head,.lk-row{display:grid;grid-template-columns:60px 80px 1fr 28px 1fr 80px;gap:4px;align-items:center;padding:7px 10px;}
+.lk-head{background:var(--bg2);font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;}
+.lk-row{border-top:.5px solid var(--b3);}
+.lk-row.alt{background:var(--bg2);}
+/* bracket */
+.bracket-wrap{overflow-x:auto;padding-bottom:8px;}
+.bracket{display:flex;gap:0;align-items:flex-start;}
+.bk-round{display:flex;flex-direction:column;min-width:160px;}
+.bk-round-hdr{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;padding:0 8px 8px;}
+.bk-spacer{flex:1;}
+.bk-match{border:.5px solid var(--b3);border-radius:var(--rm);background:var(--bg1);margin:0 8px 4px;}
+.bk-match.bye{opacity:.5;}
+.bk-match.complete{border-color:var(--bs);}
+.bk-entry{padding:6px 10px;font-size:12px;display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:32px;}
+.bk-entry:first-child{border-bottom:.5px solid var(--b3);}
+.bk-entry.winner{font-weight:600;color:var(--ts);}
+.bk-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bk-score{font-family:var(--mono);font-size:12px;width:32px;text-align:center;padding:2px 4px;border:.5px solid var(--b3);border-radius:4px;background:var(--bg2);color:var(--t1);}
+.bk-score.win{border-color:var(--bs);background:var(--bgs);color:var(--ts);}
+.bk-connector{display:flex;flex-direction:column;justify-content:center;width:16px;margin-bottom:4px;}
+.bk-connector svg{overflow:visible;}
+.bk-group{display:flex;align-items:center;margin-bottom:8px;}
+.bk-empty{font-size:12px;color:var(--t3);padding:12px 10px;text-align:center;}
+.bk-section-hdr{font-size:11px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;padding:4px 0 8px;}
+.seed-item{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg1);border:.5px solid var(--b3);border-radius:var(--rm);margin-bottom:4px;cursor:grab;user-select:none;transition:background .15s;}
+.seed-item:active{cursor:grabbing;}
+.seed-item.drag-over{background:var(--bg3);border-color:var(--b1);}
+.seed-item.dragging{opacity:.4;}
+.seed-num{font-size:11px;font-family:var(--mono);color:var(--t3);width:22px;flex-shrink:0;}
+.seed-name{font-size:13px;color:var(--t1);}
+.seed-handle{font-size:14px;color:var(--t3);flex-shrink:0;}
+.bk-pick{font-size:10px;padding:2px 8px;border-radius:4px;border:.5px solid var(--b2);background:var(--bg2);color:var(--t2);cursor:pointer;font-family:var(--sans);flex-shrink:0;}
+.bk-pick:hover{background:var(--bg3);color:var(--t1);}
+.bk-pick.picked{background:var(--bgs);color:var(--ts);border-color:var(--bs);font-weight:600;}
+/* pool standings section */
+.pool-section{margin-bottom:20px;}
+.pool-section-hdr{font-size:12px;font-weight:600;color:var(--t2);margin-bottom:8px;padding-bottom:6px;border-bottom:.5px solid var(--b3);}
+/* empty state */
+.empty{padding:40px;text-align:center;color:var(--t3);}
+/* Admin / locked mode */
+.admin-badge{display:none;font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--bgs);color:var(--ts);border:.5px solid var(--bs);letter-spacing:.04em;}
+body.admin-mode .admin-badge{display:inline-block;}
+.lock-btn{background:none;border:.5px solid var(--b2);border-radius:6px;padding:5px 10px;font-size:12px;font-family:var(--sans);cursor:pointer;color:var(--t2);display:flex;align-items:center;gap:5px;}
+.lock-btn:hover{background:var(--bg2);}
+/* Locked mode: score inputs visible to all; hide admin-only controls */
+body.viewer-locked .bk-pick{display:none;}
+body.viewer-locked .seed-editor{display:none!important;}
+body.viewer-locked #btn-edit-seeds{display:none!important;}
+body.viewer-locked .btn-seed-bracket-wrap{display:none;}
+body.viewer-locked .teams-rename-list{display:none;}
+body.viewer-locked #teams-apply-btn{display:none;}
+body.viewer-locked #teams-reset-btn{display:none;}
+body.viewer-locked .store-btn-clear{display:none;}
+body.viewer-locked .store-btn-backup{display:none;}
+body.viewer-locked .store-btn-restore{display:none;}
+/* score-static shown when no score yet, hidden in admin (inputs take over) */
+body.viewer-locked .score-static{display:inline-block;}
+/* Admin mode */
+/* score-in always visible */
+body.admin-mode .score-static{display:none;}
+body.admin-mode .bk-pick{display:inline-block;}
+/* Score static: read-only value shown in locked mode */
+.score-static{display:none;width:64px;text-align:center;font-family:var(--mono);font-size:13px;color:var(--t1);}
+.score-static.win{color:var(--ts);font-weight:600;}
+.score-static.lose{color:var(--tw);}
+@media(max-width:580px){
+  .net-head,.net-row{grid-template-columns:44px 1fr 52px 18px 52px 1fr 64px;padding:6px 6px;}
+  .lk-head,.lk-row{grid-template-columns:44px 60px 1fr 22px 1fr 60px;}
+  .bk-round{min-width:130px;}
+  .card{padding:14px;}
+}
 </style>
 </head>
 <body>
-<div id="kob-loading">
-  <h2>KOB Platform</h2>
-  <p id="load-status">Loading event...</p>
+<div id="kob-loading" style="position:fixed;inset:0;background:var(--bg1);display:flex;align-items:center;justify-content:center;z-index:999;flex-direction:column;gap:12px;">
+  <div style="color:var(--ts);font-size:18px;font-weight:600;">KOB Platform</div>
+  <div id="load-status" style="color:var(--t2);font-size:13px;">Loading...</div>
 </div>
+<header class="page-hdr" style="display:flex;justify-content:space-between;align-items:center;">
+  <div>
+    <h1 id="page-title" style="display:flex;align-items:center;gap:8px;">KOB Viewer <span class="admin-badge">ADMIN</span></h1>
+    <span id="page-sub"></span>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <button class="lock-btn store-btn-backup" onclick="storeExport()" title="Download backup" style="font-size:11px;">Backup</button>
+    <button class="lock-btn store-btn-restore" onclick="storeImport()" title="Restore from backup" style="font-size:11px;">Restore</button>
+    <button class="lock-btn store-btn-clear" onclick="storeClear()" title="Clear all data" style="font-size:11px;color:var(--tw);border-color:var(--tw);">Clear</button>
+    <button class="lock-btn" onclick="toggleAdmin()" id="lock-btn">
+      <span id="lock-icon">[lock]</span> <span id="lock-label">View only</span>
+    </button>
+  </div>
+</header>
+<main class="page-main">
+<div class="card">
+  <div class="tabs" id="tabs"></div>
+  <div id="tab-schedule" style="display:none">
+    <div id="stats-bar" class="stats"></div>
+    <div class="nav-row"><div class="nav-l" id="week-btns"></div><div class="nav-r"><button class="btn-sm green" onclick="exportXLSX()">Export .xlsx</button></div></div>
+    <div class="round-row" id="round-btns"></div>
+    <div class="prog-row"><span class="prog-lbl" id="prog-lbl"></span><div class="prog-wrap"><div class="prog-bar" id="prog-bar" style="width:0%"></div></div></div>
+    <div class="net-table" id="net-table"></div>
+    <p class="fnote" id="fnote"></p>
+  </div>
+  <div id="tab-pools" style="display:none">
+    <div class="nav-row"><div class="nav-l" id="pool-btns"></div><div class="nav-r"><button class="btn-sm" id="btn-export-sheets" style="display:none" onclick="exportSheetsXLSX()">Export to Sheets</button> <button class="btn-sm green" onclick="exportXLSX()">Export .xlsx</button></div></div>
+    <div class="round-row" id="pool-round-btns"></div>
+    <div class="prog-row"><span class="prog-lbl" id="pool-prog-lbl"></span><div class="prog-wrap"><div class="prog-bar" id="pool-prog-bar" style="width:0%"></div></div></div>
+    <div id="pool-table"></div>
+  </div>
+  <div id="tab-standings" style="display:none">
+    <div class="grp-filter" id="std-filter"></div>
+    <div class="std-wrap"><table class="std-table" id="std-table"></table></div>
+    <p class="fnote" id="std-note"></p>
+  </div>
+  <div id="tab-bracket" style="display:none">
+    <div class="nav-row" style="margin-bottom:14px;">
+      <div id="bracket-sub-nav" class="nav-l"></div>
+      <div style="display:flex;gap:6px;">
+        <button class="btn-sm" onclick="seedBracket()" id="btn-seed-bracket">Seed from standings</button>
+        <button class="btn-sm" onclick="toggleSeedEditor()" id="btn-edit-seeds" style="display:none">Edit seeds</button>
+      </div>
+    </div>
+    <!-- Seed editor: draggable list, shown instead of bracket when editing -->
+    <div id="seed-editor" style="display:none;margin-bottom:16px;">
+      <p style="font-size:12px;color:var(--t2);margin-bottom:10px;">Drag entries to reorder seeds. Changes rebuild the bracket.</p>
+      <div id="seed-list-wrap" style="max-width:320px;"></div>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button class="btn-sm sel" onclick="confirmSeedEdit()">Confirm & rebuild</button>
+        <button class="btn-sm" onclick="cancelSeedEdit()">Cancel</button>
+      </div>
+    </div>
+    <div id="bracket-wrap"></div>
+  </div>
+  <div id="tab-lookup" style="display:none">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+      <label style="font-size:13px;color:var(--t2);">Player:</label>
+      <select id="lookup-sel" class="lookup-sel" onchange="renderLookup()"></select>
+    </div>
+    <div id="lookup-res"></div>
+  </div>
+  <!-- Traditional League schedule tab -->
+  <div id="tab-trad-lg-schedule" style="display:none">
+    <div class="nav-row">
+      <div class="nav-l" id="trad-week-btns"></div>
+      <button class="btn-sm green" onclick="exportXLSX()">Export .xlsx</button>
+    </div>
+    <div class="round-row" id="trad-round-btns"></div>
+    <div class="prog-row"><span class="prog-lbl" id="trad-prog-lbl"></span><div class="prog-wrap"><div class="prog-bar" id="trad-prog-bar" style="width:0%"></div></div></div>
+    <div id="trad-lg-table"></div>
+  </div>
+  <!-- KOB Quads schedule tab -->
+  <div id="tab-quads-schedule" style="display:none">
+    <div class="nav-row">
+      <div class="nav-l" id="quads-stage-btns"></div>
+      <button class="btn-sm green" onclick="exportXLSX()">Export .xlsx</button>
+    </div>
+    <div class="nav-l" id="quads-pool-btns" style="margin-bottom:10px;flex-wrap:wrap;gap:6px;display:flex;"></div>
+    <div class="prog-row"><span class="prog-lbl" id="quads-prog-lbl"></span><div class="prog-wrap"><div class="prog-bar" id="quads-prog-bar"></div></div></div>
+    <div id="quads-table"></div>
+    <div id="rq-pool-editor"></div>
+    <div id="rq-actions"></div>
+  </div>
+  <!-- KOB Random Mix schedule tab -->
+  <div id="tab-mix-schedule" style="display:none">
+    <div class="nav-row">
+      <div class="nav-l" id="mix-round-btns"></div>
+      <button class="btn-sm green" onclick="exportXLSX()">Export .xlsx</button>
+    </div>
+    <div class="prog-row"><span class="prog-lbl" id="mix-prog-lbl"></span><div class="prog-wrap"><div class="prog-bar" id="mix-prog-bar" style="width:0%"></div></div></div>
+    <div id="mix-table"></div>
+  </div>
+  <!-- KOB Standings (shared for quads + mix) -->
+  <div id="tab-mix-standings" style="display:none">
+    <div class="std-wrap"><table class="std-table" id="std-table-mix"></table></div>
+  </div>
+  <div id="tab-teams" style="display:none">
+    <p style="font-size:13px;color:var(--t2);margin-bottom:14px;">Rename entries — display names update across all tabs instantly. Original names are preserved internally.</p>
+    <div id="teams-rename-list" class="teams-rename-list" style="max-width:480px;"></div>
+    <div style="display:flex;gap:8px;margin-top:14px;">
+      <button class="btn-sm sel" id="teams-apply-btn" onclick="applyRenames()">Apply</button>
+      <button class="btn-sm" id="teams-reset-btn" onclick="resetRenames()">Reset to originals</button>
+    </div>
+  </div>
+</div>
+</main>
 
 <script>
 var SUPABASE_URL='https://bdxsvlcojqmushnndaxz.supabase.co';
@@ -133,7 +384,9 @@ async function boot(){
     console.log('KOB viewer loaded');
     // Dispatch init — mirrors the standalone viewer IIFE
     fmt=window.SD.format||'kob_league';
-    document.getElementById('page-title').textContent=window.SD.title||'KOB Viewer';
+    // page-title may not exist in SaaS layout — set safely
+    var ptEl=document.getElementById('page-title');
+    if(ptEl) ptEl.textContent=window.SD.title||'KOB Viewer';
     document.title=(window.SD.title||'KOB Viewer')+' | KOB Platform';
     storeLoad();
     document.body.classList.add('viewer-locked');
