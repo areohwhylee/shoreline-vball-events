@@ -1,13 +1,4 @@
-// KOB Viewer Core v3.19
-(function(){
-var _s=document.createElement('style');_s.textContent="\n:root{\n  --sans:'DM Sans',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;\n  --t1:#1a1a18;--t2:#58584f;--t3:#9a9a90;--ti:#185fa5;--ts:#0f6e56;--tw:#993c1d;--tp:#6b3fa0;\n  --bg1:#fff;--bg2:#f4f3ef;--bg3:#eceae4;--bgs:#e1f5ee;--bgp:#f0eaf8;\n  --b3:rgba(26,26,24,.13);--b2:rgba(26,26,24,.25);--b1:rgba(26,26,24,.42);\n  --bs:#0f6e56;--bp:#6b3fa0;--rm:8px;--rl:12px;\n}\n@media(prefers-color-scheme:dark){:root{\n  --t1:#f0efe8;--t2:#9a9a90;--t3:#68685f;--ti:#85b7eb;--ts:#5dcaa5;--tw:#f0997b;--tp:#c49ee8;\n  --bg1:#1c1c1a;--bg2:#262623;--bg3:#2e2e2b;--bgs:#085041;--bgp:#2e1e45;\n  --b3:rgba(240,239,232,.13);--b2:rgba(240,239,232,.25);--b1:rgba(240,239,232,.42);\n  --bs:#5dcaa5;--bp:#c49ee8;\n}}\n*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}\nbody{font-family:var(--sans);background:var(--bg2);color:var(--t1);min-height:100vh;}\n.page-hdr{background:var(--bg1);border-bottom:.5px solid var(--b3);padding:14px 20px;}\n.page-hdr h1{font-size:17px;font-weight:600;}\n.page-hdr span{font-size:12px;color:var(--t3);display:block;margin-top:2px;}\n.page-main{max-width:900px;margin:0 auto;padding:20px 16px 60px;}\n.card{background:var(--bg1);border:.5px solid var(--b3);border-radius:16px;padding:24px;}\n.tabs{display:flex;gap:2px;border-bottom:.5px solid var(--b3);margin-bottom:20px;flex-wrap:wrap;}\n.tab{background:transparent;border:.5px solid transparent;border-radius:8px 8px 0 0;padding:8px 16px;cursor:pointer;font-size:13px;font-family:var(--sans);color:var(--t2);margin-bottom:-.5px;}\n.tab.active{background:var(--bg1);border-color:var(--b2);border-bottom-color:var(--bg1);color:var(--t1);}\n/* nav rows */\n.nav-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;}\n.nav-l{display:flex;gap:6px;flex-wrap:wrap;}\n.round-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}\n.btn-sm{padding:5px 12px;font-size:12px;font-family:var(--sans);cursor:pointer;border-radius:6px;border:.5px solid var(--b2);background:var(--bg2);color:var(--t2);}\n.btn-sm.sel,.btn-sm:hover{background:var(--bg3);color:var(--t1);}\n.btn-sm.green{color:var(--ts);border-color:var(--bs);}\n.btn-sm.green:hover{background:var(--bgs);}\n.btn-xs{padding:3px 9px;font-size:11px;font-family:var(--sans);cursor:pointer;border-radius:6px;border:.5px solid var(--b2);background:var(--bg2);color:var(--t2);}\n.btn-xs.sel,.btn-xs:hover{background:var(--bg3);color:var(--t1);}\n/* progress */\n.prog-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;}\n.prog-lbl{font-size:12px;color:var(--t3);white-space:nowrap;}\n.prog-wrap{flex:1;height:4px;background:var(--bg3);border-radius:2px;}\n.prog-bar{height:4px;background:var(--ts);border-radius:2px;transition:width .3s;}\n/* match table */\n.net-table{border:.5px solid var(--b3);border-radius:var(--rl);overflow:hidden;}\n.net-head,.net-row{display:grid;grid-template-columns:64px 1fr 70px 28px 70px 1fr 80px;gap:4px;align-items:center;padding:7px 10px;}\n.net-head{background:var(--bg2);font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;}\n.net-row{border-top:.5px solid var(--b3);}\n.net-row.alt{background:var(--bg2);}\n.nnum{font-size:11px;color:var(--t3);font-family:var(--mono);}\n.pair{display:flex;align-items:center;gap:4px;font-size:13px;}\n.pa{color:var(--ti);}\n.pb{color:var(--tp);}\n.plus{color:var(--t3);font-size:11px;}\n.vsc{font-size:11px;color:var(--t3);text-align:center;}\n.score-in{width:64px;font-family:var(--mono);font-size:13px;text-align:center;padding:4px 6px;border:.5px solid var(--b3);border-radius:6px;background:var(--bg2);color:var(--t1);}\n.score-in.win{border-color:var(--bs);background:var(--bgs);color:var(--ts);}\n.score-in.lose{border-color:var(--b2);}\n/* pool header */\n.pool-hdr{font-size:12px;font-weight:600;color:var(--t2);padding:8px 10px;background:var(--bg2);border-radius:var(--rm);margin-bottom:8px;display:flex;align-items:center;gap:8px;}\n.pool-badge{font-size:10px;padding:1px 7px;border-radius:99px;background:var(--bgp);color:var(--tp);font-weight:600;}\n/* standings */\n.std-wrap{overflow-x:auto;}\n.std-table{width:100%;border-collapse:collapse;font-size:13px;}\n.std-table th{font-size:10px;font-weight:500;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;padding:8px 10px;text-align:left;background:var(--bg2);border-bottom:.5px solid var(--b3);}\n.std-table th.r,.std-table td.r{text-align:right;}\n.std-table td{padding:8px 10px;border-bottom:.5px solid var(--b3);color:var(--t1);}\n.std-table tr:last-child td{border-bottom:none;}\n.std-table tr.alt td{background:var(--bg2);}\n.rnk{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:600;background:var(--bg2);color:var(--t2);}\n.rnk.gold{background:#fef3c7;color:#92400e;}\n.rnk.silver{background:#f3f4f6;color:#374151;}\n.rnk.bronze{background:#fde8d8;color:#92400e;}\n.gbadge{font-size:10px;padding:1px 6px;border-radius:99px;background:var(--bg2);border:.5px solid var(--b3);color:var(--t2);}\n.dpos{color:var(--ts);}\n.dneg{color:var(--tw);}\n.grp-filter{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}\n.fnote{font-size:11px;color:var(--t3);margin-top:10px;}\n/* stats bar */\n.stats{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;}\n.stat{display:flex;flex-direction:column;}\n.stat-lbl{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;}\n.stat-val{font-size:16px;font-weight:600;color:var(--t1);}\n/* lookup */\n.lookup-sel{font-family:var(--sans);font-size:13px;padding:5px 8px;border:.5px solid var(--b3);border-radius:var(--rm);background:var(--bg2);color:var(--t1);}\n.lk-wrap{border:.5px solid var(--b3);border-radius:var(--rl);overflow:hidden;}\n.lk-head,.lk-row{display:grid;grid-template-columns:60px 80px 1fr 28px 1fr 80px;gap:4px;align-items:center;padding:7px 10px;}\n.lk-head{background:var(--bg2);font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;}\n.lk-row{border-top:.5px solid var(--b3);}\n.lk-row.alt{background:var(--bg2);}\n/* bracket */\n.bracket-wrap{overflow-x:auto;padding-bottom:8px;}\n.bracket{display:flex;gap:0;align-items:flex-start;}\n.bk-round{display:flex;flex-direction:column;min-width:160px;}\n.bk-round-hdr{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;padding:0 8px 8px;}\n.bk-spacer{flex:1;}\n.bk-match{border:.5px solid var(--b3);border-radius:var(--rm);background:var(--bg1);margin:0 8px 4px;}\n.bk-match.bye{opacity:.5;}\n.bk-match.complete{border-color:var(--bs);}\n.bk-entry{padding:6px 10px;font-size:12px;display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:32px;}\n.bk-entry:first-child{border-bottom:.5px solid var(--b3);}\n.bk-entry.winner{font-weight:600;color:var(--ts);}\n.bk-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}\n.bk-score{font-family:var(--mono);font-size:12px;width:32px;text-align:center;padding:2px 4px;border:.5px solid var(--b3);border-radius:4px;background:var(--bg2);color:var(--t1);}\n.bk-score.win{border-color:var(--bs);background:var(--bgs);color:var(--ts);}\n.bk-connector{display:flex;flex-direction:column;justify-content:center;width:16px;margin-bottom:4px;}\n.bk-connector svg{overflow:visible;}\n.bk-group{display:flex;align-items:center;margin-bottom:8px;}\n.bk-empty{font-size:12px;color:var(--t3);padding:12px 10px;text-align:center;}\n.bk-section-hdr{font-size:11px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;padding:4px 0 8px;}\n.seed-item{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg1);border:.5px solid var(--b3);border-radius:var(--rm);margin-bottom:4px;cursor:grab;user-select:none;transition:background .15s;}\n.seed-item:active{cursor:grabbing;}\n.seed-item.drag-over{background:var(--bg3);border-color:var(--b1);}\n.seed-item.dragging{opacity:.4;}\n.seed-num{font-size:11px;font-family:var(--mono);color:var(--t3);width:22px;flex-shrink:0;}\n.seed-name{font-size:13px;color:var(--t1);}\n.seed-handle{font-size:14px;color:var(--t3);flex-shrink:0;}\n.bk-pick{font-size:10px;padding:2px 8px;border-radius:4px;border:.5px solid var(--b2);background:var(--bg2);color:var(--t2);cursor:pointer;font-family:var(--sans);flex-shrink:0;}\n.bk-pick:hover{background:var(--bg3);color:var(--t1);}\n.bk-pick.picked{background:var(--bgs);color:var(--ts);border-color:var(--bs);font-weight:600;}\n/* pool standings section */\n.pool-section{margin-bottom:20px;}\n.pool-section-hdr{font-size:12px;font-weight:600;color:var(--t2);margin-bottom:8px;padding-bottom:6px;border-bottom:.5px solid var(--b3);}\n/* empty state */\n.empty{padding:40px;text-align:center;color:var(--t3);}\n/* Admin / locked mode */\n.admin-badge{display:none;font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--bgs);color:var(--ts);border:.5px solid var(--bs);letter-spacing:.04em;}\nbody.admin-mode .admin-badge{display:inline-block;}\n.lock-btn{background:none;border:.5px solid var(--b2);border-radius:6px;padding:5px 10px;font-size:12px;font-family:var(--sans);cursor:pointer;color:var(--t2);display:flex;align-items:center;gap:5px;}\n.lock-btn:hover{background:var(--bg2);}\n/* Locked mode: score inputs visible to all; hide admin-only controls */\nbody.viewer-locked .bk-pick{display:none;}\nbody.viewer-locked .seed-editor{display:none!important;}\nbody.viewer-locked #btn-edit-seeds{display:none!important;}\nbody.viewer-locked .btn-seed-bracket-wrap{display:none;}\nbody.viewer-locked .teams-rename-list{display:none;}\nbody.viewer-locked #teams-apply-btn{display:none;}\nbody.viewer-locked #teams-reset-btn{display:none;}\nbody.viewer-locked .store-btn-clear{display:none;}\nbody.viewer-locked .store-btn-backup{display:none;}\nbody.viewer-locked .store-btn-restore{display:none;}\n/* score-static shown when no score yet, hidden in admin (inputs take over) */\nbody.viewer-locked .score-static{display:inline-block;}\n/* Admin mode */\n/* score-in always visible */\nbody.admin-mode .score-static{display:none;}\nbody.admin-mode .bk-pick{display:inline-block;}\n/* Score static: read-only value shown in locked mode */\n.score-static{display:none;width:64px;text-align:center;font-family:var(--mono);font-size:13px;color:var(--t1);}\n.score-static.win{color:var(--ts);font-weight:600;}\n.score-static.lose{color:var(--tw);}\n@media(max-width:580px){\n  .net-head,.net-row{grid-template-columns:44px 1fr 52px 18px 52px 1fr 64px;padding:6px 6px;}\n  .lk-head,.lk-row{grid-template-columns:44px 60px 1fr 22px 1fr 60px;}\n  .bk-round{min-width:130px;}\n  .card{padding:14px;}\n}\n";document.head.appendChild(_s);
-var _tmp=document.createElement('div');_tmp.innerHTML='<header class="page-hdr" style="display:flex;justify-content:space-between;align-items:center;">\n  <div>\n    <h1 id="page-title" style="display:flex;align-items:center;gap:8px;">KOB Viewer <span class="admin-badge">ADMIN</span></h1>\n    <span id="page-sub"></span>\n  </div>\n  <div style="display:flex;gap:8px;align-items:center;">\n    <button class="lock-btn store-btn-backup" onclick="storeExport()" title="Download backup" style="font-size:11px;">Backup</button>\n    <button class="lock-btn store-btn-restore" onclick="storeImport()" title="Restore from backup" style="font-size:11px;">Restore</button>\n    <button class="lock-btn store-btn-clear" onclick="storeClear()" title="Clear all data" style="font-size:11px;color:var(--tw);border-color:var(--tw);">Clear</button>\n    <button class="lock-btn" onclick="toggleAdmin()" id="lock-btn">\n      <span id="lock-icon">[lock]</span> <span id="lock-label">View only</span>\n    </button>\n  </div>\n</header>\n<main class="page-main">\n<div class="card">\n  <div class="tabs" id="tabs"></div>\n  <div id="tab-schedule" style="display:none">\n    <div id="stats-bar" class="stats"></div>\n    <div class="nav-row"><div class="nav-l" id="week-btns"></div><div class="nav-r"><button class="btn-sm green" onclick="exportXLSX()">Export .xlsx</button></div></div>\n    <div class="round-row" id="round-btns"></div>\n    <div class="prog-row"><span class="prog-lbl" id="prog-lbl"></span><div class="prog-wrap"><div class="prog-bar" id="prog-bar" style="width:0%"></div></div></div>\n    <div class="net-table" id="net-table"></div>\n    <p class="fnote" id="fnote"></p>\n  </div>\n  <div id="tab-pools" style="display:none">\n    <div class="nav-row"><div class="nav-l" id="pool-btns"></div><div class="nav-r"><button class="btn-sm" id="btn-export-sheets" style="display:none" onclick="exportSheetsXLSX()">Export to Sheets</button> <button class="btn-sm green" onclick="exportXLSX()">Export .xlsx</button></div></div>\n    <div class="round-row" id="pool-round-btns"></div>\n    <div class="prog-row"><span class="prog-lbl" id="pool-prog-lbl"></span><div class="prog-wrap"><div class="prog-bar" id="pool-prog-bar" style="width:0%"></div></div></div>\n    <div id="pool-table"></div>\n  </div>\n  <div id="tab-standings" style="display:none">\n    <div class="grp-filter" id="std-filter"></div>\n    <div class="std-wrap"><table class="std-table" id="std-table"></table></div>\n    <p class="fnote" id="std-note"></p>\n  </div>\n  <div id="tab-bracket" style="display:none">\n    <div class="nav-row" style="margin-bottom:14px;">\n      <div id="bracket-sub-nav" class="nav-l"></div>\n      <div style="display:flex;gap:6px;">\n        <button class="btn-sm" onclick="seedBracket()" id="btn-seed-bracket">Seed from standings</button>\n        <button class="btn-sm" onclick="toggleSeedEditor()" id="btn-edit-seeds" style="display:none">Edit seeds</button>\n      </div>\n    </div>\n    <!-- Seed editor: draggable list, shown instead of bracket when editing -->\n    <div id="seed-editor" style="display:none;margin-bottom:16px;">\n      <p style="font-size:12px;color:var(--t2);margin-bottom:10px;">Drag entries to reorder seeds. Changes rebuild the bracket.</p>\n      <div id="seed-list-wrap" style="max-width:320px;"></div>\n      <div style="display:flex;gap:8px;margin-top:12px;">\n        <button class="btn-sm sel" onclick="confirmSeedEdit()">Confirm & rebuild</button>\n        <button class="btn-sm" onclick="cancelSeedEdit()">Cancel</button>\n      </div>\n    </div>\n    <div id="bracket-wrap"></div>\n  </div>\n  <div id="tab-lookup" style="display:none">\n    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">\n      <label style="font-size:13px;color:var(--t2);">Player:</label>\n      <select id="lookup-sel" class="lookup-sel" onchange="renderLookup()"></select>\n    </div>\n    <div id="lookup-res"></div>\n  </div>\n  <!-- Traditional League schedule tab -->\n  <div id="tab-trad-lg-schedule" style="display:none">\n    <div class="nav-row">\n      <div class="nav-l" id="trad-week-btns"></div>\n      <button class="btn-sm green" onclick="exportXLSX()">Export .xlsx</button>\n    </div>\n    <div class="round-row" id="trad-round-btns"></div>\n    <div class="prog-row"><span class="prog-lbl" id="trad-prog-lbl"></span><div class="prog-wrap"><div class="prog-bar" id="trad-prog-bar" style="width:0%"></div></div></div>\n    <div id="trad-lg-table"></div>\n  </div>\n  <!-- KOB Quads schedule tab -->\n  <div id="tab-quads-schedule" style="display:none">\n    <div class="nav-row">\n      <div class="nav-l" id="quads-stage-btns"></div>\n      <button class="btn-sm green" onclick="exportXLSX()">Export .xlsx</button>\n    </div>\n    <div class="nav-l" id="quads-pool-btns" style="margin-bottom:10px;flex-wrap:wrap;gap:6px;display:flex;"></div>\n    <div class="prog-row"><span class="prog-lbl" id="quads-prog-lbl"></span><div class="prog-wrap"><div class="prog-bar" id="quads-prog-bar" style="width:0%"></div></div></div>\n    <div id="quads-table"></div>\n  </div>\n  <!-- KOB Random Mix schedule tab -->\n  <div id="tab-mix-schedule" style="display:none">\n    <div class="nav-row">\n      <div class="nav-l" id="mix-round-btns"></div>\n      <button class="btn-sm green" onclick="exportXLSX()">Export .xlsx</button>\n    </div>\n    <div class="prog-row"><span class="prog-lbl" id="mix-prog-lbl"></span><div class="prog-wrap"><div class="prog-bar" id="mix-prog-bar" style="width:0%"></div></div></div>\n    <div id="mix-table"></div>\n  </div>\n  <!-- KOB Standings (shared for quads + mix) -->\n  <div id="tab-mix-standings" style="display:none">\n    <div class="std-wrap"><table class="std-table" id="std-table"></table></div>\n  </div>\n  <div id="tab-teams" style="display:none">\n    <p style="font-size:13px;color:var(--t2);margin-bottom:14px;">Rename entries — display names update across all tabs instantly. Original names are preserved internally.</p>\n    <div id="teams-rename-list" class="teams-rename-list" style="max-width:480px;"></div>\n    <div style="display:flex;gap:8px;margin-top:14px;">\n      <button class="btn-sm sel" id="teams-apply-btn" onclick="applyRenames()">Apply</button>\n      <button class="btn-sm" id="teams-reset-btn" onclick="resetRenames()">Reset to originals</button>\n    </div>\n  </div>\n</div>\n</main>';
-while(_tmp.firstChild) document.body.appendChild(_tmp.firstChild);
-document.body.style.display='';document.body.style.alignItems='';document.body.style.justifyContent='';
-})();
 
-
-var SD = window.SD || {};
 var scores = {};   // key->{s1,s2} for all formats
 // allBrackets[i] = {name, seeds, rounds} -- one per Gold/Silver/etc
 var allBrackets = [];
@@ -17,13 +8,13 @@ var nameMap={};  // originalName -> displayName
 var adminMode=false;
 var _storeKey='';  // localStorage key prefix, set at init from event title
 
-function storeSave(){if(typeof window._storeSaveOverride==="function"){window._storeSaveOverride();return;}
+function storeSave(){
   if(!_storeKey) return;
   try{
     localStorage.setItem(_storeKey+'.scores', JSON.stringify(scores));
     localStorage.setItem(_storeKey+'.nameMap', JSON.stringify(nameMap));
     // Save bracket state (seeds + picks only, not full round structure)
-    var bracketState=allBrackets.map(function(bk){
+    var bracketState=(allBrackets||[]).map(function(bk){
       return {name:bk.name, seeds:bk.seeds, wins:extractWins(bk)};
     });
     localStorage.setItem(_storeKey+'.brackets', JSON.stringify(bracketState));
@@ -42,7 +33,7 @@ function extractWins(bk){
   return wins;
 }
 
-function storeLoad(){if(typeof window._storeLoadOverride==="function"){window._storeLoadOverride();return;}
+function storeLoad(){
   if(!_storeKey) return;
   try{
     var sc=localStorage.getItem(_storeKey+'.scores');
@@ -69,7 +60,7 @@ function storeLoadBrackets(){
   }catch(e){}
 }
 
-function storeClear(){if(typeof window._storeClearOverride==="function"){window._storeClearOverride();return;}
+function storeClear(){
   if(!_storeKey) return;
   var confirm1=window.confirm('WARNING: This will permanently delete all saved scores, team names, and bracket picks for this event.\n\nDo you want to download a backup first?');
   if(confirm1) storeExport();
@@ -87,7 +78,7 @@ function storeClear(){if(typeof window._storeClearOverride==="function"){window.
   }catch(e){}
 }
 
-function storeExport(){if(typeof window._storeExportOverride==="function"){window._storeExportOverride();return;}
+function storeExport(){
   if(!_storeKey) return;
   var backup={
     key:_storeKey,
@@ -105,7 +96,7 @@ function storeExport(){if(typeof window._storeExportOverride==="function"){windo
   URL.revokeObjectURL(a.href);
 }
 
-function storeImport(){if(typeof window._storeImportOverride==="function"){window._storeImportOverride();return;}
+function storeImport(){
   var input=document.createElement('input');
   input.type='file'; input.accept='.json';
   input.onchange=function(){
@@ -161,9 +152,9 @@ function dn(name){
   return nameMap[name]||name;
 }
 function initNameMap(){
-  // Build nameMap from all entries in SD, defaulting to original name
   nameMap={};
   if(SD.entries) SD.entries.forEach(function(e){ if(!nameMap[e]) nameMap[e]=e; });
+  else if(SD.allEntries) SD.allEntries.forEach(function(e){ if(!nameMap[e]) nameMap[e]=e; });
   else if(SD.pools) SD.pools.forEach(function(pool){ pool.entries.forEach(function(e){ if(!nameMap[e]) nameMap[e]=e; }); });
   else if(SD.gA){ SD.gA.forEach(function(e){nameMap[e]=e;}); SD.gB.forEach(function(e){nameMap[e]=e;}); }
 }
@@ -185,7 +176,7 @@ function switchTab(t){
   document.querySelectorAll('.tab').forEach(function(b){
     b.classList.toggle('active', b.textContent.toLowerCase()===t||b.getAttribute('onclick').indexOf("'"+t+"'")>=0);
   });
-  if(t==='standings') renderStandings();
+  if(t==='standings'||t==='mix-standings') renderStandings();
   if(t==='bracket') renderBracket();
   if(t==='lookup') renderLookupSelect();
   if(t==='teams') renderTeamsTab();
@@ -201,6 +192,7 @@ function refreshRates(e){
   e.winRate=e.gp>0?e.w/e.gp:0;
   e.diffPerGame=e.gp>0?(e.pf-e.pa)/e.gp:0;
   e.pfPerGame=e.gp>0?e.pf/e.gp:0;
+  e.paPerGame=e.gp>0?e.pa/e.gp:0;
   return e;
 }
 function nameHash(s){
@@ -1198,8 +1190,10 @@ function renderLookupSelect(){
   } else if(fmt==='kob_league'){
     sd.gA.forEach(function(n){opt+='<option value="'+n+'|A">'+n+' (A)</option>';});
     sd.gB.forEach(function(n){opt+='<option value="'+n+'|B">'+n+' (B)</option>';});
+  } else if(fmt==='kob_quads'||fmt==='kob_random_mix'){
+    (sd.allEntries||sd.entries||[]).forEach(function(e){opt+='<option value="'+e+'">'+dn(e)+'</option>';});
   } else {
-    sd.entries.forEach(function(e){opt+='<option value="'+e+'">'+e+'</option>';});
+    (sd.entries||[]).forEach(function(e){opt+='<option value="'+e+'">'+dn(e)+'</option>';});
   }
   document.getElementById('lookup-sel').innerHTML=opt;
 }
@@ -1208,6 +1202,7 @@ function renderLookup(){
   if(!val){document.getElementById('lookup-res').innerHTML='';return;}
   if(fmt==='kob_league') renderLgLookup(val);
   else if(fmt==='traditional_league') renderTradLeagueLookup(val);
+  else if(fmt==='kob_quads') renderQuadsLookup(val);
   else renderTournLookup(val);
 }
 function renderLgLookup(val){
@@ -1232,6 +1227,34 @@ function renderLgLookup(val){
     html+='<div class="lk-row'+(i%2?' alt':'')+'"><span style="font-size:12px;color:var(--t2);">'+r.label+'</span><span></span><span class="pair"><span class="pa">'+r.partner+'</span></span><span class="vsc">vs</span><span class="pair"><span class="pa">'+r.opp1+'</span><span class="plus">+</span><span class="pb">'+r.opp2+'</span></span>'+resHtml+'</div>';
   });
   document.getElementById('lookup-res').innerHTML=html+'</div>';
+}
+function renderQuadsLookup(val){
+  var res=document.getElementById('lookup-res'); if(!res) return;
+  var rows=[];
+  rqRounds.forEach(function(round,ri){
+    round.pools.forEach(function(pool,pi){
+      rqPoolMatches(pool).forEach(function(m,mi){
+        var onP1=m.p1.indexOf(val)>=0, onP2=m.p2.indexOf(val)>=0;
+        if(!onP1&&!onP2) return;
+        var sc=scores[rqKey(ri,pi,mi)]||{s1:'',s2:''};
+        var myScore=onP1?sc.s1:sc.s2, oppScore=onP1?sc.s2:sc.s1;
+        var partner=(onP1?m.p1:m.p2).filter(function(e){return e!==val;});
+        var opps=(onP1?m.p2:m.p1);
+        var result=myScore!==''&&oppScore!==''?(parseInt(myScore)>parseInt(oppScore)?'W':'L'):'';
+        rows.push('<tr><td>Rd '+(ri+1)+'</td><td>Pool '+String.fromCharCode(65+pi)+'</td>'+
+          '<td>'+partner.map(dn).join(' + ')+'</td>'+
+          '<td>'+opps.map(dn).join(' & ')+'</td>'+
+          '<td>'+(myScore!==''?myScore+'-'+oppScore:' ')+'</td>'+
+          '<td class="r"><strong class="'+(result==='W'?'dpos':result==='L'?'dneg':'')+'">'+(result||' ')+'</strong></td></tr>');
+      });
+    });
+  });
+  var stats=rqCalcStandingsMap()[val]||blankEntry(val);
+  res.innerHTML='<div style="font-size:13px;font-weight:600;color:var(--ti);margin-bottom:10px;">'+dn(val)+'</div>'+
+    '<div style="font-size:12px;color:var(--t2);margin-bottom:12px;">GP: '+stats.gp+'   W: '+stats.w+'   L: '+stats.l+
+    '   W%: '+(stats.gp>0?(stats.w/stats.gp*100).toFixed(1):0)+'%</div>'+
+    '<table class="std-table"><thead><tr><th>Round</th><th>Pool</th><th>Partner</th><th>Opponents</th><th>Score</th><th>Result</th></tr></thead>'+
+    '<tbody>'+rows.join('')+'</tbody></table>';
 }
 function renderTournLookup(name){
   var sd=SD, rows=[];
@@ -1526,89 +1549,608 @@ function exportTournXLSX(){
 
 
 /* =======================================================
-   KOB QUADS VIEWER
+   KOB ROTATING QUADS VIEWER
+   - Snake seeded rounds with top-seed separation
+   - Interactive round management (next round / final pools)
+   - Manual pool swaps in admin mode
 ======================================================= */
-var selStage=0, selQuadsPool=0;
-var kobStandings={};  // name -> stats, accumulated across scored stages
 
+//    State                                                                   
+var rqRounds = [];          // [{pools:[[e,e,e,e],...], locked:bool, isFinal:bool}]
+var rqSelRound = 0;
+var rqSelPool = 0;
+var rqPendingPools = null;  // proposed pools awaiting director confirmation
+var rqSwapFrom = null;      // {roundIdx, poolIdx, entryIdx} for swap UI
+
+//    Init                                                                     
 function initKOBQuads(){
   var sd=SD;
   initNameMap();
   buildTabs([
     {id:'quads-schedule',label:'Schedule'},
-    {id:'quads-standings',label:'Standings'},
+    {id:'standings',label:'Standings'},
     {id:'lookup',label:'Lookup'},
     {id:'teams',label:'Teams'}
   ]);
+  var np=sd.numPools||Math.floor(sd.allEntries.length/4);
   document.getElementById('page-sub').textContent=
-    sd.stages.length+' stages . '+sd.allEntries.length+' entries . '+(sd.isCoed?'Coed Solo':'Mixed Pairs');
+    np+' pools . '+sd.allEntries.length+' entries';
   document.getElementById('tab-quads-schedule').style.display='';
-  // Init standings
-  sd.allEntries.forEach(function(e){ kobStandings[e]=blankEntry(e); });
+
+  // Load saved rounds from localStorage
+  var saved=null;
+  try{ var raw=localStorage.getItem(_storeKey+'.rqRounds'); if(raw) saved=JSON.parse(raw); }catch(e){}
+  // Validate: discard saved rounds if pool sizes are wrong (stale data from previous session)
+  if(saved&&saved.length){
+    var valid=saved.every(function(r){
+      return r.pools&&r.pools.length>0&&r.pools.every(function(p){return p.length===4;});
+    });
+    if(!valid){ saved=null; try{localStorage.removeItem(_storeKey+'.rqRounds');}catch(e){} }
+  }
+  if(saved&&saved.length){ rqRounds=saved; }
+  else {
+    // Use Round 1 pools from generator (already snake seeded), or generate fresh
+    var np2=sd.numPools||Math.floor(sd.allEntries.length/4);
+    var initPools=sd.round1pools||(sd.seedMethod==='weighted'
+      ?rqWeightedSeed(sd.allEntries,null,np2,0,{},{})
+      :rqSnakeSeed(sd.allEntries,null,np2,0,{}));
+    rqRounds=[{pools:initPools,locked:false,isFinal:false}];
+    rqSaveRounds();
+  }
+  rqSelRound=rqRounds.length-1;
   renderQuadsSchedule();
 }
 
+//    Save rounds to localStorage                                              
+function rqSaveRounds(){
+  try{ localStorage.setItem(_storeKey+'.rqRounds',JSON.stringify(rqRounds)); }catch(e){}
+  // Only call storeSave for score/namemap persistence, not during round generation
+  if(Object.keys(scores).length) storeSave();
+}
+
+
+//    Weighted Random seeding engine                                           
+// Tier split: top 25%   upper pools, bottom 25%   lower pools, middle 50%   all
+// Constraints (soft): minimize same-pool repeats + matchup repeats
+function rqWeightedSeed(entries, standings, numPools, roundNum, poolHistory, matchHistory){
+  var sorted;
+  if(!standings){
+    sorted=entries.slice();
+  } else {
+    sorted=entries.slice().sort(function(a,b){
+      return kobSort(standings[a]||blankEntry(a), standings[b]||blankEntry(b), {});
+    });
+  }
+
+  var n=sorted.length;
+  var topCount=Math.ceil(n*0.25);    // top 25%  (seeds 1-9 for 36 entries)
+  var botCount=Math.ceil(n*0.25);    // bottom 25%
+  var midCount=n-topCount-botCount;  // middle 50%
+
+  var topSeeds=sorted.slice(0,topCount);
+  var midSeeds=sorted.slice(topCount,topCount+midCount);
+  var botSeeds=sorted.slice(topCount+midCount);
+
+  // Pool split: upper = ceil(numPools/2), lower = floor(numPools/2)
+  var upperCount=Math.ceil(numPools/2);  // pools 0..upperCount-1
+  var lowerCount=numPools-upperCount;    // pools upperCount..numPools-1
+
+  var pools=[];
+  for(var i=0;i<numPools;i++) pools.push([]);
+
+  //    Assign top seeds to upper pools (randomized)                          
+  var upperSlots=[], lowerSlots=[], allSlots=[];
+  for(var i=0;i<numPools;i++){
+    for(var j=0;j<4;j++){
+      allSlots.push(i);
+      if(i<upperCount) upperSlots.push(i);
+      else lowerSlots.push(i);
+    }
+  }
+
+  // Shuffle array in place
+  function shuffle(arr){
+    for(var i=arr.length-1;i>0;i--){
+      var j=Math.floor(Math.random()*(i+1));
+      var t=arr[i]; arr[i]=arr[j]; arr[j]=t;
+    }
+    return arr;
+  }
+
+  // Assign top seeds to upper pool slots
+  var upperAvail=shuffle(upperSlots.slice());
+  topSeeds.forEach(function(e){
+    var pi=upperAvail.shift();
+    pools[pi].push(e);
+  });
+
+  // Assign bottom seeds to lower pool slots
+  var lowerAvail=shuffle(lowerSlots.slice());
+  botSeeds.forEach(function(e){
+    var pi=lowerAvail.shift();
+    pools[pi].push(e);
+  });
+
+  // Assign middle seeds to remaining slots (all pools)
+  // Build remaining capacity per pool
+  var remaining=[];
+  for(var i=0;i<numPools;i++){
+    for(var k=pools[i].length;k<4;k++) remaining.push(i);
+  }
+  shuffle(remaining);
+
+  // Sort middle seeds by pool-repeat penalty first
+  midSeeds=midSeeds.slice();
+  shuffle(midSeeds); // start random then optimize
+
+  // Greedy assign middle seeds minimizing pool repeats
+  midSeeds.forEach(function(e){
+    // Find best available slot with fewest repeats
+    var bestIdx=0, bestScore=Infinity;
+    remaining.forEach(function(pi,ri){
+      var score=(poolHistory[e]&&poolHistory[e][pi]?poolHistory[e][pi]*10:0);
+      // Add matchup penalty for others already in this pool
+      pools[pi].forEach(function(other){
+        if(matchHistory[e]&&matchHistory[e][other]) score+=matchHistory[e][other]*3;
+      });
+      if(score<bestScore){ bestScore=score; bestIdx=ri; }
+    });
+    pools[remaining[bestIdx]].push(e);
+    remaining.splice(bestIdx,1);
+  });
+
+  //    Optimize: try random swaps within tier to reduce repeats              
+  var best=pools.map(function(p){return p.slice();});
+  var bestScore=rqScoreAssignment(best,poolHistory,matchHistory);
+
+  for(var attempt=0;attempt<80&&bestScore>0;attempt++){
+    var candidate=best.map(function(p){return p.slice();});
+    // Only swap middle seeds (keep top/bottom tiers in their half)
+    var midInPools=[];
+    candidate.forEach(function(pool,pi){
+      pool.forEach(function(e,ei){
+        if(midSeeds.indexOf(e)>=0) midInPools.push({pi:pi,ei:ei});
+      });
+    });
+    if(midInPools.length<2) break;
+    var a=midInPools[Math.floor(Math.random()*midInPools.length)];
+    var b=midInPools[Math.floor(Math.random()*midInPools.length)];
+    if(a.pi===b.pi) continue;
+    var tmp=candidate[a.pi][a.ei];
+    candidate[a.pi][a.ei]=candidate[b.pi][b.ei];
+    candidate[b.pi][b.ei]=tmp;
+    var score=rqScoreAssignment(candidate,poolHistory,matchHistory);
+    if(score<bestScore){ best=candidate; bestScore=score; }
+  }
+  return best;
+}
+
+// Score a pool assignment: penalize pool repeats + matchup repeats
+function rqScoreAssignment(pools,poolHistory,matchHistory){
+  var score=0;
+  pools.forEach(function(pool,pi){
+    pool.forEach(function(e){
+      if(poolHistory[e]&&poolHistory[e][pi]) score+=poolHistory[e][pi]*10;
+    });
+    for(var i=0;i<pool.length;i++){
+      for(var j=i+1;j<pool.length;j++){
+        if(matchHistory[pool[i]]&&matchHistory[pool[i]][pool[j]])
+          score+=matchHistory[pool[i]][pool[j]]*3;
+      }
+    }
+  });
+  return score;
+}
+
+// Build pool history: entry -> {poolIndex: timesPlayed}
+function rqBuildPoolHistory(){
+  var h={};
+  rqRounds.forEach(function(round,ri){
+    if(!round.locked) return;
+    round.pools.forEach(function(pool,pi){
+      pool.forEach(function(e){
+        if(!h[e]) h[e]={};
+        h[e][pi]=(h[e][pi]||0)+1;
+      });
+    });
+  });
+  return h;
+}
+
+//    Snake seeding engine                                                     
+// Rolling-offset snake: works for any pool count (odd or even).
+// Offset shifts each round so seed 1 cycles through different pools over time,
+// and the groupings naturally balance out across rounds.
+// Swap optimization minimizes repeat matchups.
+function rqSnakeSeed(entries, standings, numPools, roundNum, matchHistory){
+  var sorted;
+  if(!standings){
+    sorted=entries.slice();
+  } else {
+    sorted=entries.slice().sort(function(a,b){
+      var sa=standings[a]||blankEntry(a);
+      var sb=standings[b]||blankEntry(b);
+      return kobSort(sa,sb,{});
+    });
+  }
+
+  var pools=[];
+  for(var i=0;i<numPools;i++) pools.push([]);
+
+  // Snake seed with rolling offset   offset changes each round so
+  // seed 1 cycles: pool 0, pool 1, pool 2... across rounds
+  var offset=roundNum%numPools;
+  sorted.forEach(function(entry,i){
+    var row=Math.floor(i/numPools);
+    var col=i%numPools;
+    // Alternate direction each row (snake)
+    var pi=row%2===0 ? col : (numPools-1-col);
+    // Apply rolling offset
+    pi=(pi+offset)%numPools;
+    pools[pi].push(entry);
+  });
+
+  //    Soft: reduce repeat matchups via random swaps                         
+  // Swap any two entries between different pools; keep if it reduces repeats
+  var best=pools.map(function(p){return p.slice();});
+  var bestScore=rqCountRepeats(best,matchHistory,numPools);
+  for(var attempt=0;attempt<80&&bestScore>0;attempt++){
+    var candidate=best.map(function(p){return p.slice();});
+    var pi1=Math.floor(Math.random()*numPools);
+    var pi2=(pi1+1+Math.floor(Math.random()*(numPools-1)))%numPools;
+    if(!candidate[pi1].length||!candidate[pi2].length) continue;
+    var si1=Math.floor(Math.random()*candidate[pi1].length);
+    var si2=Math.floor(Math.random()*candidate[pi2].length);
+    var tmp=candidate[pi1][si1];
+    candidate[pi1][si1]=candidate[pi2][si2];
+    candidate[pi2][si2]=tmp;
+    var score=rqCountRepeats(candidate,matchHistory,numPools);
+    if(score<bestScore){ best=candidate; bestScore=score; }
+  }
+  return best;
+}
+
+// Count total repeat matchups across all pools
+function rqCountRepeats(pools,matchHistory,numPools){
+  var count=0;
+  pools.forEach(function(pool){
+    for(var i=0;i<pool.length;i++){
+      for(var j=i+1;j<pool.length;j++){
+        var a=pool[i],b=pool[j];
+        if(matchHistory[a]&&matchHistory[a][b]) count++;
+      }
+    }
+  });
+  return count;
+}
+
+// Build match history   track which pairs have played in the same pool
+function rqBuildHistory(){
+  var h={};
+  rqRounds.forEach(function(round){
+    if(!round.locked) return;
+    round.pools.forEach(function(pool){
+      // Record every pair of entries that shared a pool
+      for(var i=0;i<pool.length;i++){
+        for(var j=i+1;j<pool.length;j++){
+          var a=pool[i],b=pool[j];
+          if(!h[a]) h[a]={}; h[a][b]=(h[a][b]||0)+1;
+          if(!h[b]) h[b]={}; h[b][a]=(h[b][a]||0)+1;
+        }
+      }
+    });
+  });
+  return h;
+}
+
+// 4-entry pool: 3 rotating-partner matches
+// Each entry (pair) teams up with every other entry once
+// Match 1: (E0+E1) vs (E2+E3)  Match 2: (E0+E2) vs (E1+E3)  Match 3: (E0+E3) vs (E1+E2)
+function rqPoolMatches(pool){
+  if(pool.length!==4) return [];
+  return [
+    {p1:[pool[0],pool[1]], p2:[pool[2],pool[3]]},
+    {p1:[pool[0],pool[2]], p2:[pool[1],pool[3]]},
+    {p1:[pool[0],pool[3]], p2:[pool[1],pool[2]]}
+  ];
+}
+
+//    Score keys                                                               
+function rqKey(roundIdx,poolIdx,matchIdx){
+  return 'rq-r'+roundIdx+'-p'+poolIdx+'-m'+matchIdx;
+}
+
+//    Render schedule                                                          
 function renderQuadsSchedule(){
   var sd=SD;
-  // Stage tabs
-  var stHtml='';
-  sd.stages.forEach(function(s,si){
-    stHtml+='<button class="btn-sm'+(si===selStage?' sel':'')+
-      '" onclick="selStage='+si+';selQuadsPool=0;renderQuadsSchedule()">'+
-      (s.isFinal?'Final Stage':'Stage '+s.stage)+'</button>';
+  var np=sd.numPools||Math.floor(sd.allEntries.length/4);
+  var currentRound=rqRounds[rqSelRound];
+  if(!currentRound) return;
+
+  //    Round tabs                                                             
+  var rtHtml='';
+  rqRounds.forEach(function(r,ri){
+    var lbl=r.isFinal?'Finals':(ri===0?'Round 1':'Round '+(ri+1));
+    rtHtml+='<button class="btn-sm'+(ri===rqSelRound?' sel':'')+
+      '" onclick="rqSelRound='+ri+';rqSelPool=0;renderQuadsSchedule()">'+lbl+'</button>';
   });
-  document.getElementById('quads-stage-btns').innerHTML=stHtml;
+  document.getElementById('quads-stage-btns').innerHTML=rtHtml;
 
-  var stage=sd.stages[selStage];
-  // Pool tabs
-  var poolHtml='';
-  stage.pools.forEach(function(p,pi){
-    poolHtml+='<button class="btn-sm'+(pi===selQuadsPool?' sel':'')+
-      '" onclick="selQuadsPool='+pi+';renderQuadsSchedule()">'+p.name+'</button>';
+  //    Pool tabs   highlight green when all scores entered                 
+  var ptHtml='';
+  currentRound.pools.forEach(function(pool,pi){
+    var ctName=sd.courts[pi]?sd.courts[pi].name:'Court '+(pi+1);
+    // Check if all 3 matches in this pool are scored
+    var poolDone=rqPoolMatches(pool).every(function(m,mi){
+      var sc=scores[rqKey(rqSelRound,pi,mi)]||{s1:'',s2:''};
+      return sc.s1!==''&&sc.s2!==''&&!isNaN(parseInt(sc.s1))&&!isNaN(parseInt(sc.s2));
+    });
+    var doneStyle=poolDone?'background:var(--bgs);border-color:var(--bs);color:var(--ts);':''
+    ptHtml+='<button class="btn-sm'+(pi===rqSelPool?' sel':'')+
+      '" style="'+doneStyle+'" onclick="rqSelPool='+pi+';renderQuadsSchedule()">'+
+      (poolDone?'  ':'')+
+      'Pool '+String.fromCharCode(65+pi)+
+      ' <span style="font-size:10px;opacity:.6;">('+ctName+')</span></button>';
   });
-  document.getElementById('quads-pool-btns').innerHTML=poolHtml;
+  document.getElementById('quads-pool-btns').innerHTML=ptHtml;
 
-  var pool=stage.pools[selQuadsPool];
-  var matchNum=0;
-  // Table
-  var rows='<div class="net-table">'+
-    '<div class="net-head" style="grid-template-columns:70px 1fr 70px 28px 70px 1fr;">'+
-    '<span>Court</span><span>Pair 1</span><span style="text-align:center">Score</span>'+
-    '<span></span><span style="text-align:center">Score</span><span>Pair 2</span></div>';
+  if(rqSelPool>=currentRound.pools.length) rqSelPool=0;
+  var pool=currentRound.pools[rqSelPool];
+  if(!pool||pool.length<4){
+    document.getElementById('quads-table').innerHTML='<div style="padding:20px;color:var(--t3);font-size:13px;">Pool data unavailable.</div>';
+    return;
+  }
+  var matches=rqPoolMatches(pool);
+  var courts=sd.courts||[];
+  // Each pool owns 1 court   all 3 matches play sequentially on it
+  var poolCourtName=courts[rqSelPool]?courts[rqSelPool].name:'Court '+(rqSelPool+1);
 
-  pool.rounds.forEach(function(r,ri){
-    matchNum++;
-    var key='s'+selStage+'-p'+selQuadsPool+'-m'+ri;
+  //    Match table                                                           
+  // Header card showing pool details
+  var poolEntries=pool.map(function(e){return '<span style="color:var(--ti);">'+dn(e)+'</span>';}).join(' &nbsp; &nbsp; ');
+  var poolEntries=pool.map(function(e){return '<span style="color:var(--ti);">'+dn(e)+'</span>';}).join(' &nbsp; &nbsp; ');
+  var rows='<div style="padding:8px 12px;background:var(--bg2);border:.5px solid var(--b3);border-radius:var(--rm);margin-bottom:10px;font-size:12px;color:var(--t2);">'+'<strong style="color:var(--ts);">'+poolCourtName+'</strong> &nbsp; &nbsp; '+poolEntries+'</div>'+'<div style="display:flex;flex-direction:column;gap:8px;">';
+
+  matches.forEach(function(m,mi){
+    var key=rqKey(rqSelRound,rqSelPool,mi);
     var sc=scores[key]||{s1:'',s2:''};
     var s1n=parseInt(sc.s1),s2n=parseInt(sc.s2);
     var has=sc.s1!==''&&sc.s2!==''&&!isNaN(s1n)&&!isNaN(s2n);
     var c1=has?(s1n>s2n?'win':s1n<s2n?'lose':''):'';
     var c2=has?(s2n>s1n?'win':s2n<s1n?'lose':''):'';
-    var pair1=dn(r.p1[0])+' + '+dn(r.p1[1]);
-    var pair2=dn(r.p2[0])+' + '+dn(r.p2[1]);
-    rows+='<div class="net-row'+(matchNum%2?' alt':'')+'"'+
-      ' style="grid-template-columns:70px 1fr 70px 28px 70px 1fr;">'+
-      '<span class="nnum">'+(r.court||'')+'</span>'+
-      '<span class="pair" style="font-size:12px;gap:4px;">'+
-        '<span class="pa" style="font-size:12px;">'+pair1+'</span></span>'+
-      '<input type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'"'+
-        ' data-key="'+key+'" data-side="0" oninput="onQuadsScore(this)">'+
-      '<span class="score-static '+c1+'">'+( sc.s1!==''?sc.s1:'-')+'</span>'+
-      '<span class="vsc">vs</span>'+
-      '<input type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'"'+
-        ' data-key="'+key+'" data-side="1" oninput="onQuadsScore(this)">'+
-      '<span class="score-static '+c2+'">'+( sc.s2!==''?sc.s2:'-')+'</span>'+
-      '<span class="pair" style="font-size:12px;gap:4px;">'+
-        '<span class="pb" style="font-size:12px;">'+pair2+'</span></span>'+
-      '</div>';
+    var courtName=courts[rqSelPool]?courts[rqSelPool].name:'Court '+(rqSelPool+1);
+    var win1=has&&s1n>s2n, win2=has&&s2n>s1n;
+    var tc=has?'var(--ts)':'var(--ti)';
+    rows+='<div style="background:var(--bg1);border:.5px solid var(--b3);border-radius:var(--rl);overflow:hidden;margin-bottom:8px;">'+
+      // Match header: number and winner
+      '<div style="display:flex;justify-content:space-between;padding:5px 12px;background:var(--bg2);border-bottom:.5px solid var(--b3);">'+
+        '<span style="font-size:11px;font-weight:600;color:var(--t3);">Match #'+(mi+1)+'</span>'+
+        (has?'<span style="font-size:11px;font-weight:600;color:var(--ts);">'+(win1?dn(m.p1[0])+' & '+dn(m.p1[1]):win2?dn(m.p2[0])+' & '+dn(m.p2[1]):'Tie')+'</span>':'')+
+      '</div>'+
+      // Team rows   each team shows 2 pairs
+      '<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:0;">'+
+        '<div style="padding:8px 12px;border-right:.5px solid var(--b3);">'+
+          '<div style="font-size:12px;font-weight:'+(win1?'700':'400')+';color:'+(has?(win1?'var(--ts)':'var(--t2)'):'var(--ti)')+';">'+dn(m.p1[0])+'</div>'+
+          '<div style="font-size:12px;font-weight:'+(win1?'700':'400')+';color:'+(has?(win1?'var(--ts)':'var(--t2)'):'var(--ti)')+';">'+dn(m.p1[1])+'</div>'+
+        '</div>'+
+        '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 12px;gap:4px;">'+
+          '<input type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'"'+
+            ' data-key="'+key+'" data-side="0" oninput="onQuadsScore(this)" style="width:56px;">'+
+          '<span style="font-size:11px;color:var(--t3);">vs</span>'+
+          '<input type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'"'+
+            ' data-key="'+key+'" data-side="1" oninput="onQuadsScore(this)" style="width:56px;">'+
+        '</div>'+
+        '<div style="padding:8px 12px;border-left:.5px solid var(--b3);text-align:right;">'+
+          '<div style="font-size:12px;font-weight:'+(win2?'700':'400')+';color:'+(has?(win2?'var(--ts)':'var(--t2)'):'var(--tp)')+';">'+dn(m.p2[0])+'</div>'+
+          '<div style="font-size:12px;font-weight:'+(win2?'700':'400')+';color:'+(has?(win2?'var(--ts)':'var(--t2)'):'var(--tp)')+';">'+dn(m.p2[1])+'</div>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
   });
   rows+='</div>';
   document.getElementById('quads-table').innerHTML=rows;
+
+  //    Pool composition display (admin)                                      
+  rqRenderPoolEditor();
+
+  //    Action buttons                                                         
+  rqRenderActions();
+
   updateQuadsProgress();
 }
 
+//    Pool editor (admin mode only)                                            
+function rqRenderPoolEditor(){
+  var wrap=document.getElementById('rq-pool-editor');
+  if(!wrap) return;
+  if(!adminMode){ wrap.innerHTML=''; return; }
+
+  var round=rqRounds[rqSelRound];
+  // If there are pending pools (proposed next round), show those for editing
+  var editingPending=!!rqPendingPools;
+  var pools=editingPending?rqPendingPools:round.pools;
+  var isLocked=round.locked&&!editingPending;
+
+  var h='<div style="margin-top:16px;border-top:.5px solid var(--b3);padding-top:12px;">';
+  h+='<div style="font-size:11px;font-weight:600;color:var(--t3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;">';
+  h+=editingPending?'Proposed Round '+(rqRounds.length+1)+'   Click player to swap':'Pool Composition';
+  h+='</div>';
+  h+='<div style="display:grid;grid-template-columns:repeat('+pools.length+',1fr);gap:8px;">';
+
+  pools.forEach(function(pool,pi){
+    var poolLabel='Pool '+String.fromCharCode(65+pi);
+    h+='<div style="background:var(--bg2);border:.5px solid var(--b3);border-radius:var(--rm);padding:8px;">';
+    h+='<div style="font-size:11px;font-weight:700;color:var(--ts);margin-bottom:6px;">'+poolLabel+'</div>';
+    pool.forEach(function(entry,ei){
+      var isTopSeed=ei===0;
+      var isSel=rqSwapFrom&&rqSwapFrom.pi===pi&&rqSwapFrom.ei===ei&&editingPending;
+      var style='padding:4px 6px;border-radius:4px;font-size:12px;cursor:pointer;margin-bottom:3px;'+
+        'border:.5px solid '+(isSel?'var(--ts)':'var(--b3)')+';'+
+        'background:'+(isSel?'var(--bgs)':isTopSeed?'rgba(46,125,82,.15)':'var(--bg1)')+';';
+      var topBadge=isTopSeed?'<span style="font-size:9px;color:var(--ts);margin-left:4px;"> </span>':'';
+      var clickFn=editingPending?'rqClickSwap('+pi+','+ei+')':'';
+      h+='<div style="'+style+'" onclick="'+clickFn+'">'+dn(entry)+topBadge+'</div>';
+    });
+    h+='</div>';
+  });
+  h+='</div>';
+
+  if(editingPending){
+    h+='<div style="display:flex;gap:8px;margin-top:10px;">'+
+      '<button class="btn-sm sel" onclick="rqConfirmNextRound()">Confirm Round</button>'+
+      '<button class="btn-sm" onclick="rqPendingPools=null;rqSwapFrom=null;rqRenderPoolEditor();rqRenderActions()">Discard</button>'+
+      '</div>';
+  }
+  h+='</div>';
+  wrap.innerHTML=h;
+}
+
+// Handle swap clicks in pending pool editor
+function rqClickSwap(pi,ei){
+  if(!rqPendingPools) return;
+  if(!rqSwapFrom){
+    rqSwapFrom={pi:pi,ei:ei};
+  } else {
+    // Perform swap (allow any swap including top seeds   manual overrides constraints)
+    var fromPool=rqSwapFrom.pi, fromIdx=rqSwapFrom.ei;
+    var tmp=rqPendingPools[fromPool][fromIdx];
+    rqPendingPools[fromPool][fromIdx]=rqPendingPools[pi][ei];
+    rqPendingPools[pi][ei]=tmp;
+    rqSwapFrom=null;
+  }
+  rqRenderPoolEditor();
+}
+
+//    Action buttons                                                             
+function rqRenderActions(){
+  var wrap=document.getElementById('rq-actions');
+  if(!wrap) return;
+  if(!adminMode){
+    // Show hint when round is complete so organizer knows to unlock
+    var isLast=(rqSelRound===rqRounds.length-1);
+    var done=isLast&&rqIsRoundComplete(rqSelRound);
+    wrap.innerHTML=done?
+      '<div style="margin-top:10px;padding:8px 12px;background:var(--bgs);border:.5px solid var(--bs);border-radius:var(--rm);font-size:12px;color:var(--ts);">'+
+      'Round complete   unlock admin mode to advance to next round or seed finals.</div>':'';
+    return;
+  }
+
+  var isLastRound=(rqSelRound===rqRounds.length-1);
+  var round=rqRounds[rqSelRound];
+  var allScored=rqIsRoundComplete(rqSelRound);
+
+  var h='<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">';
+
+  if(rqPendingPools){
+    // Pending confirmation handled in pool editor   no extra buttons needed
+  } else if(isLastRound&&!round.isFinal){
+    if(allScored){
+      h+='<button class="btn-sm sel" onclick="rqGenerateNextRound(false)">Next Round</button>';
+      h+='<button class="btn-sm" style="color:var(--ts);border-color:var(--bs)" onclick="rqGenerateNextRound(true)">Seed Final Pools</button>';
+    } else {
+      h+='<span style="font-size:12px;color:var(--t3);">Complete all scores to advance</span>';
+    }
+  } else if(round.isFinal){
+    h+='<span style="font-size:12px;color:var(--ts);">Final round   enter scores above</span>';
+  }
+  h+='</div>';
+  wrap.innerHTML=h;
+}
+
+//    Check if all matches in a round are scored                               
+function rqIsRoundComplete(roundIdx){
+  var round=rqRounds[roundIdx];
+  var complete=true;
+  round.pools.forEach(function(pool,pi){
+    rqPoolMatches(pool).forEach(function(m,mi){
+      var sc=scores[rqKey(roundIdx,pi,mi)]||{s1:'',s2:''};
+      if(sc.s1===''||sc.s2===''||isNaN(parseInt(sc.s1))||isNaN(parseInt(sc.s2)))
+        complete=false;
+    });
+  });
+  return complete;
+}
+
+//    Generate next round                                                      
+function rqGenerateNextRound(isFinal){
+  var sd=SD;
+  var np=sd.numPools||Math.floor(sd.allEntries.length/4);
+  var standings=rqCalcStandingsMap();
+  var history=rqBuildHistory();
+  var roundNum=rqRounds.length;
+
+  var newPools;
+  if(isFinal){
+    // Pure standings   1-4, 5-8, no constraints
+    var sorted=sd.allEntries.slice().sort(function(a,b){
+      return kobSort(standings[a]||blankEntry(a),standings[b]||blankEntry(b),{});
+    });
+    newPools=[];
+    for(var i=0;i<np;i++) newPools.push(sorted.slice(i*4,i*4+4));
+  } else {
+    var poolHist=rqBuildPoolHistory();
+    if(sd.seedMethod==='weighted'){
+      newPools=rqWeightedSeed(sd.allEntries,standings,np,roundNum,poolHist,history);
+    } else {
+      newPools=rqSnakeSeed(sd.allEntries,standings,np,roundNum,history);
+    }
+  }
+
+  // Lock current round before proposing next
+  rqRounds[rqSelRound].locked=true;
+  rqPendingPools=newPools;
+  rqPendingIsFinal=isFinal;
+  rqSwapFrom=null;
+  rqRenderPoolEditor();
+  rqRenderActions();
+}
+var rqPendingIsFinal=false;
+
+// Confirm proposed pools and add as new round
+function rqConfirmNextRound(){
+  if(!rqPendingPools) return;
+  rqRounds.push({pools:rqPendingPools,locked:false,isFinal:rqPendingIsFinal});
+  rqPendingPools=null;
+  rqSwapFrom=null;
+  rqSelRound=rqRounds.length-1;
+  rqSelPool=0;
+  rqSaveRounds();
+  renderQuadsSchedule();
+}
+
+//    Standings map (name -> stats object)                                     
+function rqCalcStandingsMap(){
+  var sd=SD;
+  var st={};
+  sd.allEntries.forEach(function(e){ st[e]=blankEntry(e); });
+  rqRounds.forEach(function(round,ri){
+    round.pools.forEach(function(pool,pi){
+      rqPoolMatches(pool).forEach(function(m,mi){
+        var sc=scores[rqKey(ri,pi,mi)];
+        if(!sc||sc.s1===''||sc.s2==='') return;
+        var s1=parseInt(sc.s1),s2=parseInt(sc.s2);
+        if(isNaN(s1)||isNaN(s2)) return;
+        // Each entry on the winning side gets credit
+        m.p1.forEach(function(p){
+          if(!st[p]) return;
+          st[p].gp++; st[p].pf+=s1; st[p].pa+=s2;
+          if(s1>s2) st[p].w++; else if(s2>s1) st[p].l++;
+        });
+        m.p2.forEach(function(p){
+          if(!st[p]) return;
+          st[p].gp++; st[p].pf+=s2; st[p].pa+=s1;
+          if(s2>s1) st[p].w++; else if(s1>s2) st[p].l++;
+        });
+      });
+    });
+  });
+  Object.values(st).forEach(refreshRates);
+  return st;
+}
+
+//    Score handlers                                                            
 function onQuadsScore(input){
-  var key=input.dataset.key, side=parseInt(input.dataset.side);
+  var key=input.dataset.key,side=parseInt(input.dataset.side);
   if(!scores[key]) scores[key]={s1:'',s2:''};
   if(side===0) scores[key].s1=input.value; else scores[key].s2=input.value;
   var sc=scores[key];
@@ -1621,15 +2163,16 @@ function onQuadsScore(input){
   if(inputs[1]) inputs[1].className='score-in '+c2;
   storeSave();
   updateQuadsProgress();
+  rqRenderActions(); // refresh action buttons
 }
 
 function updateQuadsProgress(){
-  var sd=SD; var total=0,done=0;
-  sd.stages.forEach(function(stage,si){
-    stage.pools.forEach(function(pool,pi){
-      pool.rounds.forEach(function(r,ri){
+  var total=0,done=0;
+  rqRounds.forEach(function(round,ri){
+    round.pools.forEach(function(pool,pi){
+      rqPoolMatches(pool).forEach(function(m,mi){
         total++;
-        var sc=scores['s'+si+'-p'+pi+'-m'+ri];
+        var sc=scores[rqKey(ri,pi,mi)];
         if(sc&&sc.s1!==''&&sc.s2!==''&&!isNaN(parseInt(sc.s1))&&!isNaN(parseInt(sc.s2))) done++;
       });
     });
@@ -1640,41 +2183,24 @@ function updateQuadsProgress(){
   if(bEl) bEl.style.width=total?Math.round(done/total*100)+'%':'0%';
 }
 
+//    Standings tab                                                             
 function calcQuadsStandings(){
-  var sd=SD;
-  var st={};
-  sd.allEntries.forEach(function(e){ st[e]=blankEntry(e); });
+  var st=rqCalcStandingsMap();
   var h2h={};
-  sd.allEntries.forEach(function(e){ h2h[e]={}; });
-
-  sd.stages.forEach(function(stage,si){
-    stage.pools.forEach(function(pool,pi){
-      pool.rounds.forEach(function(r,ri){
-        var sc=scores['s'+si+'-p'+pi+'-m'+ri];
+  SD.allEntries.forEach(function(e){ h2h[e]={}; });
+  rqRounds.forEach(function(round,ri){
+    round.pools.forEach(function(pool,pi){
+      rqPoolMatches(pool).forEach(function(m,mi){
+        var sc=scores[rqKey(ri,pi,mi)];
         if(!sc||sc.s1===''||sc.s2==='') return;
         var s1=parseInt(sc.s1),s2=parseInt(sc.s2);
         if(isNaN(s1)||isNaN(s2)) return;
-        var p1a=r.p1[0],p1b=r.p1[1],p2a=r.p2[0],p2b=r.p2[1];
-        // Accumulate stats for each player in the pair
-        [p1a,p1b].forEach(function(p){
-          if(!st[p]) return;
-          st[p].gp++; st[p].pf+=s1; st[p].pa+=s2;
-          if(s1>s2) st[p].w++; else if(s2>s1) st[p].l++;
-        });
-        [p2a,p2b].forEach(function(p){
-          if(!st[p]) return;
-          st[p].gp++; st[p].pf+=s2; st[p].pa+=s1;
-          if(s2>s1) st[p].w++; else if(s1>s2) st[p].l++;
-        });
-        // H2H: all p1-pair members vs all p2-pair members
-        [p1a,p1b].forEach(function(a){
-          [p2a,p2b].forEach(function(b){
-            if(!h2h[a]) h2h[a]={};
-            if(!h2h[a][b]) h2h[a][b]={w:0,l:0,pf:0,pa:0};
+        m.p1.forEach(function(a){
+          m.p2.forEach(function(b){
+            if(!h2h[a]) h2h[a]={}; if(!h2h[a][b]) h2h[a][b]={w:0,l:0,pf:0,pa:0};
             h2h[a][b].pf+=s1; h2h[a][b].pa+=s2;
             if(s1>s2) h2h[a][b].w++; else if(s2>s1) h2h[a][b].l++;
-            if(!h2h[b]) h2h[b]={};
-            if(!h2h[b][a]) h2h[b][a]={w:0,l:0,pf:0,pa:0};
+            if(!h2h[b]) h2h[b]={}; if(!h2h[b][a]) h2h[b][a]={w:0,l:0,pf:0,pa:0};
             h2h[b][a].pf+=s2; h2h[b][a].pa+=s1;
             if(s2>s1) h2h[b][a].w++; else if(s1>s2) h2h[b][a].l++;
           });
@@ -1682,7 +2208,6 @@ function calcQuadsStandings(){
       });
     });
   });
-  Object.values(st).forEach(refreshRates);
   return Object.values(st).sort(function(a,b){ return kobSort(a,b,h2h); });
 }
 
@@ -1691,13 +2216,13 @@ function renderQuadsStandings(){
   function pct(v){return(v*100).toFixed(1)+'%';}
   var thead='<thead><tr><th>#</th><th>Entry</th><th class="r">GP</th>'+
     '<th class="r">W</th><th class="r">L</th><th class="r">W%</th>'+
-    '<th class="r">+/-/G</th><th class="r">PF/G</th></tr></thead>';
+    '<th class="r">+/-/G</th><th class="r">PF/G</th><th class="r">PA/G</th></tr></thead>';
   var tbody='';
   all.forEach(function(p,i){
     var rank=i+1;
     var badge=rank===1?'gold':rank===2?'silver':rank===3?'bronze':'';
-    var dpg=p.diffPerGame, pos=dpg>0,neg=dpg<0;
-    tbody+='<tr class="'+(rank%2===0?'alt':'')+'">' +
+    var dpg=p.diffPerGame,pos=dpg>0,neg=dpg<0;
+    tbody+='<tr class="'+(rank%2===0?'alt':'')+'">'+
       '<td><span class="rnk '+badge+'">'+rank+'</span></td>'+
       '<td>'+dn(p.name)+'</td>'+
       '<td class="r">'+p.gp+'</td>'+
@@ -1707,10 +2232,12 @@ function renderQuadsStandings(){
       '<td class="r"><span class="'+(pos?'dpos':neg?'dneg':'')+'">'+
         (pos?'+':'')+dpg.toFixed(2)+'</span></td>'+
       '<td class="r">'+p.pfPerGame.toFixed(2)+'</td>'+
+      '<td class="r">'+p.paPerGame.toFixed(2)+'</td>'+
       '</tr>';
   });
   document.getElementById('std-table').innerHTML=thead+'<tbody>'+tbody+'</tbody>';
 }
+
 
 /* =======================================================
    KOB RANDOM MIX VIEWER
@@ -1858,7 +2385,7 @@ function renderMixStandings(){
   function pct(v){return(v*100).toFixed(1)+'%';}
   var thead='<thead><tr><th>#</th><th>Entry</th><th class="r">GP</th>'+
     '<th class="r">W</th><th class="r">L</th><th class="r">W%</th>'+
-    '<th class="r">+/-/G</th><th class="r">PF/G</th></tr></thead>';
+    '<th class="r">+/-/G</th><th class="r">PF/G</th><th class="r">PA/G</th></tr></thead>';
   var tbody='';
   all.forEach(function(p,i){
     var rank=i+1;
@@ -1874,9 +2401,10 @@ function renderMixStandings(){
       '<td class="r"><span class="'+(pos?'dpos':neg?'dneg':'')+'">'+
         (pos?'+':'')+dpg.toFixed(2)+'</span></td>'+
       '<td class="r">'+p.pfPerGame.toFixed(2)+'</td>'+
+      '<td class="r">'+p.paPerGame.toFixed(2)+'</td>'+
       '</tr>';
   });
-  document.getElementById('std-table').innerHTML=thead+'<tbody>'+tbody+'</tbody>';
+  document.getElementById('std-table-mix').innerHTML=thead+'<tbody>'+tbody+'</tbody>';
 }
 
 
@@ -2049,6 +2577,7 @@ function renderTradLeagueStandings(){
       '<td class="r"><span class="'+(pos?'dpos':neg?'dneg':'')+'">'+
         (pos?'+':'')+dpg.toFixed(2)+'</span></td>'+
       '<td class="r">'+p.pfPerGame.toFixed(2)+'</td>'+
+      '<td class="r">'+p.paPerGame.toFixed(2)+'</td>'+
       '</tr>';
   });
   document.getElementById('std-table').innerHTML=thead+'<tbody>'+tbody+'</tbody>';
@@ -2344,23 +2873,3 @@ function _buildCombinedStandings(sd,allPools){
 /* =======================================================
    INIT
 ======================================================= */
-(function(){
-  if(!SD||SD==='SCHEDULE_DATA_PLACEHOLDER'){
-    document.querySelector('.card').innerHTML='<div class="empty"><p>No schedule loaded.</p><p style="margin-top:8px;font-size:12px;color:var(--t3);">Use the generator to produce a populated viewer.</p></div>';
-    return;
-  }
-  fmt=SD.format||'kob_league';
-  document.getElementById('page-title').textContent=SD.title||'KOB Viewer';
-  document.title=(SD.title||'KOB Viewer')+' | v3.19';
-  // Set storage key unique to this event
-  _storeKey=window._storeKey||('kob_'+btoa(encodeURIComponent((SD.title||'ev')+(SD.format||''))).replace(/[^a-zA-Z0-9]/g,'').slice(0,24));
-  storeLoad();
-  document.body.classList.add('viewer-locked');
-  document.title=(SD.title||'KOB Viewer')+' | v3.19';
-  if(fmt==='kob_league') initKOBLeague();
-  else if(fmt==='traditional_tournament'){ initTournament(); initSheetsExportBtn(); }
-  else if(fmt==='traditional_league') initTraditionalLeague();
-  else if(fmt==='kob_quads') initKOBQuads();
-  else if(fmt==='kob_random_mix') initKOBRandomMix();
-})();
-
