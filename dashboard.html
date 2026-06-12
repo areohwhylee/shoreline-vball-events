@@ -128,7 +128,7 @@ async function loadEvents(){
         '<span class="tag">'+(ev.is_public?'Public':'Private')+'</span>'+
         '<button class="btn btn-ghost" onclick="copyLink(\''+ev.id+'\')">Copy link</button>'+
         '<button class="btn btn-green" onclick="window.open(\''+viewUrl+'\')">Open</button>'+
-        '<button class="btn btn-ghost" style="color:#e57373;border-color:#c62828" onclick="startDelete(\''+ev.id+'\',\''+ev.title.replace(/'/g,'')+'\')">Del</button>'+
+        '<button class="btn btn-ghost" style="color:#e57373;border-color:#c62828" onclick="startDelete(\''+ev.id+'\')">Del</button>'+
       '</div>'+
     '</div>';
   }).join('');
