@@ -81,10 +81,10 @@ h2{font-size:18px;font-weight:700;margin-bottom:18px;}
 <div class="modal-bg" id="del-modal">
   <div class="modal">
     <h3>Delete event?</h3>
-    <p class="msg">This permanently deletes the event, all scores and renames. Type the event title to confirm.</p>
-    <input type="text" id="del-confirm-input" placeholder="Type event title...">
+    <p class="msg">This permanently deletes the event, all scores and renames. This cannot be undone.</p>
+    <p id="del-event-title" style="font-weight:600;color:var(--ts);margin:8px 0 16px;"></p>
     <div class="modal-btns">
-      <button class="btn btn-red" onclick="confirmDelete()">Delete</button>
+      <button class="btn btn-red" onclick="confirmDelete()">Yes, Delete</button>
       <button class="btn btn-ghost" onclick="closeDelModal()">Cancel</button>
     </div>
   </div>
@@ -168,15 +168,13 @@ function copyLink(id){
 }
 
 // ── Delete ────────────────────────────────────────────────────────────────────
-function startDelete(id,title){
-  pendingDeleteId=id; pendingDeleteTitle=title;
-  document.getElementById('del-confirm-input').value='';
+function startDelete(id){
+  pendingDeleteId=id; pendingDeleteTitle=(eventsMap[id]||{}).title||'';
+  document.getElementById('del-event-title').textContent=pendingDeleteTitle;
   document.getElementById('del-modal').classList.add('show');
 }
 function closeDelModal(){ document.getElementById('del-modal').classList.remove('show'); }
 async function confirmDelete(){
-  var typed=document.getElementById('del-confirm-input').value.trim();
-  if(typed!==pendingDeleteTitle){ alert('Title doesn\'t match.'); return; }
   await sb.from('events').delete().eq('id',pendingDeleteId);
   closeDelModal();
   loadEvents();
