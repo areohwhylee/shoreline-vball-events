@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- KOB Viewer v3.32 -->
+<!-- KOB Viewer v3.34 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -273,7 +273,7 @@ body.admin-mode .bk-pick{display:inline-block;}
 </div>
 </main>
 <script>
-var SD = {"format":"kob_quads","title":"KOB Pool Quads","adminPin":null,"courts":[{"name":"Court 1"},{"name":"Court 2"},{"name":"Court 3"},{"name":"Court 4"},{"name":"Court 5"},{"name":"Court 6"},{"name":"Court 7"},{"name":"Court 8"},{"name":"Court 9"}],"isCoed":false,"scoring":{"mode":"sets","numSets":1,"scoreLimit":21},"entriesA":["Jaisen Y. + Makayla S.","Christian S. + Zoe G","Adolfo V. + Sam H.","Petr P. + SJ","Taylor A + Santiago L.","Nicole C. + Frank P.","Andrew C. + Kelly B.","JJ A. + Kaitlyn","Aa + Tehanna G.","Roy L. + Jenny L.","Jian + Amy","Dinara + Adrian S.","Connor L. + JJ J.","Ryan L. + Diana S.","Justin L. + Camilie G.","Dave Z. + Christine","John P. + Alicia T.","Destry + Emily G.","Ari B. + Alex L.","Alvin C. + Yasmeen","Joey + Rome","Jimmie M. + Aimee B.","Gary L. + Ari C.","Aaron O. + Caro","Miki M. + Stephen L.","Euline O.  Wesley L.","Kat A. + Marvyn B.","Viktor V. + KG","Grace Y. + Henry","Justin D. + Ella S.","Brice C. + Anna S.","Rachel L. + Robert W","Mikee D. + Angela E.","Koby N. + Mireya K.","Izabella G + Everett V.","Vita P. + TBD"],"entriesB":[],"allEntries":["Jaisen Y. + Makayla S.","Christian S. + Zoe G","Adolfo V. + Sam H.","Petr P. + SJ","Taylor A + Santiago L.","Nicole C. + Frank P.","Andrew C. + Kelly B.","JJ A. + Kaitlyn","Aa + Tehanna G.","Roy L. + Jenny L.","Jian + Amy","Dinara + Adrian S.","Connor L. + JJ J.","Ryan L. + Diana S.","Justin L. + Camilie G.","Dave Z. + Christine","John P. + Alicia T.","Destry + Emily G.","Ari B. + Alex L.","Alvin C. + Yasmeen","Joey + Rome","Jimmie M. + Aimee B.","Gary L. + Ari C.","Aaron O. + Caro","Miki M. + Stephen L.","Euline O.  Wesley L.","Kat A. + Marvyn B.","Viktor V. + KG","Grace Y. + Henry","Justin D. + Ella S.","Brice C. + Anna S.","Rachel L. + Robert W","Mikee D. + Angela E.","Koby N. + Mireya K.","Izabella G + Everett V.","Vita P. + TBD"],"numPools":9,"seedMethod":"weighted","round1pools":[["Nicole C. + Frank P.","Connor L. + JJ J.","Joey + Rome","Kat A. + Marvyn B."],["Christian S. + Zoe G","Aa + Tehanna G.","Alvin C. + Yasmeen","Aaron O. + Caro"],["Jaisen Y. + Makayla S.","Jian + Amy","Destry + Emily G.","Euline O.  Wesley L."],["Adolfo V. + Sam H.","Petr P. + SJ","Andrew C. + Kelly B.","Miki M. + Stephen L."],["Taylor A + Santiago L.","JJ A. + Kaitlyn","Dave Z. + Christine","Ari B. + Alex L."],["Mikee D. + Angela E.","Koby N. + Mireya K.","Vita P. + TBD","Ryan L. + Diana S."],["Viktor V. + KG","Grace Y. + Henry","Rachel L. + Robert W","Jimmie M. + Aimee B."],["Justin D. + Ella S.","Roy L. + Jenny L.","Justin L. + Camilie G.","John P. + Alicia T."],["Brice C. + Anna S.","Izabella G + Everett V.","Dinara + Adrian S.","Gary L. + Ari C."]],"stages":[]};
+var SD = "SCHEDULE_DATA_PLACEHOLDER";
 var scores = {};   // key->{s1,s2} for all formats
 // allBrackets[i] = {name, seeds, rounds} -- one per Gold/Silver/etc
 var allBrackets = [];
@@ -467,6 +467,7 @@ function refreshRates(e){
   e.winRate=e.gp>0?e.w/e.gp:0;
   e.diffPerGame=e.gp>0?(e.pf-e.pa)/e.gp:0;
   e.pfPerGame=e.gp>0?e.pf/e.gp:0;
+  e.paPerGame=e.gp>0?e.pa/e.gp:0;
   return e;
 }
 function nameHash(s){
@@ -2150,12 +2151,20 @@ function renderQuadsSchedule(){
   });
   document.getElementById('quads-stage-btns').innerHTML=rtHtml;
 
-  // ── Pool tabs — show court name alongside pool letter ──────────────────
+  // ── Pool tabs — highlight green when all scores entered ────────────────
   var ptHtml='';
-  currentRound.pools.forEach(function(p,pi){
+  currentRound.pools.forEach(function(pool,pi){
     var ctName=sd.courts[pi]?sd.courts[pi].name:'Court '+(pi+1);
+    // Check if all 3 matches in this pool are scored
+    var poolDone=rqPoolMatches(pool).every(function(m,mi){
+      var sc=scores[rqKey(rqSelRound,pi,mi)]||{s1:'',s2:''};
+      return sc.s1!==''&&sc.s2!==''&&!isNaN(parseInt(sc.s1))&&!isNaN(parseInt(sc.s2));
+    });
+    var doneStyle=poolDone?'background:var(--bgs);border-color:var(--bs);color:var(--ts);':''
     ptHtml+='<button class="btn-sm'+(pi===rqSelPool?' sel':'')+
-      '" onclick="rqSelPool='+pi+';renderQuadsSchedule()">Pool '+String.fromCharCode(65+pi)+
+      '" style="'+doneStyle+'" onclick="rqSelPool='+pi+';renderQuadsSchedule()">'+
+      (poolDone?'✓ ':'')+
+      'Pool '+String.fromCharCode(65+pi)+
       ' <span style="font-size:10px;opacity:.6;">('+ctName+')</span></button>';
   });
   document.getElementById('quads-pool-btns').innerHTML=ptHtml;
@@ -2482,7 +2491,7 @@ function renderQuadsStandings(){
   function pct(v){return(v*100).toFixed(1)+'%';}
   var thead='<thead><tr><th>#</th><th>Entry</th><th class="r">GP</th>'+
     '<th class="r">W</th><th class="r">L</th><th class="r">W%</th>'+
-    '<th class="r">+/-/G</th><th class="r">PF/G</th></tr></thead>';
+    '<th class="r">+/-/G</th><th class="r">PF/G</th><th class="r">PA/G</th></tr></thead>';
   var tbody='';
   all.forEach(function(p,i){
     var rank=i+1;
@@ -2498,6 +2507,7 @@ function renderQuadsStandings(){
       '<td class="r"><span class="'+(pos?'dpos':neg?'dneg':'')+'">'+
         (pos?'+':'')+dpg.toFixed(2)+'</span></td>'+
       '<td class="r">'+p.pfPerGame.toFixed(2)+'</td>'+
+      '<td class="r">'+p.paPerGame.toFixed(2)+'</td>'+
       '</tr>';
   });
   document.getElementById('std-table').innerHTML=thead+'<tbody>'+tbody+'</tbody>';
@@ -2650,7 +2660,7 @@ function renderMixStandings(){
   function pct(v){return(v*100).toFixed(1)+'%';}
   var thead='<thead><tr><th>#</th><th>Entry</th><th class="r">GP</th>'+
     '<th class="r">W</th><th class="r">L</th><th class="r">W%</th>'+
-    '<th class="r">+/-/G</th><th class="r">PF/G</th></tr></thead>';
+    '<th class="r">+/-/G</th><th class="r">PF/G</th><th class="r">PA/G</th></tr></thead>';
   var tbody='';
   all.forEach(function(p,i){
     var rank=i+1;
@@ -2666,6 +2676,7 @@ function renderMixStandings(){
       '<td class="r"><span class="'+(pos?'dpos':neg?'dneg':'')+'">'+
         (pos?'+':'')+dpg.toFixed(2)+'</span></td>'+
       '<td class="r">'+p.pfPerGame.toFixed(2)+'</td>'+
+      '<td class="r">'+p.paPerGame.toFixed(2)+'</td>'+
       '</tr>';
   });
   document.getElementById('std-table-mix').innerHTML=thead+'<tbody>'+tbody+'</tbody>';
@@ -2841,6 +2852,7 @@ function renderTradLeagueStandings(){
       '<td class="r"><span class="'+(pos?'dpos':neg?'dneg':'')+'">'+
         (pos?'+':'')+dpg.toFixed(2)+'</span></td>'+
       '<td class="r">'+p.pfPerGame.toFixed(2)+'</td>'+
+      '<td class="r">'+p.paPerGame.toFixed(2)+'</td>'+
       '</tr>';
   });
   document.getElementById('std-table').innerHTML=thead+'<tbody>'+tbody+'</tbody>';
@@ -3143,12 +3155,12 @@ function _buildCombinedStandings(sd,allPools){
   }
   fmt=SD.format||'kob_league';
   document.getElementById('page-title').textContent=SD.title||'KOB Viewer';
-  document.title=(SD.title||'KOB Viewer')+' | v3.32';
+  document.title=(SD.title||'KOB Viewer')+' | v3.34';
   // Set storage key unique to this event
   _storeKey='kob_'+btoa(encodeURIComponent((SD.title||'ev')+(SD.format||''))).replace(/[^a-zA-Z0-9]/g,'').slice(0,24);
   storeLoad();
   document.body.classList.add('viewer-locked');
-  document.title=(SD.title||'KOB Viewer')+' | v3.32';
+  document.title=(SD.title||'KOB Viewer')+' | v3.34';
   if(fmt==='kob_league') initKOBLeague();
   else if(fmt==='traditional_tournament'){ initTournament(); initSheetsExportBtn(); }
   else if(fmt==='traditional_league') initTraditionalLeague();
