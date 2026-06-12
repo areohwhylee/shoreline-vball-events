@@ -94,7 +94,7 @@ h2{font-size:18px;font-weight:700;margin-bottom:18px;}
 const SUPABASE_URL='https://bdxsvlcojqmushnndaxz.supabase.co';
 const SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkeHN2bGNvanFtdXNobm5kYXh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5MTgyMTgsImV4cCI6MjA5NjQ5NDIxOH0.E7WEfw0GuQ8-iFFP6jpmDMEmDV2X24XJrI3AZ01Vnco';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON);
-var user=null, pendingDeleteId=null, pendingDeleteTitle='';
+var user=null, pendingDeleteId=null, pendingDeleteTitle=''; eventsMap={};
 
 // ── Auth guard ────────────────────────────────────────────────────────────────
 sb.auth.getUser().then(function(r){
@@ -115,6 +115,7 @@ async function loadEvents(){
     list.innerHTML='<div class="empty">No events yet. Upload a generator HTML file to get started.</div>';
     return;
   }
+  eventsMap={}; data.forEach(function(ev){eventsMap[ev.id]=ev;});
   list.innerHTML=data.map(function(ev){
     var fmt=(ev.format||'').replace(/_/g,' ');
     var date=new Date(ev.created_at).toLocaleDateString();
