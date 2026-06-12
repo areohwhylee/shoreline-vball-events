@@ -127,9 +127,22 @@ async function boot(){
   var s=document.createElement('script');
   // Path relative to this page's location
   var base=window.location.pathname.substring(0,window.location.pathname.lastIndexOf('/')+1);
-  s.src=base+'viewer-core.js?v=3.18';
+  s.src=base+'viewer-core.js?v=3.34';
   console.log('Loading viewer from:',s.src);
-  s.onload=function(){console.log('KOB viewer loaded');};
+  s.onload=function(){
+    console.log('KOB viewer loaded');
+    // Dispatch init — mirrors the standalone viewer IIFE
+    fmt=window.SD.format||'kob_league';
+    document.getElementById('page-title').textContent=window.SD.title||'KOB Viewer';
+    document.title=(window.SD.title||'KOB Viewer')+' | KOB Platform';
+    storeLoad();
+    document.body.classList.add('viewer-locked');
+    if(fmt==='kob_league') initKOBLeague();
+    else if(fmt==='traditional_tournament'){ initTournament(); initSheetsExportBtn(); }
+    else if(fmt==='traditional_league') initTraditionalLeague();
+    else if(fmt==='kob_quads') initKOBQuads();
+    else if(fmt==='kob_random_mix') initKOBRandomMix();
+  };
   s.onerror=function(){
     document.body.innerHTML='<div style="color:#e57373;padding:40px;font-family:sans-serif;">'
       +'<h2>Could not load viewer</h2>'
@@ -150,7 +163,8 @@ async function boot(){
         };
         // Refresh current view
         try{
-          if(typeof renderPoolSchedule==='function') renderPoolSchedule();
+          if(typeof renderQuadsSchedule==='function'&&fmt==='kob_quads') renderQuadsSchedule();
+          else if(typeof renderPoolSchedule==='function') renderPoolSchedule();
           else if(typeof renderLgSchedule==='function') renderLgSchedule();
           else if(typeof renderTradLeagueSchedule==='function') renderTradLeagueSchedule();
         }catch(e){}
