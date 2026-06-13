@@ -9,11 +9,14 @@ var adminMode=false;
 var _storeKey='';  // localStorage key prefix, set at init from event title
 
 function storeSave(){
+  // SaaS override takes priority
+  if(typeof window._storeSaveOverride==='function'){
+    window._storeSaveOverride(); return;
+  }
   if(!_storeKey) return;
   try{
     localStorage.setItem(_storeKey+'.scores', JSON.stringify(scores));
     localStorage.setItem(_storeKey+'.nameMap', JSON.stringify(nameMap));
-    // Save bracket state (seeds + picks only, not full round structure)
     var bracketState=(allBrackets||[]).map(function(bk){
       return {name:bk.name, seeds:bk.seeds, wins:extractWins(bk)};
     });
@@ -34,6 +37,9 @@ function extractWins(bk){
 }
 
 function storeLoad(){
+  if(typeof window._storeLoadOverride==='function'){
+    window._storeLoadOverride(); return;
+  }
   if(!_storeKey) return;
   try{
     var sc=localStorage.getItem(_storeKey+'.scores');
