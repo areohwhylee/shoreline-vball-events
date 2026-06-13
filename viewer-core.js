@@ -274,10 +274,10 @@ function renderLgSchedule(){
     rows+='<div class="net-row'+(i%2?' alt':'')+'">'
       +'<span class="nnum">'+courtName+'</span>'
       +'<span class="pair"><span class="pa">'+dn(m.p1[0])+'</span><span class="plus">+</span><span class="pb">'+dn(m.p1[1])+'</span></span>'
-      +'<input type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'" data-key="'+key+'" data-side="0" oninput="onLgScore(this)">'
+      +'<input type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'" data-key="'+key+'" data-side="0" oninput="onLgScore(this)" onblur="flushSave()">'
       +'<span class="score-static '+c1+'">'+(sc.s1!==''?sc.s1:'-')+'</span>'
       +'<span class="vsc">vs</span>'
-      +'<input type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'" data-key="'+key+'" data-side="1" oninput="onLgScore(this)">'
+      +'<input type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'" data-key="'+key+'" data-side="1" oninput="onLgScore(this)" onblur="flushSave()">'
       +'<span class="score-static '+c2+'">'+(sc.s2!==''?sc.s2:'-')+'</span>'
       +'<span class="pair"><span class="pa">'+dn(m.p2[0])+'</span><span class="plus">+</span><span class="pb">'+dn(m.p2[1])+'</span></span>'
       +'</div>';
@@ -407,9 +407,9 @@ function renderPoolSchedule(){
         var rowBg=si%2===0?'':'background:var(--bg2);';
         card+='<div style="display:grid;grid-template-columns:40px 80px 28px 80px;gap:8px;align-items:center;padding:6px 12px;'+rowBg+'border-bottom:.5px solid var(--b3);">';
         card+='<span style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;">Set '+(si+1)+'</span>';
-        card+='<input type="number" min="0" max="99" class="score-in '+s.c1+'" value="'+s.sc.s1+'" data-key="'+s.key+'" data-side="0" oninput="onPoolScore(this)" style="max-width:80px;">';
+        card+='<input type="number" min="0" max="99" class="score-in '+s.c1+'" value="'+s.sc.s1+'" data-key="'+s.key+'" data-side="0" oninput="onPoolScore(this)" onblur="flushSave()" style="max-width:80px;">';
         card+='<span style="font-size:12px;color:var(--t3);text-align:center;">vs</span>';
-        card+='<input type="number" min="0" max="99" class="score-in '+s.c2+'" value="'+s.sc.s2+'" data-key="'+s.key+'" data-side="1" oninput="onPoolScore(this)" style="max-width:80px;">';
+        card+='<input type="number" min="0" max="99" class="score-in '+s.c2+'" value="'+s.sc.s2+'" data-key="'+s.key+'" data-side="1" oninput="onPoolScore(this)" onblur="flushSave()" style="max-width:80px;">';
         card+='</div>';
       });
 
@@ -452,9 +452,9 @@ function renderPoolSchedule(){
         // Single set row
         card+='<div style="display:grid;grid-template-columns:40px 80px 28px 80px;gap:8px;align-items:center;padding:6px 12px;">';
         card+='<span style="font-size:10px;font-weight:600;color:var(--ts);text-transform:uppercase;">Set 1</span>';
-        card+='<input type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'" data-key="'+key+'" data-side="0" oninput="onPoolScore(this)" style="max-width:80px;">';
+        card+='<input type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'" data-key="'+key+'" data-side="0" oninput="onPoolScore(this)" onblur="flushSave()" style="max-width:80px;">';
         card+='<span style="font-size:12px;color:var(--t3);text-align:center;">vs</span>';
-        card+='<input type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'" data-key="'+key+'" data-side="1" oninput="onPoolScore(this)" style="max-width:80px;">';
+        card+='<input type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'" data-key="'+key+'" data-side="1" oninput="onPoolScore(this)" onblur="flushSave()" style="max-width:80px;">';
         card+='</div>';
         card+='</div>';
         rows+=card;
@@ -1944,10 +1944,10 @@ function renderQuadsSchedule(){
         '</div>'+
         '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 12px;gap:4px;">'+
           '<input type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'"'+
-            ' data-key="'+key+'" data-side="0" oninput="onQuadsScore(this)" style="width:56px;">'+
+            ' data-key="'+key+'" data-side="0" oninput="onQuadsScore(this)" onblur="flushSave()" style="width:56px;">'+
           '<span style="font-size:11px;color:var(--t3);">vs</span>'+
           '<input type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'"'+
-            ' data-key="'+key+'" data-side="1" oninput="onQuadsScore(this)" style="width:56px;">'+
+            ' data-key="'+key+'" data-side="1" oninput="onQuadsScore(this)" onblur="flushSave()" style="width:56px;">'+
         '</div>'+
         '<div style="padding:8px 12px;border-left:.5px solid var(--b3);text-align:right;">'+
           '<div style="font-size:12px;font-weight:'+(win2?'700':'400')+';color:'+(has?(win2?'var(--ts)':'var(--t2)'):'var(--tp)')+';">'+dn(m.p2[0])+'</div>'+
@@ -2158,6 +2158,11 @@ function rqCalcStandingsMap(){
 }
 
 //    Score handlers                                                            
+function flushSave(){
+  clearTimeout(_saveTimer);
+  if(typeof window._storeSaveOverride==='function') window._storeSaveOverride();
+  else storeSave();
+}
 function onQuadsScore(input){
   var key=input.dataset.key,side=parseInt(input.dataset.side);
   if(!scores[key]) scores[key]={s1:'',s2:''};
@@ -2300,11 +2305,11 @@ function renderMixSchedule(){
       '<span class="nnum">'+(m.court||'')+'</span>'+
       '<span class="pair"><span class="pa" style="font-size:12px;">'+pair1+'</span></span>'+
       '<input type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'"'+
-        ' data-key="'+key+'" data-side="0" oninput="onMixScore(this)">'+
+        ' data-key="'+key+'" data-side="0" oninput="onMixScore(this)" onblur="flushSave()">'+
       '<span class="score-static '+c1+'">'+( sc.s1!==''?sc.s1:'-')+'</span>'+
       '<span class="vsc">vs</span>'+
       '<input type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'"'+
-        ' data-key="'+key+'" data-side="1" oninput="onMixScore(this)">'+
+        ' data-key="'+key+'" data-side="1" oninput="onMixScore(this)" onblur="flushSave()">'+
       '<span class="score-static '+c2+'">'+( sc.s2!==''?sc.s2:'-')+'</span>'+
       '<span class="pair"><span class="pb" style="font-size:12px;">'+pair2+'</span></span>'+
       '</div>';
@@ -2483,11 +2488,11 @@ function renderTradLeagueSchedule(){
       '<span class="nnum">'+courtName+'</span>' +
       '<span class="pair"><span class="pa">'+dn(m.p1)+'</span></span>' +
       '<input type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'"'+
-        ' data-key="'+key+'" data-side="0" oninput="onTradLgScore(this)">'+
+        ' data-key="'+key+'" data-side="0" oninput="onTradLgScore(this)" onblur="flushSave()">'+
       '<span class="score-static '+c1+'">'+(sc.s1!==''?sc.s1:'-')+'</span>'+
       '<span class="vsc">vs</span>' +
       '<input type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'"'+
-        ' data-key="'+key+'" data-side="1" oninput="onTradLgScore(this)">'+
+        ' data-key="'+key+'" data-side="1" oninput="onTradLgScore(this)" onblur="flushSave()">'+
       '<span class="score-static '+c2+'">'+(sc.s2!==''?sc.s2:'-')+'</span>'+
       '<span class="pair"><span class="pb">'+dn(m.p2)+'</span></span>' +
       '</div>';
