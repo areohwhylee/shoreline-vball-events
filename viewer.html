@@ -331,26 +331,29 @@ async function boot(){
   // 6. Override store functions BEFORE viewer boots
   window._storeSaveOverride=async function(){
     // Save if admin mode is active (PIN already verified by toggleAdmin)
-    if(!window.adminMode) return;
-    var toUpsert=Object.keys(window.scores||{}).map(function(k){
-      var sc=window.scores[k];
+    if(!adminMode) return;
+    var toUpsert=Object.keys(scores||{}).map(function(k){
+      var sc=scores[k];
       return {event_id:eventId,score_key:k,
         s1:sc.s1!==''?parseInt(sc.s1):null,
         s2:sc.s2!==''?parseInt(sc.s2):null};
     }).filter(function(r){return r.s1!=null||r.s2!=null;});
     if(toUpsert.length)
       await sb.from('scores').upsert(toUpsert,{onConflict:'event_id,score_key'});
-    if(window.nameMap){
-      var nm=Object.keys(window.nameMap).map(function(o){
-        return {event_id:eventId,original:o,display:window.nameMap[o]};
+    if(nameMap){
+      var nm=Object.keys(nameMap).map(function(o){
+        return {event_id:eventId,original:o,display:nameMap[o]};
       });
       if(nm.length)
         await sb.from('name_maps').upsert(nm,{onConflict:'event_id,original'});
     }
   };
   window._storeLoadOverride=function(){
-    window.scores=Object.assign({},dbScores);
-    window.nameMap=Object.assign({},dbNameMap);
+    // Mutate the existing scores/nameMap objects so viewer-core's local refs stay in sync
+    Object.keys(scores).forEach(function(k){delete scores[k];});
+    Object.assign(scores,dbScores);
+    Object.keys(nameMap).forEach(function(k){delete nameMap[k];});
+    Object.assign(nameMap,dbNameMap);
   };
   window._storeClearOverride=async function(){
     if(!window.adminMode){alert('Enter admin mode first.');return;}
