@@ -8,10 +8,13 @@ var nameMap={};  // originalName -> displayName
 var adminMode=false;
 var _storeKey='';  // localStorage key prefix, set at init from event title
 
+var _saveTimer=null;
 function storeSave(){
-  // SaaS override takes priority
+  // Debounce: wait 600ms after last change before writing
   if(typeof window._storeSaveOverride==='function'){
-    window._storeSaveOverride(); return;
+    clearTimeout(_saveTimer);
+    _saveTimer=setTimeout(function(){ window._storeSaveOverride(); }, 600);
+    return;
   }
   if(!_storeKey) return;
   try{

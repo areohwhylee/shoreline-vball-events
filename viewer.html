@@ -330,8 +330,7 @@ async function boot(){
 
   // 6. Override store functions BEFORE viewer boots
   window._storeSaveOverride=async function(){
-    // Save if admin mode is active (PIN already verified by toggleAdmin)
-    if(!adminMode) return;
+    // Score entry is public — no admin check
     var toUpsert=Object.keys(scores||{}).map(function(k){
       var sc=scores[k];
       return {event_id:eventId,score_key:k,
