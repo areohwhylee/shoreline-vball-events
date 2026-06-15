@@ -1613,8 +1613,8 @@ function initKOBQuads(){
 //    Save rounds to localStorage                                              
 function rqSaveRounds(){
   try{ localStorage.setItem(_storeKey+'.rqRounds',JSON.stringify(rqRounds)); }catch(e){}
-  // Only call storeSave for score/namemap persistence, not during round generation
-  if(Object.keys(scores).length) storeSave();
+  // Always call storeSave so rqRounds gets pushed to Supabase via override
+  storeSave();
 }
 
 

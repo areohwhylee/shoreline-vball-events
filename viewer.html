@@ -337,6 +337,11 @@ async function boot(){
         s1:sc.s1!==''?parseInt(sc.s1):null,
         s2:sc.s2!==''?parseInt(sc.s2):null};
     }).filter(function(r){return r.s1!=null||r.s2!=null;});
+    // Include rqRounds as special key if present
+    if(typeof rqRounds!=='undefined'&&rqRounds.length){
+      toUpsert.push({event_id:eventId,score_key:'__rq_rounds__',
+        s1:null,s2:null,meta:JSON.stringify(rqRounds)});
+    }
     if(toUpsert.length)
       await sb.from('scores').upsert(toUpsert,{onConflict:'event_id,score_key'});
     if(nameMap){
@@ -353,6 +358,22 @@ async function boot(){
     Object.assign(scores,dbScores);
     Object.keys(nameMap).forEach(function(k){delete nameMap[k];});
     Object.assign(nameMap,dbNameMap);
+    // Load rqRounds from special key if present
+    var rqRow=dbScores['__rq_rounds__'];
+    if(rqRow&&rqRow.meta){
+      try{
+        var saved=JSON.parse(rqRow.meta);
+        if(saved&&saved.length){
+          // Validate all pools have 4 entries
+          var valid=saved.every(function(r){
+            return r.pools&&r.pools.every(function(p){return p.length===4;});
+          });
+          if(valid){ rqRounds=saved; }
+        }
+      }catch(e){}
+    }
+    // Remove __rq_rounds__ from scores so it doesn't affect scoring logic
+    delete scores['__rq_rounds__'];
   };
   window._storeClearOverride=async function(){
     if(!window.adminMode){alert('Enter admin mode first.');return;}
