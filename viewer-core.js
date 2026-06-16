@@ -1631,9 +1631,6 @@ function initKOBQuads(){
 function rqSaveRounds(){
   try{ localStorage.setItem(_storeKey+'.rqRounds',JSON.stringify(rqRounds)); }catch(e){}
   flushSave();
-}catch(e){}
-  // Only call storeSave for score/namemap persistence, not during round generation
-  if(Object.keys(scores).length) storeSave();
 }
 
 
