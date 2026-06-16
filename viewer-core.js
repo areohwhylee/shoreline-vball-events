@@ -21,12 +21,6 @@ function storeSave(){
   }catch(e){}
 }
 
-function flushSave(){
-  clearTimeout(_saveTimer);
-  if(typeof window._storeSaveOverride==='function') window._storeSaveOverride();
-  else storeSave();
-}
-
 function extractWins(bk){
   var wins={w:[],l:[],gf:null};
   (bk.wRounds||[]).forEach(function(round,ri){
@@ -268,15 +262,18 @@ function renderLgSchedule(){
     var c1=has?(s1n>s2n?'win':s1n<s2n?'lose':''):'';
     var c2=has?(s2n>s1n?'win':s2n<s1n?'lose':''):'';
     var courtName=sd.courts[i%sd.courts.length]?sd.courts[i%sd.courts.length].name:(i+1);
+    // Format pair name   handle both array [a,b] and string formats
+    var p1name=Array.isArray(m.p1)?dn(m.p1[0])+' + '+dn(m.p1[1]):dn(m.p1);
+    var p2name=Array.isArray(m.p2)?dn(m.p2[0])+' + '+dn(m.p2[1]):dn(m.p2);
     rows+='<div class="net-row'+(i%2?' alt':'')+'">'
       +'<span class="nnum">'+courtName+'</span>'
-      +'<span class="pair"><span class="pa">'+dn(m.p1[0])+'</span><span class="plus">+</span><span class="pb">'+dn(m.p1[1])+'</span></span>'
-      +'<input type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'" data-key="'+key+'" data-side="0" oninput="onLgScore(this)">'
+      +'<span class="pair" style="font-size:13px;font-weight:'+(has&&s1n>s2n?'600':'400')+';color:'+(has?(s1n>s2n?'var(--ts)':'var(--t2)'):'var(--ti)')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+p1name+'</span>'
+      +'<input type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'" data-key="'+key+'" data-side="0" oninput="onLgScore(this)" onblur="flushSave()">'
       +'<span class="score-static '+c1+'">'+(sc.s1!==''?sc.s1:'-')+'</span>'
       +'<span class="vsc">vs</span>'
-      +'<input type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'" data-key="'+key+'" data-side="1" oninput="onLgScore(this)">'
+      +'<input type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'" data-key="'+key+'" data-side="1" oninput="onLgScore(this)" onblur="flushSave()">'
       +'<span class="score-static '+c2+'">'+(sc.s2!==''?sc.s2:'-')+'</span>'
-      +'<span class="pair"><span class="pa">'+dn(m.p2[0])+'</span><span class="plus">+</span><span class="pb">'+dn(m.p2[1])+'</span></span>'
+      +'<span class="pair" style="font-size:13px;font-weight:'+(has&&s2n>s1n?'600':'400')+';color:'+(has?(s2n>s1n?'var(--ts)':'var(--t2)'):'var(--tp)')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+p2name+'</span>'
       +'</div>';
   }
   rows+='</div>';
@@ -1610,8 +1607,8 @@ function initKOBQuads(){
 //    Save rounds to localStorage                                              
 function rqSaveRounds(){
   try{ localStorage.setItem(_storeKey+'.rqRounds',JSON.stringify(rqRounds)); }catch(e){}
-  flushSave();
-}
+  // Only call storeSave for score/namemap persistence, not during round generation
+  if(Object.keys(scores).length) storeSave();
 }
 
 
@@ -2120,9 +2117,7 @@ function rqConfirmNextRound(){
   rqSwapFrom=null;
   rqSelRound=rqRounds.length-1;
   rqSelPool=0;
-  // Immediate save — round confirmation is critical, bypass debounce
-  try{ localStorage.setItem(_storeKey+'.rqRounds',JSON.stringify(rqRounds)); }catch(e){}
-  flushSave();
+  rqSaveRounds();
   renderQuadsSchedule();
 }
 
