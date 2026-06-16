@@ -8,7 +8,29 @@ var nameMap={};  // originalName -> displayName
 var adminMode=false;
 var _storeKey='';  // localStorage key prefix, set at init from event title
 
+function flushSave(){
+  clearTimeout(_saveTimer);
+  if(typeof window._storeSaveOverride==='function') window._storeSaveOverride();
+  else { clearTimeout(_saveTimer); _doLocalSave(); }
+}
+function _doLocalSave(){
+  if(!_storeKey) return;
+  try{
+    localStorage.setItem(_storeKey+'.scores', JSON.stringify(scores));
+    localStorage.setItem(_storeKey+'.nameMap', JSON.stringify(nameMap));
+    var bracketState=(allBrackets||[]).map(function(bk){
+      return {name:bk.name, seeds:bk.seeds, wins:extractWins(bk)};
+    });
+    localStorage.setItem(_storeKey+'.brackets', JSON.stringify(bracketState));
+  }catch(e){}
+}
+var _saveTimer=null;
 function storeSave(){
+  if(typeof window._storeSaveOverride==='function'){
+    clearTimeout(_saveTimer);
+    _saveTimer=setTimeout(function(){ window._storeSaveOverride(); }, 600);
+    return;
+  }
   if(!_storeKey) return;
   try{
     localStorage.setItem(_storeKey+'.scores', JSON.stringify(scores));
@@ -34,6 +56,9 @@ function extractWins(bk){
 }
 
 function storeLoad(){
+  if(typeof window._storeLoadOverride==='function'){
+    window._storeLoadOverride(); return;
+  }
   if(!_storeKey) return;
   try{
     var sc=localStorage.getItem(_storeKey+'.scores');
@@ -1607,8 +1632,7 @@ function initKOBQuads(){
 //    Save rounds to localStorage                                              
 function rqSaveRounds(){
   try{ localStorage.setItem(_storeKey+'.rqRounds',JSON.stringify(rqRounds)); }catch(e){}
-  // Only call storeSave for score/namemap persistence, not during round generation
-  if(Object.keys(scores).length) storeSave();
+  flushSave();
 }
 
 
@@ -2117,7 +2141,8 @@ function rqConfirmNextRound(){
   rqSwapFrom=null;
   rqSelRound=rqRounds.length-1;
   rqSelPool=0;
-  rqSaveRounds();
+  try{ localStorage.setItem(_storeKey+'.rqRounds',JSON.stringify(rqRounds)); }catch(e){}
+  flushSave();
   renderQuadsSchedule();
 }
 
