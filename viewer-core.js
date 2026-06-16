@@ -286,15 +286,17 @@ function renderLgSchedule(){
     // Format pair name   handle both array [a,b] and string formats
     var p1name=Array.isArray(m.p1)?dn(m.p1[0])+' + '+dn(m.p1[1]):dn(m.p1);
     var p2name=Array.isArray(m.p2)?dn(m.p2[0])+' + '+dn(m.p2[1]):dn(m.p2);
+    var p1col=has?(s1n>s2n?'var(--ts)':s1n<s2n?'var(--t2)':'var(--ti)'):'var(--ti)';
+    var p2col=has?(s2n>s1n?'var(--ts)':s2n<s1n?'var(--t2)':'var(--tp)'):'var(--tp)';
     rows+='<div class="net-row'+(i%2?' alt':'')+'">'
       +'<span class="nnum">'+courtName+'</span>'
-      +'<span class="pair" style="font-size:13px;font-weight:'+(has&&s1n>s2n?'600':'400')+';color:'+(has?(s1n>s2n?'var(--ts)':'var(--t2)'):'var(--ti)')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+p1name+'</span>'
+      +'<span class="pair p1" style="font-weight:'+(has&&s1n>s2n?'600':'400')+';color:'+p1col+';">'+p1name+'</span>'
       +'<input type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'" data-key="'+key+'" data-side="0" oninput="onLgScore(this)" onblur="flushSave()">'
       +'<span class="score-static '+c1+'">'+(sc.s1!==''?sc.s1:'-')+'</span>'
       +'<span class="vsc">vs</span>'
       +'<input type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'" data-key="'+key+'" data-side="1" oninput="onLgScore(this)" onblur="flushSave()">'
       +'<span class="score-static '+c2+'">'+(sc.s2!==''?sc.s2:'-')+'</span>'
-      +'<span class="pair" style="font-size:13px;font-weight:'+(has&&s2n>s1n?'600':'400')+';color:'+(has?(s2n>s1n?'var(--ts)':'var(--t2)'):'var(--tp)')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+p2name+'</span>'
+      +'<span class="pair p2" style="font-weight:'+(has&&s2n>s1n?'600':'400')+';color:'+p2col+';">'+p2name+'</span>'
       +'</div>';
   }
   rows+='</div>';
