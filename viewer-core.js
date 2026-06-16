@@ -8,23 +8,23 @@ var nameMap={};  // originalName -> displayName
 var adminMode=false;
 var _storeKey='';  // localStorage key prefix, set at init from event title
 
-var _saveTimer=null;
 function storeSave(){
-  // Debounce: wait 600ms after last change before writing
-  if(typeof window._storeSaveOverride==='function'){
-    clearTimeout(_saveTimer);
-    _saveTimer=setTimeout(function(){ window._storeSaveOverride(); }, 600);
-    return;
-  }
   if(!_storeKey) return;
   try{
     localStorage.setItem(_storeKey+'.scores', JSON.stringify(scores));
     localStorage.setItem(_storeKey+'.nameMap', JSON.stringify(nameMap));
+    // Save bracket state (seeds + picks only, not full round structure)
     var bracketState=(allBrackets||[]).map(function(bk){
       return {name:bk.name, seeds:bk.seeds, wins:extractWins(bk)};
     });
     localStorage.setItem(_storeKey+'.brackets', JSON.stringify(bracketState));
   }catch(e){}
+}
+
+function flushSave(){
+  clearTimeout(_saveTimer);
+  if(typeof window._storeSaveOverride==='function') window._storeSaveOverride();
+  else storeSave();
 }
 
 function extractWins(bk){
@@ -40,9 +40,6 @@ function extractWins(bk){
 }
 
 function storeLoad(){
-  if(typeof window._storeLoadOverride==='function'){
-    window._storeLoadOverride(); return;
-  }
   if(!_storeKey) return;
   try{
     var sc=localStorage.getItem(_storeKey+'.scores');
@@ -274,10 +271,10 @@ function renderLgSchedule(){
     rows+='<div class="net-row'+(i%2?' alt':'')+'">'
       +'<span class="nnum">'+courtName+'</span>'
       +'<span class="pair"><span class="pa">'+dn(m.p1[0])+'</span><span class="plus">+</span><span class="pb">'+dn(m.p1[1])+'</span></span>'
-      +'<input type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'" data-key="'+key+'" data-side="0" oninput="onLgScore(this)" onblur="flushSave()">'
+      +'<input type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'" data-key="'+key+'" data-side="0" oninput="onLgScore(this)">'
       +'<span class="score-static '+c1+'">'+(sc.s1!==''?sc.s1:'-')+'</span>'
       +'<span class="vsc">vs</span>'
-      +'<input type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'" data-key="'+key+'" data-side="1" oninput="onLgScore(this)" onblur="flushSave()">'
+      +'<input type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'" data-key="'+key+'" data-side="1" oninput="onLgScore(this)">'
       +'<span class="score-static '+c2+'">'+(sc.s2!==''?sc.s2:'-')+'</span>'
       +'<span class="pair"><span class="pa">'+dn(m.p2[0])+'</span><span class="plus">+</span><span class="pb">'+dn(m.p2[1])+'</span></span>'
       +'</div>';
@@ -407,9 +404,9 @@ function renderPoolSchedule(){
         var rowBg=si%2===0?'':'background:var(--bg2);';
         card+='<div style="display:grid;grid-template-columns:40px 80px 28px 80px;gap:8px;align-items:center;padding:6px 12px;'+rowBg+'border-bottom:.5px solid var(--b3);">';
         card+='<span style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;">Set '+(si+1)+'</span>';
-        card+='<input type="number" min="0" max="99" class="score-in '+s.c1+'" value="'+s.sc.s1+'" data-key="'+s.key+'" data-side="0" oninput="onPoolScore(this)" onblur="flushSave()" style="max-width:80px;">';
+        card+='<input type="number" min="0" max="99" class="score-in '+s.c1+'" value="'+s.sc.s1+'" data-key="'+s.key+'" data-side="0" oninput="onPoolScore(this)" style="max-width:80px;">';
         card+='<span style="font-size:12px;color:var(--t3);text-align:center;">vs</span>';
-        card+='<input type="number" min="0" max="99" class="score-in '+s.c2+'" value="'+s.sc.s2+'" data-key="'+s.key+'" data-side="1" oninput="onPoolScore(this)" onblur="flushSave()" style="max-width:80px;">';
+        card+='<input type="number" min="0" max="99" class="score-in '+s.c2+'" value="'+s.sc.s2+'" data-key="'+s.key+'" data-side="1" oninput="onPoolScore(this)" style="max-width:80px;">';
         card+='</div>';
       });
 
@@ -452,9 +449,9 @@ function renderPoolSchedule(){
         // Single set row
         card+='<div style="display:grid;grid-template-columns:40px 80px 28px 80px;gap:8px;align-items:center;padding:6px 12px;">';
         card+='<span style="font-size:10px;font-weight:600;color:var(--ts);text-transform:uppercase;">Set 1</span>';
-        card+='<input type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'" data-key="'+key+'" data-side="0" oninput="onPoolScore(this)" onblur="flushSave()" style="max-width:80px;">';
+        card+='<input type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'" data-key="'+key+'" data-side="0" oninput="onPoolScore(this)" style="max-width:80px;">';
         card+='<span style="font-size:12px;color:var(--t3);text-align:center;">vs</span>';
-        card+='<input type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'" data-key="'+key+'" data-side="1" oninput="onPoolScore(this)" onblur="flushSave()" style="max-width:80px;">';
+        card+='<input type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'" data-key="'+key+'" data-side="1" oninput="onPoolScore(this)" style="max-width:80px;">';
         card+='</div>';
         card+='</div>';
         rows+=card;
@@ -1613,8 +1610,8 @@ function initKOBQuads(){
 //    Save rounds to localStorage                                              
 function rqSaveRounds(){
   try{ localStorage.setItem(_storeKey+'.rqRounds',JSON.stringify(rqRounds)); }catch(e){}
-  // Always call storeSave so rqRounds gets pushed to Supabase via override
-  storeSave();
+  flushSave();
+}
 }
 
 
@@ -1944,10 +1941,10 @@ function renderQuadsSchedule(){
         '</div>'+
         '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 12px;gap:4px;">'+
           '<input type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'"'+
-            ' data-key="'+key+'" data-side="0" oninput="onQuadsScore(this)" onblur="flushSave()" style="width:56px;">'+
+            ' data-key="'+key+'" data-side="0" oninput="onQuadsScore(this)" style="width:56px;">'+
           '<span style="font-size:11px;color:var(--t3);">vs</span>'+
           '<input type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'"'+
-            ' data-key="'+key+'" data-side="1" oninput="onQuadsScore(this)" onblur="flushSave()" style="width:56px;">'+
+            ' data-key="'+key+'" data-side="1" oninput="onQuadsScore(this)" style="width:56px;">'+
         '</div>'+
         '<div style="padding:8px 12px;border-left:.5px solid var(--b3);text-align:right;">'+
           '<div style="font-size:12px;font-weight:'+(win2?'700':'400')+';color:'+(has?(win2?'var(--ts)':'var(--t2)'):'var(--tp)')+';">'+dn(m.p2[0])+'</div>'+
@@ -2123,7 +2120,9 @@ function rqConfirmNextRound(){
   rqSwapFrom=null;
   rqSelRound=rqRounds.length-1;
   rqSelPool=0;
-  rqSaveRounds();
+  // Immediate save — round confirmation is critical, bypass debounce
+  try{ localStorage.setItem(_storeKey+'.rqRounds',JSON.stringify(rqRounds)); }catch(e){}
+  flushSave();
   renderQuadsSchedule();
 }
 
@@ -2158,11 +2157,6 @@ function rqCalcStandingsMap(){
 }
 
 //    Score handlers                                                            
-function flushSave(){
-  clearTimeout(_saveTimer);
-  if(typeof window._storeSaveOverride==='function') window._storeSaveOverride();
-  else storeSave();
-}
 function onQuadsScore(input){
   var key=input.dataset.key,side=parseInt(input.dataset.side);
   if(!scores[key]) scores[key]={s1:'',s2:''};
@@ -2305,11 +2299,11 @@ function renderMixSchedule(){
       '<span class="nnum">'+(m.court||'')+'</span>'+
       '<span class="pair"><span class="pa" style="font-size:12px;">'+pair1+'</span></span>'+
       '<input type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'"'+
-        ' data-key="'+key+'" data-side="0" oninput="onMixScore(this)" onblur="flushSave()">'+
+        ' data-key="'+key+'" data-side="0" oninput="onMixScore(this)">'+
       '<span class="score-static '+c1+'">'+( sc.s1!==''?sc.s1:'-')+'</span>'+
       '<span class="vsc">vs</span>'+
       '<input type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'"'+
-        ' data-key="'+key+'" data-side="1" oninput="onMixScore(this)" onblur="flushSave()">'+
+        ' data-key="'+key+'" data-side="1" oninput="onMixScore(this)">'+
       '<span class="score-static '+c2+'">'+( sc.s2!==''?sc.s2:'-')+'</span>'+
       '<span class="pair"><span class="pb" style="font-size:12px;">'+pair2+'</span></span>'+
       '</div>';
@@ -2474,30 +2468,68 @@ function renderTradLeagueSchedule(){
     '<span style="text-align:center">Score</span><span></span>'+
     '<span style="text-align:center">Score</span><span>Team 2</span></div>';
 
+  var numSets=(sd.scoring&&sd.scoring.numSets>1)?sd.scoring.numSets:1;
+
   round.forEach(function(m,mi){
     if(m.isBye) return;
     matchNum++;
-    var key='tl-w'+selTradWeek+'-r'+selTradRound+'-m'+mi;
-    var sc=scores[key]||{s1:'',s2:''};
-    var s1n=parseInt(sc.s1),s2n=parseInt(sc.s2);
-    var has=sc.s1!==''&&sc.s2!==''&&!isNaN(s1n)&&!isNaN(s2n);
-    var c1=has?(s1n>s2n?'win':s1n<s2n?'lose':''):'';
-    var c2=has?(s2n>s1n?'win':s2n<s1n?'lose':''):'';
     var courtName=sd.courts[m.court]?sd.courts[m.court].name:(m.court!=null?'C'+(m.court+1):'--');
-    rows+='<div class="net-row'+(matchNum%2?' alt':'')+'">' +
-      '<span class="nnum">'+courtName+'</span>' +
-      '<span class="pair"><span class="pa">'+dn(m.p1)+'</span></span>' +
-      '<input type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'"'+
-        ' data-key="'+key+'" data-side="0" oninput="onTradLgScore(this)" onblur="flushSave()">'+
-      '<span class="score-static '+c1+'">'+(sc.s1!==''?sc.s1:'-')+'</span>'+
-      '<span class="vsc">vs</span>' +
-      '<input type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'"'+
-        ' data-key="'+key+'" data-side="1" oninput="onTradLgScore(this)" onblur="flushSave()">'+
-      '<span class="score-static '+c2+'">'+(sc.s2!==''?sc.s2:'-')+'</span>'+
-      '<span class="pair"><span class="pb">'+dn(m.p2)+'</span></span>' +
-      '</div>';
+
+    if(numSets===1){
+      var key='tl-w'+selTradWeek+'-r'+selTradRound+'-m'+mi;
+      var sc=scores[key]||{s1:'',s2:''};
+      var s1n=parseInt(sc.s1),s2n=parseInt(sc.s2);
+      var has=sc.s1!==''&&sc.s2!==''&&!isNaN(s1n)&&!isNaN(s2n);
+      var c1=has?(s1n>s2n?'win':s1n<s2n?'lose':''):'';
+      var c2=has?(s2n>s1n?'win':s2n<s1n?'lose':''):'';
+      rows+='<div class="net-row'+(matchNum%2?' alt':'')+'">'+
+        '<span class="nnum">'+courtName+'</span>'+
+        '<span class="pair"><span class="pa">'+dn(m.p1)+'</span></span>'+
+        '<input type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'"'+
+          ' data-key="'+key+'" data-side="0" oninput="onTradLgScore(this)">'+
+        '<span class="score-static '+c1+'">'+(sc.s1!==''?sc.s1:'-')+'</span>'+
+        '<span class="vsc">vs</span>'+
+        '<input type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'"'+
+          ' data-key="'+key+'" data-side="1" oninput="onTradLgScore(this)">'+
+        '<span class="score-static '+c2+'">'+(sc.s2!==''?sc.s2:'-')+'</span>'+
+        '<span class="pair"><span class="pb">'+dn(m.p2)+'</span></span>'+
+        '</div>';
+    } else {
+      // Multi-set: one score row per set, match header shows team names + set tally
+      var setWins1=0, setWins2=0;
+      var setRows='';
+      for(var si=0;si<numSets;si++){
+        var key='tl-w'+selTradWeek+'-r'+selTradRound+'-m'+mi+'-s'+si;
+        var sc=scores[key]||{s1:'',s2:''};
+        var s1n=parseInt(sc.s1),s2n=parseInt(sc.s2);
+        var has=sc.s1!==''&&sc.s2!==''&&!isNaN(s1n)&&!isNaN(s2n);
+        var c1=has?(s1n>s2n?'win':s1n<s2n?'lose':''):'';
+        var c2=has?(s2n>s1n?'win':s2n<s1n?'lose':''):'';
+        if(has){ if(s1n>s2n) setWins1++; else if(s2n>s1n) setWins2++; }
+        setRows+='<div class="net-row" style="background:var(--bg2);padding:4px 8px 4px 24px;">'+
+          '<span class="nnum" style="font-size:10px;">Set '+(si+1)+'</span>'+
+          '<span></span>'+
+          '<input type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'"'+
+            ' data-key="'+key+'" data-side="0" oninput="onTradLgScore(this)">'+
+          '<span class="score-static '+c1+'">'+(sc.s1!==''?sc.s1:'-')+'</span>'+
+          '<span class="vsc">vs</span>'+
+          '<input type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'"'+
+            ' data-key="'+key+'" data-side="1" oninput="onTradLgScore(this)">'+
+          '<span class="score-static '+c2+'">'+(sc.s2!==''?sc.s2:'-')+'</span>'+
+          '<span></span>'+
+          '</div>';
+      }
+      var mWin1=setWins1>setWins2, mWin2=setWins2>setWins1;
+      rows+='<div class="net-row'+(matchNum%2?' alt':'')+'">'+
+        '<span class="nnum">'+courtName+'</span>'+
+        '<span class="pair"><span class="pa" style="color:'+(mWin1?'var(--ts)':mWin2?'var(--t2)':'var(--ti)')+';font-weight:'+(mWin1?'700':'400')+';">'+dn(m.p1)+'</span></span>'+
+        '<span style="text-align:center;font-size:13px;font-weight:600;color:var(--ti);">'+setWins1+'</span>'+
+        '<span class="vsc">sets</span>'+
+        '<span style="text-align:center;font-size:13px;font-weight:600;color:var(--tp);">'+setWins2+'</span>'+
+        '<span class="pair"><span class="pb" style="color:'+(mWin2?'var(--ts)':mWin1?'var(--t2)':'var(--tp)')+';font-weight:'+(mWin2?'700':'400')+';">'+dn(m.p2)+'</span></span>'+
+        '</div>'+setRows;
+    }
   });
-  rows+='</div>';
   document.getElementById('trad-lg-table').innerHTML=rows;
   storeSave();
   updateTradLgProgress();
@@ -2520,13 +2552,22 @@ function onTradLgScore(input){
 
 function updateTradLgProgress(){
   var sd=SD; var total=0,done=0;
+  var numSets=(sd.scoring&&sd.scoring.numSets>1)?sd.scoring.numSets:1;
   sd.sched.forEach(function(week,wi){
     week.forEach(function(round,ri){
       round.forEach(function(m,mi){
         if(m.isBye) return;
-        total++;
-        var sc=scores['tl-w'+wi+'-r'+ri+'-m'+mi];
-        if(sc&&sc.s1!==''&&sc.s2!==''&&!isNaN(parseInt(sc.s1))&&!isNaN(parseInt(sc.s2))) done++;
+        if(numSets===1){
+          total++;
+          var sc=scores['tl-w'+wi+'-r'+ri+'-m'+mi];
+          if(sc&&sc.s1!==''&&sc.s2!==''&&!isNaN(parseInt(sc.s1))&&!isNaN(parseInt(sc.s2))) done++;
+        } else {
+          for(var si=0;si<numSets;si++){
+            total++;
+            var sc=scores['tl-w'+wi+'-r'+ri+'-m'+mi+'-s'+si];
+            if(sc&&sc.s1!==''&&sc.s2!==''&&!isNaN(parseInt(sc.s1))&&!isNaN(parseInt(sc.s2))) done++;
+          }
+        }
       });
     });
   });
@@ -2547,22 +2588,42 @@ function calcTradLeagueStandings(){
     week.forEach(function(round,ri){
       round.forEach(function(m,mi){
         if(m.isBye) return;
-        var sc=scores['tl-w'+wi+'-r'+ri+'-m'+mi];
-        if(!sc||sc.s1===''||sc.s2==='') return;
-        var s1=parseInt(sc.s1),s2=parseInt(sc.s2);
-        if(isNaN(s1)||isNaN(s2)) return;
         var t1=m.p1, t2=m.p2;
-        st[t1].gp++; st[t1].pf+=s1; st[t1].pa+=s2;
-        st[t2].gp++; st[t2].pf+=s2; st[t2].pa+=s1;
-        if(s1>s2){st[t1].w++;st[t2].l++;}
-        else if(s2>s1){st[t2].w++;st[t1].l++;}
-        // H2H
-        if(!h2h[t1][t2]) h2h[t1][t2]={w:0,l:0,pf:0,pa:0};
-        if(!h2h[t2][t1]) h2h[t2][t1]={w:0,l:0,pf:0,pa:0};
-        h2h[t1][t2].pf+=s1; h2h[t1][t2].pa+=s2;
-        h2h[t2][t1].pf+=s2; h2h[t2][t1].pa+=s1;
-        if(s1>s2){h2h[t1][t2].w++;h2h[t2][t1].l++;}
-        else if(s2>s1){h2h[t2][t1].w++;h2h[t1][t2].l++;}
+        var numSets=(sd.scoring&&sd.scoring.numSets>1)?sd.scoring.numSets:1;
+        if(numSets===1){
+          var sc=scores['tl-w'+wi+'-r'+ri+'-m'+mi];
+          if(!sc||sc.s1===''||sc.s2==='') return;
+          var s1=parseInt(sc.s1),s2=parseInt(sc.s2);
+          if(isNaN(s1)||isNaN(s2)) return;
+          st[t1].gp++; st[t1].pf+=s1; st[t1].pa+=s2;
+          st[t2].gp++; st[t2].pf+=s2; st[t2].pa+=s1;
+          if(s1>s2){st[t1].w++;st[t2].l++;}
+          else if(s2>s1){st[t2].w++;st[t1].l++;}
+          if(!h2h[t1][t2]) h2h[t1][t2]={w:0,l:0,pf:0,pa:0};
+          if(!h2h[t2][t1]) h2h[t2][t1]={w:0,l:0,pf:0,pa:0};
+          h2h[t1][t2].pf+=s1; h2h[t1][t2].pa+=s2;
+          h2h[t2][t1].pf+=s2; h2h[t2][t1].pa+=s1;
+          if(s1>s2){h2h[t1][t2].w++;h2h[t2][t1].l++;}
+          else if(s2>s1){h2h[t2][t1].w++;h2h[t1][t2].l++;}
+        } else {
+          // Multi-set: W = sets won, gp = total sets played
+          for(var si=0;si<numSets;si++){
+            var sc=scores['tl-w'+wi+'-r'+ri+'-m'+mi+'-s'+si];
+            if(!sc||sc.s1===''||sc.s2==='') continue;
+            var s1=parseInt(sc.s1),s2=parseInt(sc.s2);
+            if(isNaN(s1)||isNaN(s2)) continue;
+            st[t1].gp++; st[t1].pf+=s1; st[t1].pa+=s2;
+            st[t2].gp++; st[t2].pf+=s2; st[t2].pa+=s1;
+            if(s1>s2){st[t1].w++;st[t2].l++;}
+            else if(s2>s1){st[t2].w++;st[t1].l++;}
+            if(!h2h[t1][t2]) h2h[t1][t2]={w:0,l:0,pf:0,pa:0};
+            if(!h2h[t2][t1]) h2h[t2][t1]={w:0,l:0,pf:0,pa:0};
+            h2h[t1][t2].pf+=s1; h2h[t1][t2].pa+=s2;
+            h2h[t2][t1].pf+=s2; h2h[t2][t1].pa+=s1;
+            if(s1>s2){h2h[t1][t2].w++;h2h[t2][t1].l++;}
+            else if(s2>s1){h2h[t2][t1].w++;h2h[t1][t2].l++;}
+          }
+        }
       });
     });
   });
