@@ -53,17 +53,23 @@ body{font-family:var(--sans);background:var(--bg2);color:var(--t1);min-height:10
 @media(max-width:640px){
   .net-head{display:none;}
   .net-row{
-    grid-template-columns:1fr auto auto auto 1fr;
-    grid-template-rows:auto auto;
-    gap:4px 6px;
-    padding:10px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    padding:12px;
   }
   .net-row .nnum{
-    grid-column:1/-1;
     font-size:10px;color:var(--t3);font-weight:600;
   }
-  .net-row .pair{white-space:normal;}
-  .net-row .pair.p2{text-align:left;}
+  .net-row .pair{
+    white-space:normal;
+    text-align:center;
+    font-size:14px;
+  }
+  .net-row .pair.p2{text-align:center;}
+  .net-row-scores{
+    display:flex;align-items:center;justify-content:center;gap:10px;
+  }
 }
 .net-row.alt{background:var(--bg2);}
 .nnum{font-size:11px;color:var(--t3);font-family:var(--mono);}
@@ -417,7 +423,7 @@ async function boot(){
   var s=document.createElement('script');
   // Path relative to this page's location
   var base=window.location.pathname.substring(0,window.location.pathname.lastIndexOf('/')+1);
-  s.src=base+'viewer-core.js?v=3.37b';
+  s.src=base+'viewer-core.js?v=3.38';
   console.log('Loading viewer from:',s.src);
   s.onload=function(){
     console.log('KOB viewer loaded');
