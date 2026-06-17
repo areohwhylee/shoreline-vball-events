@@ -291,11 +291,13 @@ function renderLgSchedule(){
     rows+='<div class="net-row'+(i%2?' alt':'')+'">'
       +'<span class="nnum">'+courtName+'</span>'
       +'<span class="pair p1" style="font-weight:'+(has&&s1n>s2n?'600':'400')+';color:'+p1col+';">'+p1name+'</span>'
+      +'<span class="net-row-scores">'
       +'<input type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'" data-key="'+key+'" data-side="0" oninput="onLgScore(this)" onblur="flushSave()">'
       +'<span class="score-static '+c1+'">'+(sc.s1!==''?sc.s1:'-')+'</span>'
       +'<span class="vsc">vs</span>'
       +'<input type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'" data-key="'+key+'" data-side="1" oninput="onLgScore(this)" onblur="flushSave()">'
       +'<span class="score-static '+c2+'">'+(sc.s2!==''?sc.s2:'-')+'</span>'
+      +'</span>'
       +'<span class="pair p2" style="font-weight:'+(has&&s2n>s1n?'600':'400')+';color:'+p2col+';">'+p2name+'</span>'
       +'</div>';
   }
