@@ -175,7 +175,6 @@ body.admin-mode .bk-pick{display:inline-block;}
 .score-static.win{color:var(--ts);font-weight:600;}
 .score-static.lose{color:var(--tw);}
 @media(max-width:580px){
-  .net-head,.net-row{grid-template-columns:44px 1fr 52px 18px 52px 1fr 64px;padding:6px 6px;}
   .lk-head,.lk-row{grid-template-columns:44px 60px 1fr 22px 1fr 60px;}
   .bk-round{min-width:130px;}
   .card{padding:14px;}
@@ -423,7 +422,7 @@ async function boot(){
   var s=document.createElement('script');
   // Path relative to this page's location
   var base=window.location.pathname.substring(0,window.location.pathname.lastIndexOf('/')+1);
-  s.src=base+'viewer-core.js?v=3.41';
+  s.src=base+'viewer-core.js?v=3.42';
   console.log('Loading viewer from:',s.src);
   s.onload=function(){
     console.log('KOB viewer loaded');
