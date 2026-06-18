@@ -293,10 +293,8 @@ function renderLgSchedule(){
       +'<span class="pair p1" style="font-weight:'+(has&&s1n>s2n?'600':'400')+';color:'+p1col+';">'+p1name+'</span>'
       +'<span class="net-row-scores">'
       +'<input type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'" data-key="'+key+'" data-side="0" oninput="onLgScore(this)" onblur="flushSave()">'
-      +'<span class="score-static '+c1+'">'+(sc.s1!==''?sc.s1:'-')+'</span>'
       +'<span class="vsc">vs</span>'
       +'<input type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'" data-key="'+key+'" data-side="1" oninput="onLgScore(this)" onblur="flushSave()">'
-      +'<span class="score-static '+c2+'">'+(sc.s2!==''?sc.s2:'-')+'</span>'
       +'</span>'
       +'<span class="pair p2" style="font-weight:'+(has&&s2n>s1n?'600':'400')+';color:'+p2col+';">'+p2name+'</span>'
       +'</div>';
@@ -2318,12 +2316,10 @@ function renderMixSchedule(){
       '<span class="nnum">'+(m.court||'')+'</span>'+
       '<span class="pair"><span class="pa" style="font-size:12px;">'+pair1+'</span></span>'+
       '<input type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'"'+
-        ' data-key="'+key+'" data-side="0" oninput="onMixScore(this)">'+
-      '<span class="score-static '+c1+'">'+( sc.s1!==''?sc.s1:'-')+'</span>'+
+        ' data-key="'+key+'" data-side="0" oninput="onMixScore(this)">'
       '<span class="vsc">vs</span>'+
       '<input type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'"'+
-        ' data-key="'+key+'" data-side="1" oninput="onMixScore(this)">'+
-      '<span class="score-static '+c2+'">'+( sc.s2!==''?sc.s2:'-')+'</span>'+
+        ' data-key="'+key+'" data-side="1" oninput="onMixScore(this)">'
       '<span class="pair"><span class="pb" style="font-size:12px;">'+pair2+'</span></span>'+
       '</div>';
   });
@@ -2505,12 +2501,10 @@ function renderTradLeagueSchedule(){
         '<span class="nnum">'+courtName+'</span>'+
         '<span class="pair"><span class="pa">'+dn(m.p1)+'</span></span>'+
         '<input type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'"'+
-          ' data-key="'+key+'" data-side="0" oninput="onTradLgScore(this)">'+
-        '<span class="score-static '+c1+'">'+(sc.s1!==''?sc.s1:'-')+'</span>'+
+          ' data-key="'+key+'" data-side="0" oninput="onTradLgScore(this)">'
         '<span class="vsc">vs</span>'+
         '<input type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'"'+
-          ' data-key="'+key+'" data-side="1" oninput="onTradLgScore(this)">'+
-        '<span class="score-static '+c2+'">'+(sc.s2!==''?sc.s2:'-')+'</span>'+
+          ' data-key="'+key+'" data-side="1" oninput="onTradLgScore(this)">'
         '<span class="pair"><span class="pb">'+dn(m.p2)+'</span></span>'+
         '</div>';
     } else {
@@ -2529,12 +2523,10 @@ function renderTradLeagueSchedule(){
           '<span class="nnum" style="font-size:10px;">Set '+(si+1)+'</span>'+
           '<span></span>'+
           '<input type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'"'+
-            ' data-key="'+key+'" data-side="0" oninput="onTradLgScore(this)">'+
-          '<span class="score-static '+c1+'">'+(sc.s1!==''?sc.s1:'-')+'</span>'+
+            ' data-key="'+key+'" data-side="0" oninput="onTradLgScore(this)">'
           '<span class="vsc">vs</span>'+
           '<input type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'"'+
-            ' data-key="'+key+'" data-side="1" oninput="onTradLgScore(this)">'+
-          '<span class="score-static '+c2+'">'+(sc.s2!==''?sc.s2:'-')+'</span>'+
+            ' data-key="'+key+'" data-side="1" oninput="onTradLgScore(this)">'
           '<span></span>'+
           '</div>';
       }
