@@ -47,9 +47,10 @@ body{font-family:var(--sans);background:var(--bg2);color:var(--t1);min-height:10
 /* match table */
 .net-table{border:.5px solid var(--b3);border-radius:var(--rl);overflow:hidden;}
 .net-head{display:grid;grid-template-columns:64px 1fr 70px 28px 70px 1fr;gap:6px;align-items:center;padding:6px 10px;background:var(--bg2);font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;}
-.net-row{border-top:.5px solid var(--b3);display:grid;grid-template-columns:64px 1fr auto 28px auto 1fr;gap:6px;align-items:center;padding:8px 10px;}
+.net-row{border-top:.5px solid var(--b3);display:grid;grid-template-columns:64px 1fr auto 1fr;gap:6px;align-items:center;padding:8px 10px;}
 .net-row .pair{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px;}
 .net-row .pair.p2{text-align:right;}
+.net-row-scores{display:flex;align-items:center;gap:6px;}
 @media(max-width:640px){
   .net-head{display:none;}
   .net-row{
@@ -422,7 +423,7 @@ async function boot(){
   var s=document.createElement('script');
   // Path relative to this page's location
   var base=window.location.pathname.substring(0,window.location.pathname.lastIndexOf('/')+1);
-  s.src=base+'viewer-core.js?v=3.42';
+  s.src=base+'viewer-core.js?v=3.43';
   console.log('Loading viewer from:',s.src);
   s.onload=function(){
     console.log('KOB viewer loaded');

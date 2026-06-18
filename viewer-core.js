@@ -2316,10 +2316,10 @@ function renderMixSchedule(){
       '<span class="nnum">'+(m.court||'')+'</span>'+
       '<span class="pair"><span class="pa" style="font-size:12px;">'+pair1+'</span></span>'+
       '<input type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'"'+
-        ' data-key="'+key+'" data-side="0" oninput="onMixScore(this)">'
+        ' data-key="'+key+'" data-side="0" oninput="onMixScore(this)" onblur="flushSave()">'+
       '<span class="vsc">vs</span>'+
       '<input type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'"'+
-        ' data-key="'+key+'" data-side="1" oninput="onMixScore(this)">'
+        ' data-key="'+key+'" data-side="1" oninput="onMixScore(this)" onblur="flushSave()">'+
       '<span class="pair"><span class="pb" style="font-size:12px;">'+pair2+'</span></span>'+
       '</div>';
   });
