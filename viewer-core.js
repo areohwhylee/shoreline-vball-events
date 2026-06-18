@@ -189,7 +189,7 @@ function buildTabs(tabDefs){
   document.getElementById('tabs').innerHTML=h;
 }
 function switchTab(t){
-  var allTabs=['schedule','pools','standings','bracket','lookup','teams','quads-schedule','mix-schedule','mix-standings','trad-lg-schedule','trad-lg-standings'];
+  var allTabs=['schedule','pools','standings','bracket','lookup','teams','quads-schedule','mix-schedule','mix-standings','trad-lg-schedule'];
   allTabs.forEach(function(x){
     var el=document.getElementById('tab-'+x);
     if(el) el.style.display=x===t?'':'none';
@@ -2441,7 +2441,7 @@ function initTraditionalLeague(){
   initNameMap();
   buildTabs([
     {id:'trad-lg-schedule',label:'Schedule'},
-    {id:'trad-lg-standings',label:'Standings'},
+    {id:'standings',label:'Standings'},
     {id:'bracket',label:'Playoffs'},
     {id:'lookup',label:'Lookup'},
     {id:'teams',label:'Teams'}
@@ -2523,10 +2523,10 @@ function renderTradLeagueSchedule(){
           '<span class="nnum" style="font-size:10px;">Set '+(si+1)+'</span>'+
           '<span></span>'+
           '<input type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'"'+
-            ' data-key="'+key+'" data-side="0" oninput="onTradLgScore(this)">'
+            ' data-key="'+key+'" data-side="0" oninput="onTradLgScore(this)" onblur="flushSave()">'+
           '<span class="vsc">vs</span>'+
           '<input type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'"'+
-            ' data-key="'+key+'" data-side="1" oninput="onTradLgScore(this)">'
+            ' data-key="'+key+'" data-side="1" oninput="onTradLgScore(this)" onblur="flushSave()">'+
           '<span></span>'+
           '</div>';
       }
@@ -2647,7 +2647,7 @@ function renderTradLeagueStandings(){
   function pct(v){return(v*100).toFixed(1)+'%';}
   var thead='<thead><tr><th>#</th><th>Team</th>'+
     '<th class="r">GP</th><th class="r">W</th><th class="r">L</th>'+
-    '<th class="r">W%</th><th class="r">+/-/G</th><th class="r">PF/G</th></tr></thead>';
+    '<th class="r">W%</th><th class="r">+/-/G</th><th class="r">PF/G</th><th class="r">PA/G</th></tr></thead>';
   var tbody='';
   all.forEach(function(p,i){
     var rank=i+1;
