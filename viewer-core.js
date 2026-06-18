@@ -2499,13 +2499,15 @@ function renderTradLeagueSchedule(){
       var c2=has?(s2n>s1n?'win':s2n<s1n?'lose':''):'';
       rows+='<div class="net-row'+(matchNum%2?' alt':'')+'">'+
         '<span class="nnum">'+courtName+'</span>'+
-        '<span class="pair"><span class="pa">'+dn(m.p1)+'</span></span>'+
+        '<span class="pair p1">'+dn(m.p1)+'</span>'+
+        '<span class="net-row-scores">'+
         '<input type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'"'+
-          ' data-key="'+key+'" data-side="0" oninput="onTradLgScore(this)">'
+          ' data-key="'+key+'" data-side="0" oninput="onTradLgScore(this)" onblur="flushSave()">'+
         '<span class="vsc">vs</span>'+
         '<input type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'"'+
-          ' data-key="'+key+'" data-side="1" oninput="onTradLgScore(this)">'
-        '<span class="pair"><span class="pb">'+dn(m.p2)+'</span></span>'+
+          ' data-key="'+key+'" data-side="1" oninput="onTradLgScore(this)" onblur="flushSave()">'+
+        '</span>'+
+        '<span class="pair p2">'+dn(m.p2)+'</span>'+
         '</div>';
     } else {
       // Multi-set: one score row per set, match header shows team names + set tally
@@ -2522,22 +2524,26 @@ function renderTradLeagueSchedule(){
         setRows+='<div class="net-row" style="background:var(--bg2);padding:4px 8px 4px 24px;">'+
           '<span class="nnum" style="font-size:10px;">Set '+(si+1)+'</span>'+
           '<span></span>'+
+          '<span class="net-row-scores">'+
           '<input type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'"'+
             ' data-key="'+key+'" data-side="0" oninput="onTradLgScore(this)" onblur="flushSave()">'+
           '<span class="vsc">vs</span>'+
           '<input type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'"'+
             ' data-key="'+key+'" data-side="1" oninput="onTradLgScore(this)" onblur="flushSave()">'+
+          '</span>'+
           '<span></span>'+
           '</div>';
       }
       var mWin1=setWins1>setWins2, mWin2=setWins2>setWins1;
       rows+='<div class="net-row'+(matchNum%2?' alt':'')+'">'+
         '<span class="nnum">'+courtName+'</span>'+
-        '<span class="pair"><span class="pa" style="color:'+(mWin1?'var(--ts)':mWin2?'var(--t2)':'var(--ti)')+';font-weight:'+(mWin1?'700':'400')+';">'+dn(m.p1)+'</span></span>'+
-        '<span style="text-align:center;font-size:13px;font-weight:600;color:var(--ti);">'+setWins1+'</span>'+
+        '<span class="pair p1" style="color:'+(mWin1?'var(--ts)':mWin2?'var(--t2)':'var(--ti)')+';font-weight:'+(mWin1?'700':'400')+';">'+dn(m.p1)+'</span>'+
+        '<span class="net-row-scores">'+
+        '<span style="text-align:center;font-size:13px;font-weight:600;color:var(--ti);min-width:20px;">'+setWins1+'</span>'+
         '<span class="vsc">sets</span>'+
-        '<span style="text-align:center;font-size:13px;font-weight:600;color:var(--tp);">'+setWins2+'</span>'+
-        '<span class="pair"><span class="pb" style="color:'+(mWin2?'var(--ts)':mWin1?'var(--t2)':'var(--tp)')+';font-weight:'+(mWin2?'700':'400')+';">'+dn(m.p2)+'</span></span>'+
+        '<span style="text-align:center;font-size:13px;font-weight:600;color:var(--tp);min-width:20px;">'+setWins2+'</span>'+
+        '</span>'+
+        '<span class="pair p2" style="color:'+(mWin2?'var(--ts)':mWin1?'var(--t2)':'var(--tp)')+';font-weight:'+(mWin2?'700':'400')+';">'+dn(m.p2)+'</span>'+
         '</div>'+setRows;
     }
   });
