@@ -3304,6 +3304,8 @@ function poRender(){
 
 function initKOBPlayoff(){
   var sd=SD;
+  var tabEl=document.getElementById('tab-playoff');
+  if(tabEl) tabEl.style.display='';
   document.getElementById('page-title').textContent=sd.title||'KOB Playoffs';
   document.getElementById('page-sub').textContent=
     sd.brackets.length+' bracket'+(sd.brackets.length!==1?'s':'')+
