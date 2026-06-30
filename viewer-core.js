@@ -8,9 +8,9 @@ var nameMap={};  // originalName -> displayName
 var adminMode=false;
 var _storeKey='';  // localStorage key prefix, set at init from event title
 
-function flushSave(){
+function flushSave(changedKey){
   clearTimeout(_saveTimer);
-  if(typeof window._storeSaveOverride==='function') window._storeSaveOverride();
+  if(typeof window._storeSaveOverride==='function') window._storeSaveOverride(changedKey);
   else _doLocalSave();
 }
 function _doLocalSave(){
@@ -23,10 +23,10 @@ function _doLocalSave(){
   }catch(e){}
 }
 var _saveTimer=null;
-function storeSave(){
+function storeSave(changedKey){
   if(typeof window._storeSaveOverride==='function'){
     clearTimeout(_saveTimer);
-    _saveTimer=setTimeout(function(){ window._storeSaveOverride(); }, 600);
+    _saveTimer=setTimeout(function(){ window._storeSaveOverride(changedKey); }, 600);
     return;
   }
   if(!_storeKey) return;
@@ -315,7 +315,7 @@ function onLgScore(input){
   var inputs=document.querySelectorAll('[data-key="'+key+'"]');
   if(inputs[0]) inputs[0].className='score-in '+c1;
   if(inputs[1]) inputs[1].className='score-in '+c2;
-  storeSave();
+  storeSave(key);
   updateLgProgress();
 }
 function updateLgProgress(){
@@ -494,7 +494,7 @@ function onPoolScore(input){
   var inputs=document.querySelectorAll('[data-key="'+key+'"]');
   if(inputs[0]) inputs[0].className='score-in '+c1;
   if(inputs[1]) inputs[1].className='score-in '+c2;
-  storeSave();
+  storeSave(key);
   updatePoolProgress();
 }
 function updatePoolProgress(){
@@ -1631,7 +1631,7 @@ function initKOBQuads(){
 //    Save rounds to localStorage                                              
 function rqSaveRounds(){
   try{ localStorage.setItem(_storeKey+'.rqRounds',JSON.stringify(rqRounds)); }catch(e){}
-  flushSave();
+  flushSave('__rq_rounds__');
 }
 
 
@@ -2187,7 +2187,7 @@ function onQuadsScore(input){
   var inputs=document.querySelectorAll('[data-key="'+key+'"]');
   if(inputs[0]) inputs[0].className='score-in '+c1;
   if(inputs[1]) inputs[1].className='score-in '+c2;
-  storeSave();
+  storeSave(key);
   updateQuadsProgress();
   rqRenderActions(); // refresh action buttons
 }
@@ -2341,7 +2341,7 @@ function onMixScore(input){
   var inputs=document.querySelectorAll('[data-key="'+key+'"]');
   if(inputs[0]) inputs[0].className='score-in '+c1;
   if(inputs[1]) inputs[1].className='score-in '+c2;
-  storeSave();
+  storeSave(key);
   updateMixProgress();
 }
 
@@ -3216,7 +3216,7 @@ function onPoScore(input){
   var key=input.dataset.key, side=parseInt(input.dataset.side);
   if(!scores[key]) scores[key]={s1:'',s2:''};
   if(side===0) scores[key].s1=input.value; else scores[key].s2=input.value;
-  storeSave();
+  storeSave(key);
   // Update win/lose classes in-place
   var sc=scores[key];
   var s1n=parseInt(sc.s1),s2n=parseInt(sc.s2);

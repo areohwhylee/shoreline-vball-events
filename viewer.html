@@ -361,22 +361,40 @@ async function boot(){
   window._storeKey='kob_cloud_'+eventId.slice(0,8);
 
   // 6. Override store functions BEFORE viewer boots
-  window._storeSaveOverride=async function(){
-    // Score entry is public — no admin check
-    var toUpsert=Object.keys(scores||{}).map(function(k){
-      var sc=scores[k];
-      return {event_id:eventId,score_key:k,
-        s1:sc.s1!==''?parseInt(sc.s1):null,
-        s2:sc.s2!==''?parseInt(sc.s2):null};
-    }).filter(function(r){return r.s1!=null||r.s2!=null;});
-    // Include rqRounds as special key if present
-    if(typeof rqRounds!=='undefined'&&rqRounds.length){
-      toUpsert.push({event_id:eventId,score_key:'__rq_rounds__',
-        s1:null,s2:null,meta:JSON.stringify(rqRounds)});
+  // Per-key upsert — only write the specific score that changed
+  // Prevents multi-device collisions: each device only touches its own keys
+  window._storeSaveOverride=async function(changedKey){
+    if(changedKey&&changedKey!=='__rq_rounds__'){
+      // Single key upsert — fast, safe for multi-device
+      var sc=scores[changedKey];
+      if(sc){
+        await sb.from('scores').upsert(
+          {event_id:eventId,score_key:changedKey,
+           s1:sc.s1!==''?parseInt(sc.s1):null,
+           s2:sc.s2!==''?parseInt(sc.s2):null},
+          {onConflict:'event_id,score_key'}
+        );
+      }
+    } else if(changedKey==='__rq_rounds__'){
+      // Round confirmation — upsert just the rounds key
+      if(typeof rqRounds!=='undefined'&&rqRounds.length){
+        await sb.from('scores').upsert(
+          {event_id:eventId,score_key:'__rq_rounds__',s1:null,s2:null,meta:JSON.stringify(rqRounds)},
+          {onConflict:'event_id,score_key'}
+        );
+      }
+    } else {
+      // Full save fallback (nameMap, bulk sync) — only used on explicit backup/restore
+      var toUpsert=Object.keys(scores||{}).map(function(k){
+        var sc=scores[k];
+        return {event_id:eventId,score_key:k,
+          s1:sc.s1!==''?parseInt(sc.s1):null,
+          s2:sc.s2!==''?parseInt(sc.s2):null};
+      }).filter(function(r){return r.s1!=null||r.s2!=null;});
+      if(toUpsert.length)
+        await sb.from('scores').upsert(toUpsert,{onConflict:'event_id,score_key'});
     }
-    if(toUpsert.length)
-      await sb.from('scores').upsert(toUpsert,{onConflict:'event_id,score_key'});
-    if(nameMap){
+    if(!changedKey&&nameMap){
       var nm=Object.keys(nameMap).map(function(o){
         return {event_id:eventId,original:o,display:nameMap[o]};
       });
@@ -433,7 +451,7 @@ async function boot(){
   var s=document.createElement('script');
   // Path relative to this page's location
   var base=window.location.pathname.substring(0,window.location.pathname.lastIndexOf('/')+1);
-  s.src=base+'viewer-core.js?v=3.49e';
+  s.src=base+'viewer-core.js?v=3.50';
   console.log('Loading viewer from:',s.src);
   s.onload=function(){
     console.log('KOB viewer loaded');
