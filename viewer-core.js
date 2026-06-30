@@ -3272,7 +3272,7 @@ function poRender(){
   var btHtml=SD.brackets.map(function(b,i){
     return '<button class="btn-sm'+(i===poSelBracket?' sel':'')+'" onclick="poSelBracket='+i+';poRender()">'+b.name+'</button>';
   }).join('');
-  document.getElementById('bk-tabs').innerHTML=btHtml;
+  document.getElementById('po-bk-tabs').innerHTML=btHtml;
 
   // Section tabs
   var sections=[
@@ -3284,7 +3284,7 @@ function poRender(){
   var stHtml=sections.map(function(s){
     return '<button class="tab'+(poSelSection===s.key?' active':'')+'" onclick="poSelSection=\''+s.key+'\';poRender()">'+s.lbl+'</button>';
   }).join('');
-  document.getElementById('sec-tabs').innerHTML=stHtml;
+  document.getElementById('po-sec-tabs').innerHTML=stHtml;
 
   // Content
   var html='';
@@ -3297,7 +3297,7 @@ function poRender(){
   } else if(poSelSection==='consolation'){
     html=poRenderFinals(bk,'cn','Consolation (for fun)');
   }
-  document.getElementById('main-content').innerHTML=html;
+  document.getElementById('po-content').innerHTML=html;
 }
 
 //    Init                                                                       
