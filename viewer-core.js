@@ -189,7 +189,7 @@ function buildTabs(tabDefs){
   document.getElementById('tabs').innerHTML=h;
 }
 function switchTab(t){
-  var allTabs=['schedule','pools','standings','bracket','lookup','teams','quads-schedule','mix-schedule','mix-standings','trad-lg-schedule'];
+  var allTabs=['schedule','pools','standings','bracket','lookup','teams','quads-schedule','mix-schedule','mix-standings','trad-lg-schedule','playoff'];
   allTabs.forEach(function(x){
     var el=document.getElementById('tab-'+x);
     if(el) el.style.display=x===t?'':'none';
@@ -589,20 +589,21 @@ function buildWRounds(seeds){
   var n=seeds.length;
   var sz=1; while(sz<n) sz*=2;
   var wNR=Math.log2(sz);
-  var byeCount=sz-n;  // how many R0 matches are byes
-  // Standard seeding: 1v(sz), 2v(sz-1)... with byes at the bottom
-  var r0=[];
-  for(var i=0;i<sz/2;i++){
-    var p1=seeds[i]||null, p2=seeds[sz-1-i]||null;
-    var bye=!p1||!p2;
-    r0.push({
-      p1:p1||(p2||'TBD'), p2:bye?null:p2,
-      isBye:bye, winner:bye?(p1||p2):null,
+  var byeCount=sz-n;
+  // Place seeds using standard bracket positioning so top seeds are spread
+  // across opposite halves. Use bracketMatchupSeeds to get correct slot pairs.
+  var slotPairs=bracketMatchupSeeds(sz); // [[1,sz],[sz/2+1,sz/2],...]  1-indexed
+  var r0=new Array(sz/2);
+  slotPairs.forEach(function(pair,mi){
+    var s1=seeds[pair[0]-1]||null, s2=seeds[pair[1]-1]||null;
+    var bye=!s1||!s2;
+    r0[mi]={
+      p1:s1||(s2||'TBD'), p2:bye?null:s2,
+      isBye:bye, winner:bye?(s1||s2):null,
       matchNum:0, court:null
-    });
-  }
+    };
+  });
   var wRounds=[r0];
-  // Build subsequent W rounds
   var prev=r0;
   for(var r=1;r<wNR;r++){
     var round=[];
@@ -611,7 +612,7 @@ function buildWRounds(seeds){
     wRounds.push(round);
     prev=round;
   }
-  // Auto-advance byes in R0 -> R1
+  // Auto-advance byes R0 -> R1
   r0.forEach(function(m,mi){
     if(m.isBye&&m.winner&&wRounds[1]){
       var nmi=Math.floor(mi/2);
@@ -2965,3 +2966,349 @@ function _buildCombinedStandings(sd,allPools){
 /* =======================================================
    INIT
 ======================================================= */
+
+//    KOB Playoff format                                                        
+var poSelBracket=0;
+var poSelSection='pool-a'; // 'pool-a'|'pool-b'|'finals'|'consolation'
+
+//    Admin                                                                     
+function poToggleAdmin(){
+  if(!adminMode){
+    var pin=SD.adminPin;
+    if(pin){
+      var entered=prompt('Enter admin PIN:');
+      if(entered!==String(pin)){alert('Incorrect PIN.');return;}
+    }
+    adminMode=true;
+    document.getElementById('admin-btn').textContent='[admin]';
+    document.getElementById('admin-btn').classList.add('green');
+  } else {
+    adminMode=false;
+    document.getElementById('admin-btn').textContent='[lock] View only';
+    document.getElementById('admin-btn').classList.remove('green');
+  }
+  poRender();
+}
+
+function dn(n){ return (nameMap[n]||n)||'TBD'; }
+
+//    Score storage                                                              
+
+
+
+
+//    Score key helpers                                                          
+// key format: po-{bracketIdx}-{section}-{setIdx}
+// section: pa (pool A), pb (pool B), fn (finals), cn (consolation)
+function poScoreKey(bi,section,si){ return 'po-'+bi+'-'+section+'-'+si; }
+
+//    Pool engine   single list                                                  
+// Pool of 4: [s1,s4,s5,s8] or [s2,s3,s6,s7]
+// Set 1: (pool[0]+pool[1]) vs (pool[2]+pool[3])
+// Set 2: swap lower seeds: (pool[0]+pool[3]) vs (pool[2]+pool[1])
+function poPoolSets_single(pool){
+  return [
+    {p1:pool[0]+'+'+pool[1], p2:pool[2]+'+'+pool[3], lbl:'Set 1'},
+    {p1:pool[0]+'+'+pool[3], p2:pool[2]+'+'+pool[1], lbl:'Set 2'}
+  ];
+}
+
+//    Pool engine   double list                                                  
+// poolA: {guys:[g1,g4], girls:[b2,b3]}
+// Set 1: (g1+b2) vs (g4+b3)
+// Set 2: girls swap: (g1+b3) vs (g4+b2)
+function poPoolSets_double(pool){
+  var g=pool.guys, b=pool.girls;
+  return [
+    {p1:g[0]+'+'+b[0], p2:g[1]+'+'+b[1], lbl:'Set 1'},
+    {p1:g[0]+'+'+b[1], p2:g[1]+'+'+b[0], lbl:'Set 2'}
+  ];
+}
+
+//    Finals sets                                                                
+// Single: top 2 from PoolA + top 2 from PoolB   3-set round robin
+// entries = [fa1,fa2,fb1,fb2] (fa1=best from pool A, etc.)
+function poFinalsSets_single(entries){
+  return [
+    {p1:entries[0]+'+'+entries[1], p2:entries[2]+'+'+entries[3], lbl:'Set 1'},
+    {p1:entries[0]+'+'+entries[2], p2:entries[1]+'+'+entries[3], lbl:'Set 2'},
+    {p1:entries[0]+'+'+entries[3], p2:entries[1]+'+'+entries[2], lbl:'Set 3'}
+  ];
+}
+// Double: top guy + top girl from each pool   2-set round robin
+// entries = {guys:[ga,gb], girls:[ga,gb]}
+function poFinalsSets_double(finalists){
+  return [
+    {p1:finalists.guys[0]+'+'+finalists.girls[0], p2:finalists.guys[1]+'+'+finalists.girls[1], lbl:'Set 1'},
+    {p1:finalists.guys[0]+'+'+finalists.girls[1], p2:finalists.guys[1]+'+'+finalists.girls[0], lbl:'Set 2'}
+  ];
+}
+
+//    Individual standings for a pool                                            
+// Returns sorted array of {name, w, l, gp, pf, pa}
+function poPoolStandings(bk, poolKey, sets){
+  var bi=SD.brackets.indexOf(bk);
+  var st={};
+  // Collect all individual names from this pool
+  sets.forEach(function(set){
+    [set.p1,set.p2].forEach(function(pair){
+      pair.split('+').forEach(function(name){
+        name=name.trim();
+        if(!st[name]) st[name]={name:name,w:0,l:0,gp:0,pf:0,pa:0};
+      });
+    });
+  });
+  sets.forEach(function(set,si){
+    var key=poScoreKey(bi,poolKey,si);
+    var sc=scores[key]||{s1:'',s2:''};
+    var s1=parseInt(sc.s1),s2=parseInt(sc.s2);
+    if(isNaN(s1)||isNaN(s2)) return;
+    var pair1=set.p1.split('+').map(function(n){return n.trim();});
+    var pair2=set.p2.split('+').map(function(n){return n.trim();});
+    pair1.forEach(function(n){
+      if(st[n]){st[n].gp++;st[n].pf+=s1;st[n].pa+=s2;if(s1>s2)st[n].w++;else if(s2>s1)st[n].l++;}
+    });
+    pair2.forEach(function(n){
+      if(st[n]){st[n].gp++;st[n].pf+=s2;st[n].pa+=s1;if(s2>s1)st[n].w++;else if(s1>s2)st[n].l++;}
+    });
+  });
+  return Object.values(st).sort(function(a,b){
+    var wr=b.w-a.w; if(wr!==0) return wr;
+    var diff=((b.pf-b.pa)/Math.max(1,b.gp))-((a.pf-a.pa)/Math.max(1,a.gp));
+    if(Math.abs(diff)>0.001) return diff;
+    return (b.pf/Math.max(1,b.gp))-(a.pf/Math.max(1,a.gp));
+  });
+}
+
+//    Render a pool section (sets + standings)                                   
+function poRenderPool(bk, poolData, poolKey, title){
+  var bi=SD.brackets.indexOf(bk);
+  var sets=bk.mode==='single'?poPoolSets_single(poolData):poPoolSets_double(poolData);
+  var standings=poPoolStandings(bk,poolKey,sets);
+
+  var html='<div class="card" style="margin-bottom:12px;"><div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;">'+title+'</div>';
+
+  // Match table
+  html+='<div class="match-table">'+
+    '<div class="match-head"><span>Set</span><span>Team 1</span><span style="text-align:center">Score</span><span>Team 2</span></div>';
+
+  sets.forEach(function(set,si){
+    var key=poScoreKey(bi,poolKey,si);
+    var sc=scores[key]||{s1:'',s2:''};
+    var s1n=parseInt(sc.s1),s2n=parseInt(sc.s2);
+    var has=!isNaN(s1n)&&!isNaN(s2n)&&sc.s1!==''&&sc.s2!=='';
+    var c1=has?(s1n>s2n?'win':s1n<s2n?'lose':''):'';
+    var c2=has?(s2n>s1n?'win':s2n<s1n?'lose':''):'';
+
+    html+='<div class="match-row'+(si%2?' alt':'')+'">'+
+      '<span class="set-lbl">'+set.lbl+'</span>'+
+      '<span class="pair '+(c1==='win'?'win':c1==='lose'?'lose':'')+'">'+dn(set.p1.split('+')[0].trim())+' + '+dn(set.p1.split('+')[1].trim())+'</span>'+
+      '<span class="net-row-scores">'+
+        '<input class="score-in '+c1+'" type="number" min="0" max="99" value="'+(sc.s1||'')+'" '+
+          'data-key="'+key+'" data-side="0" '+
+          'oninput="onPoScore(this)" onblur="flushSave()"'+'>'+
+        '<span class="vsc">vs</span>'+
+        '<input class="score-in '+c2+'" type="number" min="0" max="99" value="'+(sc.s2||'')+'" '+
+          'data-key="'+key+'" data-side="1" '+
+          'oninput="onPoScore(this)" onblur="flushSave()"'+'>'+
+      '</span>'+
+      '<span class="pair '+(c2==='win'?'win':c2==='lose'?'lose':'')+'">'+dn(set.p2.split('+')[0].trim())+' + '+dn(set.p2.split('+')[1].trim())+'</span>'+
+    '</div>';
+  });
+  html+='</div>';
+
+  // Standings table
+  html+='<div class="std-wrap" id="standings-'+poolKey+'-'+bi+'"><table class="std-table">'+
+    '<thead><tr><th>#</th><th>Name</th><th>GP</th><th>W</th><th>L</th><th>PF</th><th>PA</th></tr></thead><tbody>';
+  standings.forEach(function(p,i){
+    var rankCls=i===0?'gold':i===1?'silver':i===2?'bronze':'';
+    var adv=(poolKey==='pa'||poolKey==='pb')&&(bk.mode==='single'?i<2:i<1);
+    html+='<tr><td><span class="rnk '+rankCls+'">'+(i+1)+'</span>'+(adv?'<span class="adv">ADV</span>':'')+
+      '</td><td>'+dn(p.name)+'</td><td>'+p.gp+'</td><td>'+p.w+'</td><td>'+p.l+'</td><td>'+p.pf+'</td><td>'+p.pa+'</td></tr>';
+  });
+  html+='</tbody></table></div>';
+  html+='</div>';
+  return html;
+}
+
+//    Render finals/consolation                                                   
+function poRenderFinals(bk, sectionKey, title){
+  var bi=SD.brackets.indexOf(bk);
+  // Determine finalists from pool standings
+  var setsA=bk.mode==='single'?poPoolSets_single(bk.poolA):poPoolSets_double(bk.poolA);
+  var setsB=bk.mode==='single'?poPoolSets_single(bk.poolB):poPoolSets_double(bk.poolB);
+  var standA=poPoolStandings(bk,'pa',setsA);
+  var standB=poPoolStandings(bk,'pb',setsB);
+
+  var sets, finalists;
+  var isConsolation=sectionKey==='cn';
+
+  if(bk.mode==='single'){
+    var advA=isConsolation?[standA[2]&&standA[2].name,standA[3]&&standA[3].name]:[standA[0]&&standA[0].name,standA[1]&&standA[1].name];
+    var advB=isConsolation?[standB[2]&&standB[2].name,standB[3]&&standB[3].name]:[standB[0]&&standB[0].name,standB[1]&&standB[1].name];
+    finalists=[advA[0]||'TBD',advA[1]||'TBD',advB[0]||'TBD',advB[1]||'TBD'];
+    sets=poFinalsSets_single(finalists);
+  } else {
+    // For double: top guy + top girl per pool
+    // poolA standings has guys and girls mixed   separate by checking original lists
+    var guysA=bk.poolA.guys, guysB=bk.poolB.guys;
+    var girlsA=bk.poolA.girls, girlsB=bk.poolB.girls;
+    var topGuyA=isConsolation
+      ?standA.filter(function(p){return guysA.indexOf(p.name)>=0;})[1]
+      :standA.filter(function(p){return guysA.indexOf(p.name)>=0;})[0];
+    var topGirlA=isConsolation
+      ?standA.filter(function(p){return girlsA.indexOf(p.name)>=0;})[1]
+      :standA.filter(function(p){return girlsA.indexOf(p.name)>=0;})[0];
+    var topGuyB=isConsolation
+      ?standB.filter(function(p){return guysB.indexOf(p.name)>=0;})[1]
+      :standB.filter(function(p){return guysB.indexOf(p.name)>=0;})[0];
+    var topGirlB=isConsolation
+      ?standB.filter(function(p){return girlsB.indexOf(p.name)>=0;})[1]
+      :standB.filter(function(p){return girlsB.indexOf(p.name)>=0;})[0];
+    finalists={
+      guys:[topGuyA?topGuyA.name:'TBD',topGuyB?topGuyB.name:'TBD'],
+      girls:[topGirlA?topGirlA.name:'TBD',topGirlB?topGirlB.name:'TBD']
+    };
+    sets=poFinalsSets_double(finalists);
+  }
+
+  // Render same as pool but using finals key
+  var fStandings=poPoolStandings(bk,sectionKey,sets);
+  var html='<div class="card"><div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;">'+title+'</div>';
+
+  html+='<div class="match-table"><div class="match-head"><span>Set</span><span>Team 1</span><span style="text-align:center">Score</span><span>Team 2</span></div>';
+  sets.forEach(function(set,si){
+    var key=poScoreKey(bi,sectionKey,si);
+    var sc=scores[key]||{s1:'',s2:''};
+    var s1n=parseInt(sc.s1),s2n=parseInt(sc.s2);
+    var has=!isNaN(s1n)&&!isNaN(s2n)&&sc.s1!==''&&sc.s2!=='';
+    var c1=has?(s1n>s2n?'win':'lose'):'';
+    var c2=has?(s2n>s1n?'win':'lose'):'';
+    html+='<div class="match-row'+(si%2?' alt':'')+'">'+
+      '<span class="set-lbl">'+set.lbl+'</span>'+
+      '<span class="pair '+(c1==='win'?'win':c1==='lose'?'lose':'')+'">'+set.p1.split('+').map(function(n){return dn(n.trim());}).join(' + ')+'</span>'+
+      '<span class="net-row-scores">'+
+        '<input class="score-in '+c1+'" type="number" min="0" max="99" value="'+(sc.s1||'')+'" '+
+          'data-key="'+key+'" data-side="0" '+'oninput="onPoScore(this)" onblur="flushSave()"'+'>'+
+        '<span class="vsc">vs</span>'+
+        '<input class="score-in '+c2+'" type="number" min="0" max="99" value="'+(sc.s2||'')+'" '+
+          'data-key="'+key+'" data-side="1" '+'oninput="onPoScore(this)" onblur="flushSave()"'+'>'+
+      '</span>'+
+      '<span class="pair '+(c2==='win'?'win':c2==='lose'?'lose':'')+'">'+set.p2.split('+').map(function(n){return dn(n.trim());}).join(' + ')+'</span>'+
+    '</div>';
+  });
+  html+='</div>';
+
+  // Standings
+  html+='<div class="std-wrap" id="standings-'+sectionKey+'-'+bi+'"><table class="std-table">'+
+    '<thead><tr><th>#</th><th>Name</th><th>GP</th><th>W</th><th>L</th><th>PF</th><th>PA</th></tr></thead><tbody>';
+  fStandings.forEach(function(p,i){
+    var rankCls=i===0?'gold':i===1?'silver':i===2?'bronze':'';
+    html+='<tr><td><span class="rnk '+rankCls+'">'+(i+1)+'</span></td><td>'+dn(p.name)+'</td>'+
+      '<td>'+p.gp+'</td><td>'+p.w+'</td><td>'+p.l+'</td><td>'+p.pf+'</td><td>'+p.pa+'</td></tr>';
+  });
+  html+='</tbody></table></div></div>';
+  return html;
+}
+
+//    Score input handler                                                        
+function onPoScore(input){
+  var key=input.dataset.key, side=parseInt(input.dataset.side);
+  if(!scores[key]) scores[key]={s1:'',s2:''};
+  if(side===0) scores[key].s1=input.value; else scores[key].s2=input.value;
+  storeSave();
+  // Update win/lose classes in-place
+  var sc=scores[key];
+  var s1n=parseInt(sc.s1),s2n=parseInt(sc.s2);
+  var has=!isNaN(s1n)&&!isNaN(s2n)&&sc.s1!==''&&sc.s2!=='';
+  var siblings=document.querySelectorAll('[data-key="'+key+'"]');
+  siblings.forEach(function(el){
+    var s=parseInt(el.dataset.side);
+    el.className='score-in '+(has?(s===0?(s1n>s2n?'win':s1n<s2n?'lose':''):(s2n>s1n?'win':s2n<s1n?'lose':'')):'');
+  });
+  // Refresh standings in-place
+  poRefreshStandings();
+}
+
+function poRefreshStandings(){
+  var bk=SD.brackets[poSelBracket];
+  var bi=poSelBracket;
+  var sKey=poSelSection==='pool-a'?'pa':poSelSection==='pool-b'?'pb':poSelSection==='finals'?'fn':'cn';
+  var el=document.getElementById('standings-'+sKey+'-'+bi);
+  if(!el) return;
+  var sets, standings;
+  if(poSelSection==='pool-a'){
+    sets=bk.mode==='single'?poPoolSets_single(bk.poolA):poPoolSets_double(bk.poolA);
+    standings=poPoolStandings(bk,'pa',sets);
+  } else if(poSelSection==='pool-b'){
+    sets=bk.mode==='single'?poPoolSets_single(bk.poolB):poPoolSets_double(bk.poolB);
+    standings=poPoolStandings(bk,'pb',sets);
+  } else {
+    var setsA=bk.mode==='single'?poPoolSets_single(bk.poolA):poPoolSets_double(bk.poolA);
+    var setsB=bk.mode==='single'?poPoolSets_single(bk.poolB):poPoolSets_double(bk.poolB);
+    var standA=poPoolStandings(bk,'pa',setsA);
+    var standB=poPoolStandings(bk,'pb',setsB);
+    sets=bk.mode==='single'
+      ?poFinalsSets_single([standA[0]&&standA[0].name||'TBD',standA[1]&&standA[1].name||'TBD',standB[0]&&standB[0].name||'TBD',standB[1]&&standB[1].name||'TBD'])
+      :poFinalsSets_double({guys:[standA.filter(function(p){return bk.poolA.guys.indexOf(p.name)>=0;})[sKey==='cn'?1:0]||{name:'TBD'},standB.filter(function(p){return bk.poolB.guys.indexOf(p.name)>=0;})[sKey==='cn'?1:0]||{name:'TBD'}].map(function(p){return p.name;}),girls:[standA.filter(function(p){return bk.poolA.girls.indexOf(p.name)>=0;})[sKey==='cn'?1:0]||{name:'TBD'},standB.filter(function(p){return bk.poolB.girls.indexOf(p.name)>=0;})[sKey==='cn'?1:0]||{name:'TBD'}].map(function(p){return p.name;})});
+    standings=poPoolStandings(bk,sKey,sets);
+  }
+  var tbody='';
+  standings.forEach(function(p,i){
+    var rankCls=i===0?'gold':i===1?'silver':i===2?'bronze':'';
+    var adv=(sKey==='pa'||sKey==='pb')&&(bk.mode==='single'?i<2:i<1);
+    tbody+='<tr><td><span class="rnk '+rankCls+'">'+(i+1)+'</span>'+(adv?'<span class="adv">ADV</span>':'')+
+      '</td><td>'+dn(p.name)+'</td><td>'+p.gp+'</td><td>'+p.w+'</td><td>'+p.l+'</td><td>'+p.pf+'</td><td>'+p.pa+'</td></tr>';
+  });
+  el.querySelector('tbody').innerHTML=tbody;
+}
+
+//    Main render                                                                
+function poRender(){
+  var bk=SD.brackets[poSelBracket];
+  if(!bk) return;
+
+  // Bracket tabs
+  var btHtml=SD.brackets.map(function(b,i){
+    return '<button class="btn-sm'+(i===poSelBracket?' sel':'')+'" onclick="poSelBracket='+i+';poRender()">'+b.name+'</button>';
+  }).join('');
+  document.getElementById('bk-tabs').innerHTML=btHtml;
+
+  // Section tabs
+  var sections=[
+    {key:'pool-a',lbl:'Pool A'},
+    {key:'pool-b',lbl:'Pool B'},
+    {key:'finals',lbl:'Finals'},
+    {key:'consolation',lbl:'Consolation'}
+  ];
+  var stHtml=sections.map(function(s){
+    return '<button class="tab'+(poSelSection===s.key?' active':'')+'" onclick="poSelSection=\''+s.key+'\';poRender()">'+s.lbl+'</button>';
+  }).join('');
+  document.getElementById('sec-tabs').innerHTML=stHtml;
+
+  // Content
+  var html='';
+  if(poSelSection==='pool-a'){
+    html=poRenderPool(bk,bk.poolA,'pa','Pool A');
+  } else if(poSelSection==='pool-b'){
+    html=poRenderPool(bk,bk.poolB,'pb','Pool B');
+  } else if(poSelSection==='finals'){
+    html=poRenderFinals(bk,'fn','Finals');
+  } else if(poSelSection==='consolation'){
+    html=poRenderFinals(bk,'cn','Consolation (for fun)');
+  }
+  document.getElementById('main-content').innerHTML=html;
+}
+
+//    Init                                                                       
+
+function initKOBPlayoff(){
+  var sd=SD;
+  document.getElementById('page-title').textContent=sd.title||'KOB Playoffs';
+  document.getElementById('page-sub').textContent=
+    sd.brackets.length+' bracket'+(sd.brackets.length!==1?'s':'')+
+    '   '+(sd.rosterMode==='double'?'Coed pairs':'Single list');
+  _storeKey='kob_po_'+btoa(encodeURIComponent((sd.title||'po'))).replace(/[^a-zA-Z0-9]/g,'').slice(0,20);
+  storeLoad();
+  poRender();
+}
