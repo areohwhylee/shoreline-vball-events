@@ -140,7 +140,7 @@ async function uploadEvent(input){
   var file=input.files[0]; if(!file) return;
   var text=await file.text();
   // Extract SD from the HTML file
-  var m=text.match(/var SD = (\{[\s\S]*?\});/);
+  var m=text.match(/var SD[\s]*=[\s]*({[\s\S]*?});/);
   if(!m){ alert('This doesn\'t look like a KOB viewer file. Make sure you\'re uploading a generated viewer HTML.'); return; }
   var sd;
   try{ sd=JSON.parse(m[1]); } catch(e){ alert('Could not parse schedule data: '+e.message); return; }
