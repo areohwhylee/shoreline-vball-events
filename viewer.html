@@ -433,7 +433,7 @@ async function boot(){
   var s=document.createElement('script');
   // Path relative to this page's location
   var base=window.location.pathname.substring(0,window.location.pathname.lastIndexOf('/')+1);
-  s.src=base+'viewer-core.js?v=3.49';
+  s.src=base+'viewer-core.js?v=3.49b';
   console.log('Loading viewer from:',s.src);
   s.onload=function(){
     console.log('KOB viewer loaded');
@@ -456,13 +456,7 @@ async function boot(){
     document.body.innerHTML='<div style="color:#e57373;padding:40px;font-family:sans-serif;">'
       +'<h2>Could not load viewer</h2>'
       +'<p>viewer-core.js failed to load from: '+s.src+'</p>'
-      +'</div>
-  <!-- KOB Playoff -->
-  <div id="tab-playoff" style="display:none">
-    <div class="po-bk-tabs" id="po-bk-tabs"></div>
-    <div class="po-sec-tabs" id="po-sec-tabs"></div>
-    <div id="po-content"></div>
-  </div>';
+      +'</div>';
   };
   document.head.appendChild(s);
 
@@ -492,5 +486,12 @@ boot().catch(function(e){
   console.error(e);
 });
 </script>
+
+  <!-- KOB Playoff -->
+  <div id="tab-playoff" style="display:none">
+    <div class="po-bk-tabs" id="po-bk-tabs"></div>
+    <div class="po-sec-tabs" id="po-sec-tabs"></div>
+    <div id="po-content"></div>
+  </div>
 </body>
 </html>
