@@ -50,6 +50,14 @@ h2{font-size:18px;font-weight:700;margin-bottom:18px;}
   font-size:13px;margin-bottom:12px;outline:none;}
 .modal-btns{display:flex;gap:8px;margin-top:6px;}
 .msg{font-size:12px;color:#7a9e82;margin-bottom:10px;}
+.wk-row{display:flex;justify-content:space-between;align-items:center;
+  padding:9px 12px;border-radius:7px;background:#0f1a14;border:.5px solid #2d4a36;margin-bottom:6px;}
+.wk-name{font-size:13px;font-weight:600;}
+.wk-pill{font-size:10px;padding:2px 8px;border-radius:99px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;}
+.wk-pill.complete{background:#1e4029;color:#5dcaa5;}
+.wk-pill.progress{background:#3a3115;color:#e0c060;}
+.wk-pill.none{background:#2d4a36;color:#7a9e82;}
+.season-actions{display:flex;gap:8px;margin-top:14px;}
 </style>
 </head>
 <body>
@@ -86,6 +94,17 @@ h2{font-size:18px;font-weight:700;margin-bottom:18px;}
     <div class="modal-btns">
       <button class="btn btn-red" onclick="confirmDelete()">Yes, Delete</button>
       <button class="btn btn-ghost" onclick="closeDelModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Season management modal (KOB League) -->
+<div class="modal-bg" id="season-modal">
+  <div class="modal" style="max-width:560px;">
+    <h3 id="season-title">Season</h3>
+    <div id="season-body"><p class="msg">Loading season data...</p></div>
+    <div class="modal-btns" style="margin-top:16px;">
+      <button class="btn btn-ghost" onclick="closeSeasonModal()">Close</button>
     </div>
   </div>
 </div>
@@ -127,6 +146,7 @@ async function loadEvents(){
       '</div>'+
       '<div class="ev-actions">'+
         '<span class="tag">'+(ev.is_public?'Public':'Private')+'</span>'+
+        (ev.format==='kob_league'?'<button class="btn btn-ghost" onclick="openSeasonModal(\''+ev.id+'\')">Season</button>':'')+
         '<button class="btn btn-ghost" onclick="copyLink(\''+ev.id+'\')">Copy link</button>'+
         '<button class="btn btn-green" onclick="window.open(\''+viewUrl+'\')">Open</button>'+
         '<button class="btn btn-ghost" style="color:#e57373;border-color:#c62828" onclick="startDelete(\''+ev.id+'\')">Del</button>'+
@@ -184,6 +204,306 @@ async function confirmDelete(){
 async function signOut(){
   await sb.auth.signOut();
   window.location.href='auth.html';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Seed-aware pairing/matching engine (GenZilla) — canonical copy shared with
+// the generator. Used here to generate additional KOB League weeks mid-season,
+// blending original seed rank with live standings as the season progresses.
+// ═══════════════════════════════════════════════════════════════════════════
+function shuffle(arr){
+  var a=arr.slice();
+  for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}
+  return a;
+}
+function teamStrength(a,b,rankOf){
+  return (rankOf[a]||999)+(rankOf[b]||999);
+}
+function effectiveRank(player,seedRankOf,standingsRankOf,weekIndex){
+  var seedR=seedRankOf[player]||999;
+  if(!standingsRankOf||!weekIndex) return seedR;
+  var liveR=standingsRankOf[player]||seedR;
+  var liveWeight=Math.min(0.7,weekIndex*0.15);
+  return seedR*(1-liveWeight)+liveR*liveWeight;
+}
+function buildPairings(gA,gB,ph,repeatCap){
+  repeatCap=repeatCap===undefined?Infinity:repeatCap;
+  var avail=gB.slice(),pairs=[];
+  shuffle(gA).forEach(function(a){
+    var eligible=avail.filter(function(b){return((ph[a]&&ph[a][b])||0)<repeatCap;});
+    var pool=eligible.length?eligible:avail;
+    var bestB=null,bestS=Infinity;
+    pool.forEach(function(b){
+      var s=((ph[a]&&ph[a][b])||0)*10+Math.random()*0.8;
+      if(s<bestS){bestS=s;bestB=b;}
+    });
+    pairs.push({a:a,b:bestB});avail.splice(avail.indexOf(bestB),1);
+  });
+  return pairs;
+}
+function buildMatches(pairs,mh,oh,rankOf,opts){
+  opts=opts||{};
+  var matchupRepeatCap=opts.matchupRepeatCap===undefined?Infinity:opts.matchupRepeatCap;
+  var randomWeight=opts.randomWeight===undefined?0.6:opts.randomWeight;
+  var s=pairs.map(function(p){
+    return {p:p,str:teamStrength(p.a,p.b,rankOf)+Math.random()*randomWeight};
+  }).sort(function(x,y){return x.str-y.str;}).map(function(x){return x.p;});
+  var matches=[],used={};
+  for(var i=0;i<s.length;i++){
+    if(used[i]) continue;
+    var bestJ=-1,bestScore=Infinity;
+    for(var j=i+1;j<s.length;j++){
+      if(used[j]) continue;
+      var key=[s[i].a,s[i].b,s[j].a,s[j].b].sort().join('|');
+      var repeatCount=mh[key]||0;
+      var overCap=repeatCount>=matchupRepeatCap;
+      var strA=teamStrength(s[i].a,s[i].b,rankOf),strB=teamStrength(s[j].a,s[j].b,rankOf);
+      var sc=Math.abs(strA-strB)*10;
+      sc+=repeatCount*8;
+      sc+=((oh[s[i].a]&&oh[s[i].a][s[j].a])||0)*1.5;
+      sc+=((oh[s[i].a]&&oh[s[i].a][s[j].b])||0)*1.5;
+      sc+=((oh[s[i].b]&&oh[s[i].b][s[j].a])||0)*1.5;
+      sc+=((oh[s[i].b]&&oh[s[i].b][s[j].b])||0)*1.5;
+      sc+=Math.random()*randomWeight;
+      if(overCap) sc+=100000;
+      if(sc<bestScore){bestScore=sc;bestJ=j;}
+      if(bestJ>=0&&(j-i)>4&&sc>bestScore*3) break;
+    }
+    if(bestJ>=0){matches.push([s[i],s[bestJ]]);used[i]=true;used[bestJ]=true;}
+  }
+  return matches;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// KOB League — Season management (mid-season "Generate Next Week")
+// ═══════════════════════════════════════════════════════════════════════════
+var seasonEventId=null, seasonSD=null, seasonScores=null;
+
+async function openSeasonModal(eventId){
+  seasonEventId=eventId;
+  document.getElementById('season-title').textContent=(eventsMap[eventId]||{}).title||'Season';
+  document.getElementById('season-body').innerHTML='<p class="msg">Loading season data...</p>';
+  document.getElementById('season-modal').classList.add('show');
+  await loadSeasonData();
+}
+function closeSeasonModal(){
+  document.getElementById('season-modal').classList.remove('show');
+  seasonEventId=null; seasonSD=null; seasonScores=null;
+}
+
+async function loadSeasonData(){
+  var {data:evRow,error:evErr}=await sb.from('events').select('sd_json').eq('id',seasonEventId).single();
+  if(evErr||!evRow){ document.getElementById('season-body').innerHTML='<p class="msg">Could not load event.</p>'; return; }
+  seasonSD=evRow.sd_json;
+
+  var {data:scoreRows,error:scErr}=await sb.from('scores').select('score_key,s1,s2').eq('event_id',seasonEventId);
+  seasonScores={};
+  (scoreRows||[]).forEach(function(r){ seasonScores[r.score_key]={s1:r.s1,s2:r.s2}; });
+
+  renderSeasonModal();
+}
+
+function isMatchScored(key){
+  var sc=seasonScores[key];
+  if(!sc||sc.s1===''||sc.s1===null||sc.s2===''||sc.s2===null) return false;
+  var s1=parseInt(sc.s1),s2=parseInt(sc.s2);
+  return !isNaN(s1)&&!isNaN(s2);
+}
+
+function renderSeasonModal(){
+  var sd=seasonSD;
+  var weeks=sd.sched.length;
+  var html='';
+  var lastWeekComplete=true, lastWeekHasAnyScores=false;
+  for(var w=0;w<weeks;w++){
+    var total=0,done=0;
+    sd.sched[w].forEach(function(round,ri){round.forEach(function(m,ni){
+      total++;
+      if(isMatchScored(w+'-'+ri+'-'+ni)) done++;
+    });});
+    var complete=total>0&&done===total;
+    var pillClass=done===0?'none':(complete?'complete':'progress');
+    var pillLabel=done===0?'Not started':(complete?'Complete':(done+'/'+total));
+    html+='<div class="wk-row"><span class="wk-name">Week '+(w+1)+'</span>'+
+      '<span style="display:flex;gap:8px;align-items:center;">'+
+      '<span class="wk-pill '+pillClass+'">'+pillLabel+'</span>'+
+      (done===0?'<button class="btn btn-ghost" style="padding:3px 9px;font-size:11px;" onclick="regenerateWeek('+w+')">Regenerate</button>':'')+
+      '</span></div>';
+    if(w===weeks-1){ lastWeekComplete=complete; lastWeekHasAnyScores=done>0; }
+  }
+  html+='<div class="season-actions">'+
+    '<button class="btn btn-green" onclick="generateNextWeek()">Generate Week '+(weeks+1)+'</button>'+
+    '<button class="btn btn-ghost" style="color:#e57373;border-color:#c62828" '+
+      (lastWeekHasAnyScores?'disabled title="Last week already has scores recorded"':'onclick="removeLastWeek()"')+
+      '>Remove Week '+weeks+'</button>'+
+  '</div>';
+  if(!lastWeekComplete && weeks>0){
+    html+='<p class="msg" style="margin-top:10px;color:#e0c060;">Heads up: Week '+weeks+' isn\'t fully scored yet. '+
+      'Standings used for seeding will be based on partial results.</p>';
+  }
+  html+='<p class="msg" style="margin-top:10px;">"Regenerate" recomputes an unscored week using current standings — '+
+    'use it on weeks that were pre-generated before earlier weeks had results.</p>';
+  document.getElementById('season-body').innerHTML=html;
+}
+
+// Standings sorted like the viewer's calcLgStandings: wins desc, point-diff desc, points-for desc.
+function calcStandingsFromScores(sd, scores){
+  var players={};
+  sd.gA.forEach(function(n){players[n]={name:n,grp:'A',w:0,l:0,pf:0,pa:0,played:0};});
+  sd.gB.forEach(function(n){players[n]={name:n,grp:'B',w:0,l:0,pf:0,pa:0,played:0};});
+  sd.sched.forEach(function(week,wi){week.forEach(function(round,ri){round.forEach(function(m,ni){
+    var sc=scores[wi+'-'+ri+'-'+ni];
+    if(!sc||sc.s1===''||sc.s2===''||sc.s1===null||sc.s2===null) return;
+    var s1=parseInt(sc.s1),s2=parseInt(sc.s2);
+    if(isNaN(s1)||isNaN(s2)) return;
+    m.p1.forEach(function(p){if(!players[p])return;players[p].pf+=s1;players[p].pa+=s2;players[p].played++;if(s1>s2)players[p].w++;else if(s2>s1)players[p].l++;});
+    m.p2.forEach(function(p){if(!players[p])return;players[p].pf+=s2;players[p].pa+=s1;players[p].played++;if(s2>s1)players[p].w++;else if(s1>s2)players[p].l++;});
+  });});});
+  return players;
+}
+
+function standingsRankFromScores(sd, scores){
+  var standings=calcStandingsFromScores(sd, scores);
+  var standingsRank={};
+  ['A','B'].forEach(function(grp){
+    var list=Object.values(standings).filter(function(p){return p.grp===grp&&p.played>0;})
+      .sort(function(a,b){ if(b.w!==a.w) return b.w-a.w; var da=a.pf-a.pa,db=b.pf-b.pa; if(db!==da) return db-da; return b.pf-a.pf; });
+    list.forEach(function(p,i){ standingsRank[p.name]=i+1; });
+  });
+  return standingsRank;
+}
+
+// Replays sd.sched to rebuild ph/mh/oh history. Pass excludeWeekIdx to leave one
+// week's matches out of the tally (used when regenerating that week from scratch).
+function replayHistory(sd, excludeWeekIdx){
+  var gA=sd.gA, gB=sd.gB;
+  var ph={}, oh={}, mh={};
+  gA.forEach(function(a){ph[a]={};gB.forEach(function(b){ph[a][b]=0;});});
+  gA.concat(gB).forEach(function(p){ oh[p]={}; });
+  sd.sched.forEach(function(week,wi){
+    if(wi===excludeWeekIdx) return;
+    week.forEach(function(round){round.forEach(function(m){
+      if(!m.p1||!m.p2) return;
+      [m.p1,m.p2].forEach(function(pr){
+        var a=gA.indexOf(pr[0])>=0?pr[0]:pr[1];
+        var b=gA.indexOf(pr[0])>=0?pr[1]:pr[0];
+        if(ph[a]) ph[a][b]=(ph[a][b]||0)+1;
+      });
+      var key=[m.p1[0],m.p1[1],m.p2[0],m.p2[1]].sort().join('|');
+      mh[key]=(mh[key]||0)+1;
+      [m.p1[0],m.p1[1]].forEach(function(p1){[m.p2[0],m.p2[1]].forEach(function(p2){
+        oh[p1][p2]=(oh[p1][p2]||0)+1; oh[p2][p1]=(oh[p2][p1]||0)+1;
+      });});
+    });});
+  });
+  return {ph:ph,oh:oh,mh:mh};
+}
+
+function seedRankFor(sd){
+  if(sd.seedRank) return sd.seedRank;
+  var seedRank={};
+  sd.gA.forEach(function(p,i){seedRank[p]=i+1;});
+  sd.gB.forEach(function(p,i){seedRank[p]=i+1;});
+  return seedRank;
+}
+
+// Builds one week's rounds given current ph/oh/mh state (mutates them as it goes,
+// same as the generator does) and an effective rank map for this week.
+function buildLeagueWeek(gA,gB,courts,rounds,ph,oh,mh,rankOf,partnerCap,matchupCap){
+  var week=[];
+  for(var r=0;r<rounds;r++){
+    var pairs=buildPairings(gA,gB,ph,partnerCap);
+    pairs.forEach(function(p){ph[p.a][p.b]++;});
+    var rawMatches=buildMatches(pairs,mh,oh,rankOf,{matchupRepeatCap:matchupCap});
+    rawMatches.forEach(function(m){
+      var key=[m[0].a,m[0].b,m[1].a,m[1].b].sort().join('|');
+      mh[key]=(mh[key]||0)+1;
+      [m[0].a,m[0].b].forEach(function(p1){[m[1].a,m[1].b].forEach(function(p2){
+        oh[p1][p2]=(oh[p1][p2]||0)+1; oh[p2][p1]=(oh[p2][p1]||0)+1;
+      });});
+    });
+    var roundMatches=rawMatches.map(function(m,i){
+      return {court:i%courts.length,p1:[m[0].a,m[0].b],p2:[m[1].a,m[1].b],isBye:false};
+    });
+    week.push(roundMatches);
+  }
+  return week;
+}
+
+async function generateNextWeek(){
+  var sd=seasonSD;
+  var weekIndex=sd.sched.length; // 0-based index of the week we're about to add
+  var rounds=sd.roundsPerWeek||5;
+  var gA=sd.gA, gB=sd.gB, courts=sd.courts;
+  var seedRank=seedRankFor(sd);
+  var partnerCap=(sd.repeatCaps&&sd.repeatCaps.partner)||3;
+  var matchupCap=(sd.repeatCaps&&sd.repeatCaps.matchup)||2;
+
+  var standingsRank=standingsRankFromScores(sd, seasonScores);
+  var rankOf={};
+  gA.concat(gB).forEach(function(p){ rankOf[p]=effectiveRank(p,seedRank,standingsRank,weekIndex); });
+
+  var hist=replayHistory(sd, -1); // exclude nothing — this is a brand new week
+  var week=buildLeagueWeek(gA,gB,courts,rounds,hist.ph,hist.oh,hist.mh,rankOf,partnerCap,matchupCap);
+
+  sd.sched.push(week);
+  sd.weeks=sd.sched.length;
+
+  var {error}=await sb.from('events').update({sd_json:sd}).eq('id',seasonEventId);
+  if(error){ alert('Failed to save new week: '+error.message); return; }
+  seasonSD=sd;
+  renderSeasonModal();
+}
+
+// Regenerates an existing, not-yet-scored week using current live standings —
+// for events where the whole season was pre-generated upfront and you want
+// later weeks to reflect actual results instead of the static seed.
+async function regenerateWeek(weekIdx){
+  var sd=seasonSD;
+  var hasScores=false;
+  sd.sched[weekIdx].forEach(function(round,ri){round.forEach(function(m,ni){
+    if(isMatchScored(weekIdx+'-'+ri+'-'+ni)) hasScores=true;
+  });});
+  if(hasScores){ alert('Week '+(weekIdx+1)+' already has scores recorded — regenerate is disabled to protect data.'); return; }
+  if(!confirm('Regenerate Week '+(weekIdx+1)+' using current standings? This replaces its matchups.')) return;
+
+  var rounds=sd.roundsPerWeek||5;
+  var gA=sd.gA, gB=sd.gB, courts=sd.courts;
+  var seedRank=seedRankFor(sd);
+  var partnerCap=(sd.repeatCaps&&sd.repeatCaps.partner)||3;
+  var matchupCap=(sd.repeatCaps&&sd.repeatCaps.matchup)||2;
+
+  var standingsRank=standingsRankFromScores(sd, seasonScores);
+  var rankOf={};
+  gA.concat(gB).forEach(function(p){ rankOf[p]=effectiveRank(p,seedRank,standingsRank,weekIdx); });
+
+  var hist=replayHistory(sd, weekIdx); // exclude this week's own (stale) matches from history
+  var week=buildLeagueWeek(gA,gB,courts,rounds,hist.ph,hist.oh,hist.mh,rankOf,partnerCap,matchupCap);
+
+  sd.sched[weekIdx]=week;
+  var {error}=await sb.from('events').update({sd_json:sd}).eq('id',seasonEventId);
+  if(error){ alert('Failed to regenerate week: '+error.message); return; }
+  seasonSD=sd;
+  renderSeasonModal();
+}
+
+async function removeLastWeek(){
+  var sd=seasonSD;
+  if(sd.sched.length===0) return;
+  var lastIdx=sd.sched.length-1;
+  var hasScores=false;
+  sd.sched[lastIdx].forEach(function(round,ri){round.forEach(function(m,ni){
+    if(isMatchScored(lastIdx+'-'+ri+'-'+ni)) hasScores=true;
+  });});
+  if(hasScores){ alert('This week already has scores recorded — remove is disabled to protect data.'); return; }
+  if(!confirm('Remove Week '+(lastIdx+1)+'? This cannot be undone.')) return;
+
+  sd.sched.pop();
+  sd.weeks=sd.sched.length;
+  var {error}=await sb.from('events').update({sd_json:sd}).eq('id',seasonEventId);
+  if(error){ alert('Failed to remove week: '+error.message); return; }
+  seasonSD=sd;
+  renderSeasonModal();
 }
 
 // ── Drag & drop ───────────────────────────────────────────────────────────────
