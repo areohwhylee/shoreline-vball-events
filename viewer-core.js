@@ -200,7 +200,7 @@ function switchTab(t){
   if(t==='standings'||t==='mix-standings') renderStandings();
   if(t==='bracket') renderBracket();
   if(t==='lookup') renderLookupSelect();
-  if(t==='teams') renderTeamsTab();
+  if(t==='teams'){ renderTeamsTab(); renderPoolTeamsSummary(); }
 }
 
 /* =======================================================
@@ -1166,6 +1166,22 @@ function setTournStdFilter(pi,btn){
 
 
 // -- Teams rename tab --------------------------------------------------------
+function renderPoolTeamsSummary(){
+  var wrap=document.getElementById('pool-teams-summary');
+  if(!wrap) return;
+  if(fmt!=='traditional_tournament'||!SD.pools||!SD.pools.length){ wrap.innerHTML=''; wrap.style.display='none'; return; }
+  wrap.style.display='block';
+  var h='<div style="font-size:13px;color:var(--t2);margin-bottom:12px;">Teams by pool</div>';
+  SD.pools.forEach(function(pool){
+    h+='<div style="margin-bottom:16px;">'+
+      '<div style="font-size:13px;font-weight:700;color:var(--ts);margin-bottom:6px;">'+pool.name+' ('+pool.entries.length+')</div>'+
+      pool.entries.map(function(e){
+        return '<div style="font-size:13px;padding:7px 12px;background:var(--bg2);border:.5px solid var(--b3);border-radius:var(--rm);margin-bottom:5px;">'+dn(e)+'</div>';
+      }).join('')+
+      '</div>';
+  });
+  wrap.innerHTML=h;
+}
 function renderTeamsTab(){
   var wrap=document.getElementById('teams-rename-list'); if(!wrap) return;
   var entries=Object.keys(nameMap);
@@ -1196,10 +1212,12 @@ function applyRenames(){
   }
   storeSave();
   renderTeamsTab();
+  renderPoolTeamsSummary();
 }
 function resetRenames(){
   Object.keys(nameMap).forEach(function(k){ nameMap[k]=k; });
   renderTeamsTab();
+  renderPoolTeamsSummary();
   if(fmt==='traditional_tournament'){
     renderPoolSchedule();
     renderStandings();
