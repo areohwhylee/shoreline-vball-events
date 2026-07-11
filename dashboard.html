@@ -73,6 +73,13 @@ h2{font-size:18px;font-weight:700;margin-bottom:18px;}
 .pill-waitlisted{background:#3a3115;color:#e0c060;}
 .section-divider{font-size:11px;color:#5a7a62;font-weight:700;text-transform:uppercase;
   letter-spacing:.05em;margin:16px 0 8px;}
+.roster-row{display:flex;justify-content:space-between;align-items:center;
+  padding:8px 12px;border-radius:7px;background:#0f1a14;border:.5px solid #2d4a36;margin-bottom:5px;}
+.roster-seed{font-size:11px;color:#5a7a62;width:24px;flex-shrink:0;}
+.roster-name{font-size:13px;flex:1;}
+.add-row{display:flex;gap:8px;margin-top:12px;}
+.add-row input{flex:1;padding:8px 10px;border-radius:6px;border:.5px solid #2d4a36;
+  background:#0f1a14;color:#e8f0eb;font-size:13px;}
 </style>
 </head>
 <body>
@@ -135,6 +142,17 @@ h2{font-size:18px;font-weight:700;margin-bottom:18px;}
   </div>
 </div>
 
+<!-- Roster modal (Traditional Tournament) -->
+<div class="modal-bg" id="roster-modal">
+  <div class="modal" style="max-width:520px;max-height:85vh;overflow-y:auto;">
+    <h3 id="roster-title">Roster</h3>
+    <div id="roster-body"><p class="msg">Loading...</p></div>
+    <div class="modal-btns" style="margin-top:16px;">
+      <button class="btn btn-ghost" onclick="closeRosterModal()">Close</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const SUPABASE_URL='https://bdxsvlcojqmushnndaxz.supabase.co';
 const SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkeHN2bGNvanFtdXNobm5kYXh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5MTgyMTgsImV4cCI6MjA5NjQ5NDIxOH0.E7WEfw0GuQ8-iFFP6jpmDMEmDV2X24XJrI3AZ01Vnco';
@@ -173,6 +191,7 @@ async function loadEvents(){
       '<div class="ev-actions">'+
         '<span class="tag">'+(ev.is_public?'Public':'Private')+'</span>'+
         (ev.format==='kob_league'?'<button class="btn btn-ghost" onclick="openSeasonModal(\''+ev.id+'\')">Season</button>':'')+
+        (ev.format==='traditional_tournament'?'<button class="btn btn-ghost" onclick="openRosterModal(\''+ev.id+'\')">Roster</button>':'')+
         '<button class="btn btn-ghost" onclick="openRegModal(\''+ev.id+'\')">Registrations</button>'+
         '<button class="btn btn-ghost" onclick="copyLink(\''+ev.id+'\')">Copy link</button>'+
         '<button class="btn btn-green" onclick="window.open(\''+viewUrl+'\')">Open</button>'+
@@ -380,6 +399,233 @@ function exportRoster(){
     '<div class="section-divider">Export</div>'+
     '<textarea readonly style="width:100%;height:160px;padding:10px;border-radius:7px;'+
     'border:.5px solid #2d4a36;background:#0f1a14;color:#e8f0eb;font-size:12px;font-family:monospace;">'+esc(text)+'</textarea>';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Traditional Tournament — Roster management (pre-scores drop/add + regenerate)
+// Ported from the generator so pools/schedule/bracket can be rebuilt from the
+// dashboard without needing to re-run the standalone generator tool.
+// ═══════════════════════════════════════════════════════════════════════════
+function drawPools(entries, poolSize, numPools){
+  numPools=numPools||Math.ceil(entries.length/poolSize);
+  var pools=[];
+  for(var i=0;i<numPools;i++) pools.push([]);
+  for(var i=0;i<entries.length;i++){
+    var pass=Math.floor(i/numPools);
+    var pos=i%numPools;
+    var idx=pass%2===0?pos:numPools-1-pos;
+    pools[idx].push(entries[i]);
+  }
+  return pools;
+}
+function roundRobin(poolEntries){
+  var arr=poolEntries.slice();
+  if(arr.length%2!==0) arr.push('BYE');
+  var n=arr.length, rounds=[];
+  for(var r=0;r<n-1;r++){
+    var round=[];
+    for(var i=0;i<n/2;i++){
+      var p1=arr[i], p2=arr[n-1-i];
+      var bye=p1==='BYE'||p2==='BYE';
+      round.push({p1:bye&&p1==='BYE'?p2:p1, p2:bye&&p2==='BYE'?p1:p2, isBye:bye});
+    }
+    rounds.push(round);
+    var last=arr[n-1];
+    for(var j=n-1;j>1;j--) arr[j]=arr[j-1];
+    arr[1]=last;
+  }
+  return rounds;
+}
+function assignCourts(poolRounds, courts, poolCourtStart, courtsPerPool){
+  var cpp=Math.max(courtsPerPool,1);
+  var matchCounter=0;
+  return poolRounds.map(function(round){
+    return round.map(function(match){
+      if(match.isBye) return Object.assign({},match,{court:poolCourtStart});
+      var courtIdx=poolCourtStart+(matchCounter%cpp);
+      matchCounter++;
+      return Object.assign({},match,{court:courtIdx});
+    });
+  });
+}
+function assignRefs(poolRounds, poolEntries, courtsPerPool){
+  // Same correctness fix as the generator: refs are only drawn from entries
+  // not busy in the same simultaneous court-batch as the match being reffed.
+  var cpp=Math.max(courtsPerPool,1);
+  var refCount={};
+  poolEntries.forEach(function(e){ refCount[e]=0; });
+  var lastRef=null;
+  return poolRounds.map(function(round){
+    var realIdx=[];
+    round.forEach(function(m,mi){ if(!m.isBye) realIdx.push(mi); });
+    var out=round.slice();
+    for(var b=0; b*cpp<realIdx.length; b++){
+      var batchIdxs=realIdx.slice(b*cpp,(b+1)*cpp);
+      var busyThisBatch={};
+      batchIdxs.forEach(function(mi){ busyThisBatch[out[mi].p1]=true; busyThisBatch[out[mi].p2]=true; });
+      batchIdxs.forEach(function(mi){
+        var match=out[mi];
+        var notPlaying=poolEntries.filter(function(e){ return !busyThisBatch[e]; });
+        var noBackToBack=notPlaying.filter(function(e){return e!==lastRef;});
+        var pool=noBackToBack.length>0?noBackToBack:notPlaying;
+        var underCap=pool.filter(function(e){return refCount[e]<2;});
+        var candidates=underCap.length>0?underCap:pool;
+        candidates.sort(function(a,b2){return refCount[a]-refCount[b2];});
+        var ref=candidates[0]||null;
+        if(ref) refCount[ref]++;
+        lastRef=ref;
+        var sit=poolEntries.filter(function(e){return e!==match.p1&&e!==match.p2&&e!==ref;});
+        out[mi]=Object.assign({},match,{ref:ref,sit:sit});
+      });
+    }
+    return out;
+  });
+}
+function bracketMatchupSeeds(size){
+  if(size===2) return [[1,2]];
+  var prev=bracketMatchupSeeds(size/2);
+  var result=[];
+  prev.forEach(function(pair){
+    result.push([pair[0], size+1-pair[0]]);
+    var opp=size+1-pair[1];
+    result.push([Math.min(opp,pair[1]), Math.max(opp,pair[1])]);
+  });
+  return result;
+}
+
+var rosterEventId=null, rosterSD=null, rosterHasScores=false;
+
+async function openRosterModal(eventId){
+  rosterEventId=eventId;
+  document.getElementById('roster-title').textContent='Roster — '+((eventsMap[eventId]||{}).title||'');
+  document.getElementById('roster-body').innerHTML='<p class="msg">Loading...</p>';
+  document.getElementById('roster-modal').classList.add('show');
+  await loadRosterData();
+}
+function closeRosterModal(){
+  document.getElementById('roster-modal').classList.remove('show');
+  rosterEventId=null; rosterSD=null;
+}
+
+async function loadRosterData(){
+  var {data:evRow,error:evErr}=await sb.from('events').select('sd_json').eq('id',rosterEventId).single();
+  if(evErr||!evRow){ document.getElementById('roster-body').innerHTML='<p class="msg">Could not load event.</p>'; return; }
+  rosterSD=evRow.sd_json;
+
+  var {count,error:scErr}=await sb.from('scores').select('score_key',{count:'exact',head:true}).eq('event_id',rosterEventId);
+  rosterHasScores=!scErr && count>0;
+
+  renderRosterModal();
+}
+
+function renderRosterModal(){
+  var sd=rosterSD;
+  var h='';
+  if(rosterHasScores){
+    h+='<p class="msg" style="color:#e0c060;">Scores have already been recorded for this event — '+
+      'dropping/adding entrants and regenerating is disabled to protect existing results. '+
+      'This only works before the tournament starts scoring.</p>';
+  }
+  h+='<div class="section-divider">Entries ('+sd.entries.length+', seed order)</div>';
+  sd.entries.forEach(function(name,i){
+    h+='<div class="roster-row"><span class="roster-seed">#'+(i+1)+'</span>'+
+      '<span class="roster-name">'+esc(name)+'</span>'+
+      (rosterHasScores?'':'<button class="btn btn-ghost" style="color:#e57373;padding:3px 10px;font-size:11px;" onclick="dropEntrant('+i+')">Drop</button>')+
+      '</div>';
+  });
+  if(!rosterHasScores){
+    h+='<div class="add-row"><input type="text" id="add-entrant-name" placeholder="Add entrant name...">'+
+      '<button class="btn btn-ghost" onclick="addEntrant()">Add</button></div>';
+    h+='<div class="season-actions"><button class="btn btn-green" onclick="regenerateTournament()">Regenerate pools &amp; schedule</button></div>';
+    h+='<p class="msg" style="margin-top:10px;">This rebuilds pools, round-robin schedule, and bracket sizing from scratch '+
+      'using the current entry list and this event\'s existing pool/court settings.</p>';
+  }
+  document.getElementById('roster-body').innerHTML=h;
+}
+
+function dropEntrant(idx){
+  rosterSD.entries.splice(idx,1);
+  renderRosterModal();
+}
+function addEntrant(){
+  var inp=document.getElementById('add-entrant-name');
+  var name=inp.value.trim();
+  if(!name) return;
+  rosterSD.entries.push(name);
+  renderRosterModal();
+}
+
+async function regenerateTournament(){
+  var sd=rosterSD;
+  if(sd.entries.length<2){ alert('Need at least 2 entrants.'); return; }
+  if(!confirm('Regenerate pools and schedule for '+sd.entries.length+' entrants? This replaces the current pool/bracket structure.')) return;
+
+  var config=sd.config||{};
+  var numPools=parseInt(config['num-pools'])||2;
+  var entriesPerPool=parseInt(config['entries-per-pool'])||4;
+  var courtsPerPool=parseInt(config['courts-per-pool'])||1;
+  var courts=sd.courts;
+  var entries=sd.entries;
+
+  var totalAdv=config.playoffMode==='top-n'
+    ?(parseInt(config.playoffQualifiers)||entries.length)
+    :entries.length;
+  var seedsAdv=Math.max(1,Math.ceil(totalAdv/numPools));
+
+  var poolGroups=drawPools(entries, entriesPerPool, numPools);
+  var baseSets=(sd.scoring&&sd.scoring.numSets)||1;
+  var pools=poolGroups.map(function(pe, pi){
+    var rounds=roundRobin(pe);
+    var poolCourtStart=pi*courtsPerPool;
+    var withCourts=assignCourts(rounds, courts, poolCourtStart, courtsPerPool);
+    var withRefs=assignRefs(withCourts, pe, courtsPerPool);
+    var bonusRounds=[];
+    if(pe.length<entriesPerPool){
+      var extraRounds=entriesPerPool-pe.length;
+      var bonusArr=pe.slice(); bonusArr.push('BYE');
+      var last=bonusArr[bonusArr.length-1];
+      for(var j=bonusArr.length-1;j>1;j--) bonusArr[j]=bonusArr[j-1];
+      bonusArr[1]=last;
+      var bn=bonusArr.length;
+      for(var br=0;br<Math.min(extraRounds*(bn-1),pe.length*(pe.length-1)/2);br++){
+        var bRound=[];
+        for(var bi=0;bi<bn/2;bi++){
+          var bp1=bonusArr[bi], bp2=bonusArr[bn-1-bi];
+          var bBye=bp1==='BYE'||bp2==='BYE';
+          bRound.push({p1:bBye&&bp1==='BYE'?bp2:bp1, p2:bBye&&bp2==='BYE'?bp1:bp2,
+            isBye:bBye, bonus:true});
+        }
+        bonusRounds.push(bRound);
+        var bl=bonusArr[bn-1];
+        for(var bj=bn-1;bj>1;bj--) bonusArr[bj]=bonusArr[bj-1];
+        bonusArr[1]=bl;
+      }
+      var bonusWithCourts=assignCourts(bonusRounds, courts, poolCourtStart, courtsPerPool);
+      var bonusWithRefs=assignRefs(bonusWithCourts, pe, courtsPerPool);
+      bonusRounds=bonusWithRefs;
+    }
+    return {name:'Pool '+String.fromCharCode(65+pi), entries:pe, rounds:withRefs,
+      bonusRounds:bonusRounds, sets:baseSets};
+  });
+
+  var bracketSize=1; while(bracketSize<totalAdv) bracketSize*=2;
+  var matchupSeeds=bracketMatchupSeeds(bracketSize);
+
+  sd.pools=pools;
+  sd.bracket={
+    type:config.bracketType||'single',
+    seedsAdv:seedsAdv,
+    seedingMethod:config.seedingMethod||'flat',
+    seedsPerPool:config.seedsPerPool||2,
+    size:bracketSize,
+    matchupSeeds:matchupSeeds
+  };
+
+  var {error}=await sb.from('events').update({sd_json:sd}).eq('id',rosterEventId);
+  if(error){ alert('Failed to save: '+error.message); return; }
+  alert('Pools and schedule regenerated for '+entries.length+' entrants.');
+  rosterSD=sd;
+  renderRosterModal();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
