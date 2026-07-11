@@ -58,6 +58,21 @@ h2{font-size:18px;font-weight:700;margin-bottom:18px;}
 .wk-pill.progress{background:#3a3115;color:#e0c060;}
 .wk-pill.none{background:#2d4a36;color:#7a9e82;}
 .season-actions{display:flex;gap:8px;margin-top:14px;}
+.reg-cfg-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px;}
+.reg-cfg-row label{font-size:12px;color:#7a9e82;font-weight:600;}
+.reg-cfg-row input,.reg-cfg-row select{width:160px;padding:6px 10px;border-radius:6px;
+  border:.5px solid #2d4a36;background:#0f1a14;color:#e8f0eb;font-size:13px;}
+.toggle-row{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+.reg-row{padding:10px 12px;border-radius:7px;background:#0f1a14;border:.5px solid #2d4a36;margin-bottom:6px;}
+.reg-row-top{display:flex;justify-content:space-between;align-items:center;}
+.reg-name{font-size:13px;font-weight:600;}
+.reg-members{font-size:11px;color:#7a9e82;margin-top:2px;}
+.reg-actions{display:flex;gap:6px;}
+.reg-actions button{padding:4px 10px;font-size:11px;}
+.pill-registered{background:#1e4029;color:#5dcaa5;}
+.pill-waitlisted{background:#3a3115;color:#e0c060;}
+.section-divider{font-size:11px;color:#5a7a62;font-weight:700;text-transform:uppercase;
+  letter-spacing:.05em;margin:16px 0 8px;}
 </style>
 </head>
 <body>
@@ -109,6 +124,17 @@ h2{font-size:18px;font-weight:700;margin-bottom:18px;}
   </div>
 </div>
 
+<!-- Registrations modal -->
+<div class="modal-bg" id="reg-modal">
+  <div class="modal" style="max-width:640px;max-height:85vh;overflow-y:auto;">
+    <h3 id="reg-title">Registrations</h3>
+    <div id="reg-body"><p class="msg">Loading...</p></div>
+    <div class="modal-btns" style="margin-top:16px;">
+      <button class="btn btn-ghost" onclick="closeRegModal()">Close</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const SUPABASE_URL='https://bdxsvlcojqmushnndaxz.supabase.co';
 const SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkeHN2bGNvanFtdXNobm5kYXh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5MTgyMTgsImV4cCI6MjA5NjQ5NDIxOH0.E7WEfw0GuQ8-iFFP6jpmDMEmDV2X24XJrI3AZ01Vnco';
@@ -147,6 +173,7 @@ async function loadEvents(){
       '<div class="ev-actions">'+
         '<span class="tag">'+(ev.is_public?'Public':'Private')+'</span>'+
         (ev.format==='kob_league'?'<button class="btn btn-ghost" onclick="openSeasonModal(\''+ev.id+'\')">Season</button>':'')+
+        '<button class="btn btn-ghost" onclick="openRegModal(\''+ev.id+'\')">Registrations</button>'+
         '<button class="btn btn-ghost" onclick="copyLink(\''+ev.id+'\')">Copy link</button>'+
         '<button class="btn btn-green" onclick="window.open(\''+viewUrl+'\')">Open</button>'+
         '<button class="btn btn-ghost" style="color:#e57373;border-color:#c62828" onclick="startDelete(\''+ev.id+'\')">Del</button>'+
@@ -207,6 +234,155 @@ async function signOut(){
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Registrations panel
+// ═══════════════════════════════════════════════════════════════════════════
+var regEventId=null, regEvent=null, regRows=null;
+
+async function openRegModal(eventId){
+  regEventId=eventId;
+  document.getElementById('reg-title').textContent='Registrations — '+((eventsMap[eventId]||{}).title||'');
+  document.getElementById('reg-body').innerHTML='<p class="msg">Loading...</p>';
+  document.getElementById('reg-modal').classList.add('show');
+  await loadRegData();
+}
+function closeRegModal(){
+  document.getElementById('reg-modal').classList.remove('show');
+  regEventId=null; regEvent=null; regRows=null;
+}
+
+async function loadRegData(){
+  var {data:ev,error:evErr}=await sb.from('events')
+    .select('registration_open,registration_entry_type,registration_capacity,registration_group_labels')
+    .eq('id',regEventId).single();
+  if(evErr){ document.getElementById('reg-body').innerHTML='<p class="msg">Could not load event.</p>'; return; }
+  regEvent=ev;
+
+  var {data:rows,error:rErr}=await sb.from('registrations')
+    .select('id,entry_type,captain_name,captain_email,captain_phone,member_names,group_pref,status,paid,created_at')
+    .eq('event_id',regEventId).neq('status','cancelled')
+    .order('created_at',{ascending:true});
+  regRows=rows||[];
+
+  renderRegModal();
+}
+
+function renderRegModal(){
+  var ev=regEvent, rows=regRows;
+  var entryType=ev.registration_entry_type||'solo';
+  var cap=ev.registration_capacity;
+  var registered=rows.filter(function(r){return r.status==='registered';});
+  var waitlisted=rows.filter(function(r){return r.status==='waitlisted';});
+
+  var h='<div class="reg-cfg-row"><label>Registration is</label>'+
+    '<button class="btn '+(ev.registration_open?'btn-green':'btn-ghost')+'" style="padding:5px 12px;" onclick="toggleRegOpen()">'+
+      (ev.registration_open?'Open':'Closed')+'</button></div>'+
+    '<div class="reg-cfg-row"><label>Entry type</label>'+
+    '<select id="cfg-entry-type" onchange="saveRegConfig()">'+
+      ['solo','pair','quad','six'].map(function(t){return '<option value="'+t+'"'+(t===entryType?' selected':'')+'>'+ENTRY_LABELS_DASH[t]+'</option>';}).join('')+
+    '</select></div>'+
+    '<div class="reg-cfg-row"><label>Capacity (entries, blank = unlimited)</label>'+
+    '<input type="number" id="cfg-capacity" value="'+(cap||'')+'" min="1" onchange="saveRegConfig()"></div>'+
+    '<div class="reg-cfg-row"><label>Registration link</label>'+
+    '<button class="btn btn-ghost" style="padding:5px 12px;" onclick="copyRegLink()">Copy link</button></div>';
+
+  h+='<div class="section-divider">Registered ('+registered.length+(cap?'/'+cap:'')+')</div>';
+  h+=registered.length?registered.map(regRowHtml).join(''):'<p class="msg">No registrations yet.</p>';
+
+  if(waitlisted.length){
+    h+='<div class="section-divider">Waitlisted ('+waitlisted.length+')</div>';
+    h+=waitlisted.map(regRowHtml).join('');
+  }
+
+  h+='<div class="season-actions"><button class="btn btn-green" onclick="exportRoster()">Export roster</button></div>'+
+    '<div id="export-output"></div>';
+
+  document.getElementById('reg-body').innerHTML=h;
+}
+var ENTRY_LABELS_DASH={solo:'Solo',pair:'Pair',quad:'Quad (4)',six:'Six (6)'};
+
+function regRowHtml(r){
+  var members=(r.member_names&&r.member_names.length)?' + '+r.member_names.join(', '):'';
+  var pillClass=r.status==='registered'?'pill-registered':'pill-waitlisted';
+  var groupTag=r.group_pref?' ['+r.group_pref+']':'';
+  return '<div class="reg-row"><div class="reg-row-top">'+
+    '<div><div class="reg-name">'+esc(r.captain_name)+groupTag+'</div>'+
+    (members?'<div class="reg-members">'+esc(members)+'</div>':'')+'</div>'+
+    '<div class="reg-actions">'+
+      '<button class="btn '+(r.paid?'btn-green':'btn-ghost')+'" onclick="togglePaid(\''+r.id+'\','+(!r.paid)+')">'+(r.paid?'Paid':'Unpaid')+'</button>'+
+      (r.status==='waitlisted'?'<button class="btn btn-ghost" onclick="promoteFromWaitlist(\''+r.id+'\')">Promote</button>':'')+
+      '<button class="btn btn-ghost" style="color:#e57373;" onclick="cancelRegistration(\''+r.id+'\')">Remove</button>'+
+    '</div></div></div>';
+}
+function esc(s){ return (s||'').toString().replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+async function toggleRegOpen(){
+  var {error}=await sb.from('events').update({registration_open:!regEvent.registration_open}).eq('id',regEventId);
+  if(error){ alert('Failed: '+error.message); return; }
+  regEvent.registration_open=!regEvent.registration_open;
+  renderRegModal();
+}
+async function saveRegConfig(){
+  var entryType=document.getElementById('cfg-entry-type').value;
+  var capVal=document.getElementById('cfg-capacity').value;
+  var cap=capVal?parseInt(capVal):null;
+  var {error}=await sb.from('events').update({registration_entry_type:entryType,registration_capacity:cap}).eq('id',regEventId);
+  if(error){ alert('Failed: '+error.message); return; }
+  regEvent.registration_entry_type=entryType; regEvent.registration_capacity=cap;
+}
+function copyRegLink(){
+  var base=window.location.href.replace(/[^\/]*$/,'');
+  var url=base+'register.html?event='+regEventId;
+  navigator.clipboard.writeText(url).then(function(){ alert('Registration link copied!\n\n'+url); });
+}
+async function togglePaid(id,paid){
+  var {error}=await sb.from('registrations').update({paid:paid}).eq('id',id);
+  if(error){ alert('Failed: '+error.message); return; }
+  await loadRegData();
+}
+async function promoteFromWaitlist(id){
+  var {error}=await sb.from('registrations').update({status:'registered'}).eq('id',id);
+  if(error){ alert('Failed: '+error.message); return; }
+  await loadRegData();
+}
+async function cancelRegistration(id){
+  if(!confirm('Remove this registration?')) return;
+  var {error}=await sb.from('registrations').update({status:'cancelled'}).eq('id',id);
+  if(error){ alert('Failed: '+error.message); return; }
+  await loadRegData();
+}
+
+function exportRoster(){
+  var registered=regRows.filter(function(r){return r.status==='registered';});
+  var entryType=regEvent.registration_entry_type||'solo';
+  var text='';
+  if(entryType==='solo'){
+    var hasGroups=registered.some(function(r){return r.group_pref;});
+    if(hasGroups){
+      ['A','B'].forEach(function(g){
+        text+='== Group '+g+' ==\n';
+        registered.filter(function(r){return r.group_pref===g;}).forEach(function(r){ text+=r.captain_name+'\n'; });
+        text+='\n';
+      });
+    } else {
+      registered.forEach(function(r){ text+=r.captain_name+'\n'; });
+    }
+  } else if(entryType==='pair'){
+    text+='== List A (captains) ==\n';
+    registered.forEach(function(r){ text+=r.captain_name+'\n'; });
+    text+='\n== List B (partners) ==\n';
+    registered.forEach(function(r){ text+=(r.member_names[0]||'—')+'\n'; });
+  } else {
+    registered.forEach(function(r,i){
+      text+='Team '+(i+1)+': '+[r.captain_name].concat(r.member_names).join(', ')+'\n';
+    });
+  }
+  document.getElementById('export-output').innerHTML=
+    '<div class="section-divider">Export</div>'+
+    '<textarea readonly style="width:100%;height:160px;padding:10px;border-radius:7px;'+
+    'border:.5px solid #2d4a36;background:#0f1a14;color:#e8f0eb;font-size:12px;font-family:monospace;">'+esc(text)+'</textarea>';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Seed-aware pairing/matching engine (GenZilla) — canonical copy shared with
 // the generator. Used here to generate additional KOB League weeks mid-season,
 // blending original seed rank with live standings as the season progresses.
@@ -244,6 +420,7 @@ function buildPairings(gA,gB,ph,repeatCap){
 function buildMatches(pairs,mh,oh,rankOf,opts){
   opts=opts||{};
   var matchupRepeatCap=opts.matchupRepeatCap===undefined?Infinity:opts.matchupRepeatCap;
+  var individualRepeatCap=opts.individualRepeatCap===undefined?Infinity:opts.individualRepeatCap;
   var randomWeight=opts.randomWeight===undefined?0.6:opts.randomWeight;
   var s=pairs.map(function(p){
     return {p:p,str:teamStrength(p.a,p.b,rankOf)+Math.random()*randomWeight};
@@ -257,15 +434,17 @@ function buildMatches(pairs,mh,oh,rankOf,opts){
       var key=[s[i].a,s[i].b,s[j].a,s[j].b].sort().join('|');
       var repeatCount=mh[key]||0;
       var overCap=repeatCount>=matchupRepeatCap;
+      var o1=((oh[s[i].a]&&oh[s[i].a][s[j].a])||0),o2=((oh[s[i].a]&&oh[s[i].a][s[j].b])||0),
+          o3=((oh[s[i].b]&&oh[s[i].b][s[j].a])||0),o4=((oh[s[i].b]&&oh[s[i].b][s[j].b])||0);
+      var maxOh=Math.max(o1,o2,o3,o4);
+      var oppOverCap=maxOh>=individualRepeatCap;
       var strA=teamStrength(s[i].a,s[i].b,rankOf),strB=teamStrength(s[j].a,s[j].b,rankOf);
       var sc=Math.abs(strA-strB)*10;
       sc+=repeatCount*8;
-      sc+=((oh[s[i].a]&&oh[s[i].a][s[j].a])||0)*1.5;
-      sc+=((oh[s[i].a]&&oh[s[i].a][s[j].b])||0)*1.5;
-      sc+=((oh[s[i].b]&&oh[s[i].b][s[j].a])||0)*1.5;
-      sc+=((oh[s[i].b]&&oh[s[i].b][s[j].b])||0)*1.5;
+      sc+=(o1+o2+o3+o4)*12;
       sc+=Math.random()*randomWeight;
       if(overCap) sc+=100000;
+      if(oppOverCap) sc+=50000;
       if(sc<bestScore){bestScore=sc;bestJ=j;}
       if(bestJ>=0&&(j-i)>4&&sc>bestScore*3) break;
     }
@@ -409,12 +588,12 @@ function seedRankFor(sd){
 
 // Builds one week's rounds given current ph/oh/mh state (mutates them as it goes,
 // same as the generator does) and an effective rank map for this week.
-function buildLeagueWeek(gA,gB,courts,rounds,ph,oh,mh,rankOf,partnerCap,matchupCap){
+function buildLeagueWeek(gA,gB,courts,rounds,ph,oh,mh,rankOf,partnerCap,matchupCap,individualCap){
   var week=[];
   for(var r=0;r<rounds;r++){
     var pairs=buildPairings(gA,gB,ph,partnerCap);
     pairs.forEach(function(p){ph[p.a][p.b]++;});
-    var rawMatches=buildMatches(pairs,mh,oh,rankOf,{matchupRepeatCap:matchupCap});
+    var rawMatches=buildMatches(pairs,mh,oh,rankOf,{matchupRepeatCap:matchupCap,individualRepeatCap:individualCap});
     rawMatches.forEach(function(m){
       var key=[m[0].a,m[0].b,m[1].a,m[1].b].sort().join('|');
       mh[key]=(mh[key]||0)+1;
@@ -438,13 +617,14 @@ async function generateNextWeek(){
   var seedRank=seedRankFor(sd);
   var partnerCap=(sd.repeatCaps&&sd.repeatCaps.partner)||3;
   var matchupCap=(sd.repeatCaps&&sd.repeatCaps.matchup)||2;
+  var individualCap=(sd.repeatCaps&&sd.repeatCaps.individual)||3;
 
   var standingsRank=standingsRankFromScores(sd, seasonScores);
   var rankOf={};
   gA.concat(gB).forEach(function(p){ rankOf[p]=effectiveRank(p,seedRank,standingsRank,weekIndex); });
 
   var hist=replayHistory(sd, -1); // exclude nothing — this is a brand new week
-  var week=buildLeagueWeek(gA,gB,courts,rounds,hist.ph,hist.oh,hist.mh,rankOf,partnerCap,matchupCap);
+  var week=buildLeagueWeek(gA,gB,courts,rounds,hist.ph,hist.oh,hist.mh,rankOf,partnerCap,matchupCap,individualCap);
 
   sd.sched.push(week);
   sd.weeks=sd.sched.length;
@@ -472,13 +652,14 @@ async function regenerateWeek(weekIdx){
   var seedRank=seedRankFor(sd);
   var partnerCap=(sd.repeatCaps&&sd.repeatCaps.partner)||3;
   var matchupCap=(sd.repeatCaps&&sd.repeatCaps.matchup)||2;
+  var individualCap=(sd.repeatCaps&&sd.repeatCaps.individual)||3;
 
   var standingsRank=standingsRankFromScores(sd, seasonScores);
   var rankOf={};
   gA.concat(gB).forEach(function(p){ rankOf[p]=effectiveRank(p,seedRank,standingsRank,weekIdx); });
 
   var hist=replayHistory(sd, weekIdx); // exclude this week's own (stale) matches from history
-  var week=buildLeagueWeek(gA,gB,courts,rounds,hist.ph,hist.oh,hist.mh,rankOf,partnerCap,matchupCap);
+  var week=buildLeagueWeek(gA,gB,courts,rounds,hist.ph,hist.oh,hist.mh,rankOf,partnerCap,matchupCap,individualCap);
 
   sd.sched[weekIdx]=week;
   var {error}=await sb.from('events').update({sd_json:sd}).eq('id',seasonEventId);

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Event Registration</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  background:#0f1a14;color:#e8f0eb;min-height:100vh;}
+main{max-width:480px;margin:0 auto;padding:32px 20px;}
+h1{font-size:20px;font-weight:700;margin-bottom:4px;}
+.sub{font-size:13px;color:#7a9e82;margin-bottom:24px;}
+.card{background:#1a2e22;border:.5px solid #2d4a36;border-radius:12px;padding:24px;}
+label{display:block;font-size:12px;color:#7a9e82;font-weight:600;margin-bottom:4px;margin-top:14px;}
+label:first-child{margin-top:0;}
+input,select{width:100%;padding:10px 12px;border-radius:7px;border:.5px solid #2d4a36;
+  background:#0f1a14;color:#e8f0eb;font-size:14px;outline:none;}
+input:focus,select:focus{border-color:#3d8c5a;}
+.btn{width:100%;padding:12px;border-radius:7px;border:none;cursor:pointer;
+  font-size:14px;font-weight:600;margin-top:20px;}
+.btn-green{background:#2e7d52;color:#fff;}
+.btn-green:hover{background:#3d8c5a;}
+.btn-green:disabled{background:#2d4a36;color:#7a9e82;cursor:not-allowed;}
+.msg{font-size:13px;color:#7a9e82;text-align:center;padding:40px 0;}
+.msg.error{color:#e57373;}
+.success{text-align:center;padding:20px 0;}
+.success .icon{font-size:40px;margin-bottom:12px;}
+.success h2{font-size:18px;margin-bottom:8px;}
+.success p{font-size:13px;color:#7a9e82;}
+.member-row{display:flex;gap:8px;align-items:center;margin-top:8px;}
+.member-row input{flex:1;}
+.section-lbl{font-size:12px;color:#5a7a62;font-weight:600;text-transform:uppercase;
+  letter-spacing:.04em;margin-top:20px;margin-bottom:4px;}
+</style>
+</head>
+<body>
+<main id="app">
+  <p class="msg">Loading...</p>
+</main>
+
+<script>
+const SUPABASE_URL='https://bdxsvlcojqmushnndaxz.supabase.co';
+const SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkeHN2bGNvanFtdXNobm5kYXh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5MTgyMTgsImV4cCI6MjA5NjQ5NDIxOH0.E7WEfw0GuQ8-iFFP6jpmDMEmDV2X24XJrI3AZ01Vnco';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON);
+
+var params=new URLSearchParams(window.location.search);
+var eventId=params.get('event');
+var event=null;
+
+var ENTRY_LABELS={solo:'Solo',pair:'Pair',quad:'Quad (4)',six:'Six (6)'};
+var ENTRY_MEMBER_COUNT={solo:0,pair:1,quad:3,six:5}; // additional teammates beyond captain
+
+async function init(){
+  var app=document.getElementById('app');
+  if(!eventId){ app.innerHTML='<p class="msg error">No event specified.</p>'; return; }
+
+  var {data,error}=await sb.from('events')
+    .select('id,title,format,registration_open,registration_entry_type,registration_capacity,registration_group_labels')
+    .eq('id',eventId).single();
+
+  if(error||!data){ app.innerHTML='<p class="msg error">Event not found.</p>'; return; }
+  event=data;
+
+  if(!event.registration_open){
+    app.innerHTML='<h1>'+esc(event.title)+'</h1><p class="msg">Registration is currently closed for this event.</p>';
+    return;
+  }
+  renderForm();
+}
+
+function esc(s){ return (s||'').replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+function renderForm(){
+  var app=document.getElementById('app');
+  var entryType=event.registration_entry_type||'solo';
+  var memberCount=ENTRY_MEMBER_COUNT[entryType]||0;
+  var groupLabels=event.registration_group_labels;
+
+  var h='<h1>'+esc(event.title)+'</h1>'+
+    '<p class="sub">Register — '+ENTRY_LABELS[entryType]+'</p>'+
+    '<div class="card">'+
+    '<form id="reg-form" onsubmit="submitRegistration(event)">'+
+    '<div class="section-lbl">'+(memberCount>0?'Captain / Your info':'Your info')+'</div>'+
+    '<label>Name</label><input type="text" id="captain-name" required>'+
+    '<label>Email</label><input type="email" id="captain-email">'+
+    '<label>Phone</label><input type="tel" id="captain-phone">';
+
+  if(entryType==='solo' && groupLabels){
+    h+='<label>Group</label><select id="group-pref">';
+    Object.keys(groupLabels).forEach(function(k){ h+='<option value="'+k+'">'+esc(groupLabels[k])+'</option>'; });
+    h+='</select>';
+  }
+
+  if(memberCount>0){
+    h+='<div class="section-lbl">Teammates</div>';
+    for(var i=0;i<memberCount;i++){
+      h+='<label>Teammate '+(i+1)+' name</label><input type="text" id="member-'+i+'" required>';
+    }
+  }
+
+  h+='<button type="submit" class="btn btn-green" id="submit-btn">Register</button>'+
+    '</form></div>';
+  app.innerHTML=h;
+}
+
+async function submitRegistration(e){
+  e.preventDefault();
+  var btn=document.getElementById('submit-btn');
+  btn.disabled=true; btn.textContent='Submitting...';
+
+  var entryType=event.registration_entry_type||'solo';
+  var memberCount=ENTRY_MEMBER_COUNT[entryType]||0;
+  var name=document.getElementById('captain-name').value.trim();
+  var email=document.getElementById('captain-email').value.trim();
+  var phone=document.getElementById('captain-phone').value.trim();
+  var groupEl=document.getElementById('group-pref');
+  var groupPref=groupEl?groupEl.value:null;
+
+  var members=[];
+  for(var i=0;i<memberCount;i++){
+    var v=document.getElementById('member-'+i).value.trim();
+    if(v) members.push(v);
+  }
+
+  try{
+    // Resolve/create the captain's player record (dedupes by email, then phone).
+    var {data:playerId,error:pErr}=await sb.rpc('upsert_player',{p_name:name,p_email:email,p_phone:phone});
+    if(pErr) throw pErr;
+
+    // Determine registered vs waitlisted based on current confirmed count.
+    var status='registered';
+    if(event.registration_capacity){
+      var {data:count,error:cErr}=await sb.rpc('get_registration_count',{p_event_id:eventId});
+      if(cErr) throw cErr;
+      if(count>=event.registration_capacity) status='waitlisted';
+    }
+
+    var {error:rErr}=await sb.from('registrations').insert({
+      event_id:eventId, entry_type:entryType,
+      captain_player_id:playerId, captain_name:name, captain_email:email||null, captain_phone:phone||null,
+      member_names:members, group_pref:groupPref, status:status
+    });
+    if(rErr) throw rErr;
+
+    renderSuccess(status);
+  }catch(err){
+    btn.disabled=false; btn.textContent='Register';
+    alert('Registration failed: '+(err.message||err));
+  }
+}
+
+function renderSuccess(status){
+  var app=document.getElementById('app');
+  if(status==='waitlisted'){
+    app.innerHTML='<div class="card success"><div class="icon">⏳</div>'+
+      '<h2>You\'re on the waitlist</h2>'+
+      '<p>This event is at capacity. We\'ll reach out if a spot opens up.</p></div>';
+  } else {
+    app.innerHTML='<div class="card success"><div class="icon">✅</div>'+
+      '<h2>You\'re registered!</h2>'+
+      '<p>See you on the court.</p></div>';
+  }
+}
+
+init();
+</script>
+</body>
+</html>

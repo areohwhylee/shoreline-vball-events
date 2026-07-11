@@ -368,20 +368,22 @@ async function boot(){
       // Single key upsert — fast, safe for multi-device
       var sc=scores[changedKey];
       if(sc){
-        await sb.from('scores').upsert(
+        var {error:scErr}=await sb.from('scores').upsert(
           {event_id:eventId,score_key:changedKey,
            s1:sc.s1!==''?parseInt(sc.s1):null,
            s2:sc.s2!==''?parseInt(sc.s2):null},
           {onConflict:'event_id,score_key'}
         );
+        if(scErr){ console.error('Score save failed:',scErr); if(window.adminMode) alert('Score save failed: '+scErr.message); }
       }
     } else if(changedKey==='__rq_rounds__'){
       // Round confirmation — upsert just the rounds key
       if(typeof rqRounds!=='undefined'&&rqRounds.length){
-        await sb.from('scores').upsert(
+        var {error:rqErr}=await sb.from('scores').upsert(
           {event_id:eventId,score_key:'__rq_rounds__',s1:null,s2:null,meta:JSON.stringify(rqRounds)},
           {onConflict:'event_id,score_key'}
         );
+        if(rqErr){ console.error('Round save failed:',rqErr); if(window.adminMode) alert('Round save failed: '+rqErr.message); }
       }
     } else {
       // Full save fallback (nameMap, bulk sync) — only used on explicit backup/restore
@@ -391,15 +393,22 @@ async function boot(){
           s1:sc.s1!==''?parseInt(sc.s1):null,
           s2:sc.s2!==''?parseInt(sc.s2):null};
       }).filter(function(r){return r.s1!=null||r.s2!=null;});
-      if(toUpsert.length)
-        await sb.from('scores').upsert(toUpsert,{onConflict:'event_id,score_key'});
+      if(toUpsert.length){
+        var {error:bulkErr}=await sb.from('scores').upsert(toUpsert,{onConflict:'event_id,score_key'});
+        if(bulkErr){ console.error('Bulk score save failed:',bulkErr); if(window.adminMode) alert('Bulk score save failed: '+bulkErr.message); }
+      }
     }
     if(!changedKey&&nameMap){
       var nm=Object.keys(nameMap).map(function(o){
         return {event_id:eventId,original:o,display:nameMap[o]};
       });
-      if(nm.length)
-        await sb.from('name_maps').upsert(nm,{onConflict:'event_id,original'});
+      if(nm.length){
+        var {error:nmErr}=await sb.from('name_maps').upsert(nm,{onConflict:'event_id,original'});
+        if(nmErr){
+          console.error('Name save failed:',nmErr);
+          if(window.adminMode) alert('Saving renamed names failed: '+nmErr.message+'\n\nYour renames will NOT persist after reload until this is fixed. See browser console for details.');
+        }
+      }
     }
   };
   window._storeLoadOverride=function(){
