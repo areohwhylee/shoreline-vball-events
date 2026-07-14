@@ -705,7 +705,7 @@ function buildMatches(pairs,mh,oh,rankOf,opts){
       var strA=teamStrength(s[i].a,s[i].b,rankOf),strB=teamStrength(s[j].a,s[j].b,rankOf);
       var sc=Math.abs(strA-strB)*10;
       sc+=repeatCount*8;
-      sc+=(o1+o2+o3+o4)*12;
+      sc+=(o1+o2+o3+o4)*60;
       sc+=Math.random()*randomWeight;
       if(overCap) sc+=100000;
       if(oppOverCap) sc+=50000;
