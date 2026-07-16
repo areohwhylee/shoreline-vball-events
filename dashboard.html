@@ -864,8 +864,9 @@ function buildLeagueWeek(gA,gB,courts,rounds,ph,oh,mh,rankOf,partnerCap,matchupC
         oh[p1][p2]=(oh[p1][p2]||0)+1; oh[p2][p1]=(oh[p2][p1]||0)+1;
       });});
     });
+    var courtOrder=shuffle(rawMatches.map(function(_,idx){return idx;}));
     var roundMatches=rawMatches.map(function(m,i){
-      return {court:i%courts.length,p1:[m[0].a,m[0].b],p2:[m[1].a,m[1].b],isBye:false};
+      return {court:courtOrder[i]%courts.length,p1:[m[0].a,m[0].b],p2:[m[1].a,m[1].b],isBye:false};
     });
     week.push(roundMatches);
   }
