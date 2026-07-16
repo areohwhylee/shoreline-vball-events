@@ -703,14 +703,13 @@ function buildMatches(pairs,mh,oh,rankOf,opts){
       var maxOh=Math.max(o1,o2,o3,o4);
       var oppOverCap=maxOh>=individualRepeatCap;
       var strA=teamStrength(s[i].a,s[i].b,rankOf),strB=teamStrength(s[j].a,s[j].b,rankOf);
-      var sc=Math.abs(strA-strB)*10;
+      var sc=Math.abs(strA-strB)*5;
       sc+=repeatCount*8;
       sc+=(o1+o2+o3+o4)*60;
       sc+=Math.random()*randomWeight;
       if(overCap) sc+=100000;
       if(oppOverCap) sc+=50000;
       if(sc<bestScore){bestScore=sc;bestJ=j;}
-      if(bestJ>=0&&(j-i)>4&&sc>bestScore*3) break;
     }
     if(bestJ>=0){matches.push([s[i],s[bestJ]]);used[i]=true;used[bestJ]=true;}
   }
@@ -873,6 +872,25 @@ function buildLeagueWeek(gA,gB,courts,rounds,ph,oh,mh,rankOf,partnerCap,matchupC
   return week;
 }
 
+// Recomputes rp/mp/op season stats (repeat partners/matchups/individual-opponents)
+// from the FULL current schedule — must be called after any change to sd.sched,
+// otherwise the exported Summary sheet silently goes stale (this was the bug:
+// dashboard-generated weeks never refreshed sd.stats after initial generation).
+function computeStats(sd){
+  var gA=sd.gA, gB=sd.gB;
+  var hist=replayHistory(sd, -1); // full current schedule, nothing excluded
+  var ph=hist.ph, mh=hist.mh, oh=hist.oh;
+  var rp=0,mp=0,op=0,rpMx=0,mpMx=0,opMx=0;
+  gA.forEach(function(a){gB.forEach(function(b){var c=ph[a][b];if(c>1)rp+=(c-1);if(c>rpMx)rpMx=c;});});
+  Object.values(mh).forEach(function(c){if(c>1){mp+=(c-1);if(c>mpMx)mpMx=c;}});
+  gA.concat(gB).forEach(function(a){
+    Object.keys(oh[a]||{}).forEach(function(b){
+      if(b>a){ var c=oh[a][b]; if(c>1) op+=(c-1); if(c>opMx) opMx=c; }
+    });
+  });
+  return {rp:rp,mp:mp,op:op,rpMx:rpMx,mpMx:mpMx,opMx:opMx};
+}
+
 async function generateNextWeek(){
   var sd=seasonSD;
   var weekIndex=sd.sched.length; // 0-based index of the week we're about to add
@@ -892,6 +910,7 @@ async function generateNextWeek(){
 
   sd.sched.push(week);
   sd.weeks=sd.sched.length;
+  sd.stats=computeStats(sd);
 
   var {error}=await sb.from('events').update({sd_json:sd}).eq('id',seasonEventId);
   if(error){ alert('Failed to save new week: '+error.message); return; }
@@ -926,6 +945,7 @@ async function regenerateWeek(weekIdx){
   var week=buildLeagueWeek(gA,gB,courts,rounds,hist.ph,hist.oh,hist.mh,rankOf,partnerCap,matchupCap,individualCap);
 
   sd.sched[weekIdx]=week;
+  sd.stats=computeStats(sd);
   var {error}=await sb.from('events').update({sd_json:sd}).eq('id',seasonEventId);
   if(error){ alert('Failed to regenerate week: '+error.message); return; }
   seasonSD=sd;
