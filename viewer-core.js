@@ -189,7 +189,7 @@ function buildTabs(tabDefs){
   document.getElementById('tabs').innerHTML=h;
 }
 function switchTab(t){
-  var allTabs=['schedule','pools','standings','bracket','lookup','teams','quads-schedule','mix-schedule','mix-standings','trad-lg-schedule','playoff'];
+  var allTabs=['schedule','pools','standings','bracket','lookup','teams','quads-schedule','mix-schedule','mix-standings','mix-finals','trad-lg-schedule','playoff'];
   allTabs.forEach(function(x){
     var el=document.getElementById('tab-'+x);
     if(el) el.style.display=x===t?'':'none';
@@ -200,7 +200,8 @@ function switchTab(t){
   if(t==='standings'||t==='mix-standings') renderStandings();
   if(t==='bracket') renderBracket();
   if(t==='lookup') renderLookupSelect();
-  if(t==='teams'){ renderTeamsTab(); renderPoolTeamsSummary(); }
+  if(t==='teams') renderTeamsTab();
+  if(t==='mix-finals') renderMixFinals();
 }
 
 /* =======================================================
@@ -1166,22 +1167,6 @@ function setTournStdFilter(pi,btn){
 
 
 // -- Teams rename tab --------------------------------------------------------
-function renderPoolTeamsSummary(){
-  var wrap=document.getElementById('pool-teams-summary');
-  if(!wrap) return;
-  if(fmt!=='traditional_tournament'||!SD.pools||!SD.pools.length){ wrap.innerHTML=''; wrap.style.display='none'; return; }
-  wrap.style.display='block';
-  var h='<div style="font-size:13px;color:var(--t2);margin-bottom:12px;">Teams by pool</div>';
-  SD.pools.forEach(function(pool){
-    h+='<div style="margin-bottom:16px;">'+
-      '<div style="font-size:13px;font-weight:700;color:var(--ts);margin-bottom:6px;">'+pool.name+' ('+pool.entries.length+')</div>'+
-      pool.entries.map(function(e){
-        return '<div style="font-size:13px;padding:7px 12px;background:var(--bg2);border:.5px solid var(--b3);border-radius:var(--rm);margin-bottom:5px;">'+dn(e)+'</div>';
-      }).join('')+
-      '</div>';
-  });
-  wrap.innerHTML=h;
-}
 function renderTeamsTab(){
   var wrap=document.getElementById('teams-rename-list'); if(!wrap) return;
   var entries=Object.keys(nameMap);
@@ -1212,12 +1197,10 @@ function applyRenames(){
   }
   storeSave();
   renderTeamsTab();
-  renderPoolTeamsSummary();
 }
 function resetRenames(){
   Object.keys(nameMap).forEach(function(k){ nameMap[k]=k; });
   renderTeamsTab();
-  renderPoolTeamsSummary();
   if(fmt==='traditional_tournament'){
     renderPoolSchedule();
     renderStandings();
@@ -2287,20 +2270,36 @@ function renderQuadsStandings(){
    KOB RANDOM MIX VIEWER
 ======================================================= */
 var selMixRound=0;
+var selMixFinalsPool=0;
+var selMixFinalsRound=0;
 
 function initKOBRandomMix(){
   var sd=SD;
   initNameMap();
-  buildTabs([
+  var tabs=[
     {id:'mix-schedule',label:'Schedule'},
-    {id:'mix-standings',label:'Standings'},
-    {id:'lookup',label:'Lookup'},
-    {id:'teams',label:'Teams'}
-  ]);
+    {id:'mix-standings',label:'Standings'}
+  ];
+  if(sd.finals) tabs.push({id:'mix-finals',label:'Finals'});
+  tabs.push({id:'lookup',label:'Lookup'});
+  tabs.push({id:'teams',label:'Teams'});
+  buildTabs(tabs);
   document.getElementById('page-sub').textContent=
     sd.rounds.length+' rounds . '+sd.allEntries.length+' entries . '+(sd.isCoed?'Coed Solo':'Mixed Pairs');
   document.getElementById('tab-mix-schedule').style.display='';
   renderMixSchedule();
+}
+
+// Formats a match side's names for display. For 2-person sides (coed modes),
+// simple "Name + Name". For 4-person foursome sides, groups the two original
+// pairs visually ("Name+Name  •  Name+Name") so it's clear two fixed pairs
+// merged, rather than reading as four independent people.
+function formatSideNames(members){
+  var names=members.map(dn);
+  if(names.length===4){
+    return names[0]+' + '+names[1]+'  •  '+names[2]+' + '+names[3];
+  }
+  return names.join(' + ');
 }
 
 function renderMixSchedule(){
@@ -2320,7 +2319,14 @@ function renderMixSchedule(){
     '<span></span><span style="text-align:center">Score</span><span>Pair 2</span></div>';
 
   round.matches.forEach(function(m,mi){
-    if(m.isBye) return;
+    if(m.isBye){
+      rows+='<div class="net-row" style="grid-template-columns:70px 1fr 70px 28px 70px 1fr;opacity:0.55;">'+
+        '<span class="nnum">—</span>'+
+        '<span style="grid-column:2/7;text-align:center;font-style:italic;font-size:12px;color:var(--t2);padding:6px 0;">'+
+          formatSideNames(m.p1)+'  —  Bye this round</span>'+
+        '</div>';
+      return;
+    }
     matchNum++;
     var key='r'+selMixRound+'-m'+mi;
     var sc=scores[key]||{s1:'',s2:''};
@@ -2328,8 +2334,8 @@ function renderMixSchedule(){
     var has=sc.s1!==''&&sc.s2!==''&&!isNaN(s1n)&&!isNaN(s2n);
     var c1=has?(s1n>s2n?'win':s1n<s2n?'lose':''):'';
     var c2=has?(s2n>s1n?'win':s2n<s1n?'lose':''):'';
-    var pair1=dn(m.p1[0])+' + '+dn(m.p1[1]);
-    var pair2=dn(m.p2[0])+' + '+dn(m.p2[1]);
+    var pair1=formatSideNames(m.p1);
+    var pair2=formatSideNames(m.p2);
     rows+='<div class="net-row'+(matchNum%2?' alt':'')+'"'+
       ' style="grid-template-columns:70px 1fr 70px 28px 70px 1fr;">'+
       '<span class="nnum">'+(m.court||'')+'</span>'+
@@ -2345,6 +2351,134 @@ function renderMixSchedule(){
   rows+='</div>';
   document.getElementById('mix-table').innerHTML=rows;
   updateMixProgress();
+}
+
+// ── KOB Random Mix: Finals/Playoffs pools ──────────────────────────────────
+function renderMixFinals(){
+  var sd=SD;
+  if(!sd.finals){ document.getElementById('mix-finals-table').innerHTML='<p style="color:var(--t3);font-size:13px;">Finals haven\'t been generated yet.</p>'; return; }
+
+  var poolHtml='';
+  sd.finals.pools.forEach(function(pool,pi){
+    poolHtml+='<button class="btn-sm'+(pi===selMixFinalsPool?' sel':'')+
+      '" onclick="selMixFinalsPool='+pi+';selMixFinalsRound=0;renderMixFinals()">'+pool.name+'</button>';
+  });
+  document.getElementById('mix-finals-pool-btns').innerHTML=poolHtml;
+
+  var pool=sd.finals.pools[selMixFinalsPool];
+  var roundHtml='';
+  pool.rounds.forEach(function(r,ri){
+    roundHtml+='<button class="btn-sm'+(ri===selMixFinalsRound?' sel':'')+
+      '" onclick="selMixFinalsRound='+ri+';renderMixFinals()">Round '+r.round+'</button>';
+  });
+  document.getElementById('mix-finals-round-btns').innerHTML=roundHtml;
+
+  var round=pool.rounds[selMixFinalsRound];
+  var matchNum=0;
+  var rows='<div class="net-table">'+
+    '<div class="net-head" style="grid-template-columns:70px 1fr 70px 28px 70px 1fr;">'+
+    '<span>Court</span><span>Pair 1</span><span style="text-align:center">Score</span>'+
+    '<span></span><span style="text-align:center">Score</span><span>Pair 2</span></div>';
+
+  round.matches.forEach(function(m,mi){
+    if(m.isBye){
+      rows+='<div class="net-row" style="grid-template-columns:70px 1fr 70px 28px 70px 1fr;opacity:0.55;">'+
+        '<span class="nnum">—</span>'+
+        '<span style="grid-column:2/7;text-align:center;font-style:italic;font-size:12px;color:var(--t2);padding:6px 0;">'+
+          formatSideNames(m.p1)+'  —  Bye this round</span>'+
+        '</div>';
+      return;
+    }
+    matchNum++;
+    var key='f-'+selMixFinalsPool+'-r'+selMixFinalsRound+'-m'+mi;
+    var sc=scores[key]||{s1:'',s2:''};
+    var s1n=parseInt(sc.s1),s2n=parseInt(sc.s2);
+    var has=sc.s1!==''&&sc.s2!==''&&!isNaN(s1n)&&!isNaN(s2n);
+    var c1=has?(s1n>s2n?'win':s1n<s2n?'lose':''):'';
+    var c2=has?(s2n>s1n?'win':s2n<s1n?'lose':''):'';
+    var pair1=formatSideNames(m.p1);
+    var pair2=formatSideNames(m.p2);
+    rows+='<div class="net-row'+(matchNum%2?' alt':'')+'"'+
+      ' style="grid-template-columns:70px 1fr 70px 28px 70px 1fr;">'+
+      '<span class="nnum">'+(m.court||'')+'</span>'+
+      '<span class="pair"><span class="pa" style="font-size:12px;">'+pair1+'</span></span>'+
+      '<input type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'"'+
+        ' data-key="'+key+'" data-side="0" oninput="onMixFinalsScore(this)" onblur="flushSave()">'+
+      '<span class="vsc">vs</span>'+
+      '<input type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'"'+
+        ' data-key="'+key+'" data-side="1" oninput="onMixFinalsScore(this)" onblur="flushSave()">'+
+      '<span class="pair"><span class="pb" style="font-size:12px;">'+pair2+'</span></span>'+
+      '</div>';
+  });
+  rows+='</div>';
+  document.getElementById('mix-finals-table').innerHTML=rows;
+  updateMixFinalsProgress();
+  renderMixFinalsStandings();
+}
+
+function onMixFinalsScore(input){
+  var key=input.dataset.key, side=parseInt(input.dataset.side);
+  if(!scores[key]) scores[key]={s1:'',s2:''};
+  if(side===0) scores[key].s1=input.value; else scores[key].s2=input.value;
+  var sc=scores[key];
+  var s1n=parseInt(sc.s1),s2n=parseInt(sc.s2);
+  var has=sc.s1!==''&&sc.s2!==''&&!isNaN(s1n)&&!isNaN(s2n);
+  var c1=has?(s1n>s2n?'win':s1n<s2n?'lose':''):'';
+  var c2=has?(s2n>s1n?'win':s2n<s1n?'lose':''):'';
+  var inputs=document.querySelectorAll('[data-key="'+key+'"]');
+  if(inputs[0]) inputs[0].className='score-in '+c1;
+  if(inputs[1]) inputs[1].className='score-in '+c2;
+  storeSave(key);
+  updateMixFinalsProgress();
+  renderMixFinalsStandings();
+}
+
+function updateMixFinalsProgress(){
+  var sd=SD; var total=0,done=0;
+  var pool=sd.finals.pools[selMixFinalsPool];
+  pool.rounds.forEach(function(round,ri){
+    round.matches.forEach(function(m,mi){
+      if(m.isBye) return;
+      total++;
+      var sc=scores['f-'+selMixFinalsPool+'-r'+ri+'-m'+mi];
+      if(sc&&sc.s1!==''&&sc.s2!==''&&!isNaN(parseInt(sc.s1))&&!isNaN(parseInt(sc.s2))) done++;
+    });
+  });
+  var pEl=document.getElementById('mix-finals-prog-lbl');
+  var bEl=document.getElementById('mix-finals-prog-bar');
+  if(pEl) pEl.textContent=done+' / '+total+' scored';
+  if(bEl) bEl.style.width=total?Math.round(done/total*100)+'%':'0%';
+}
+
+function renderMixFinalsStandings(){
+  var sd=SD;
+  var pool=sd.finals.pools[selMixFinalsPool];
+  var st={};
+  pool.entries.forEach(function(e){ st[e]=blankEntry(e); });
+  pool.rounds.forEach(function(round,ri){
+    round.matches.forEach(function(m,mi){
+      if(m.isBye) return;
+      var sc=scores['f-'+selMixFinalsPool+'-r'+ri+'-m'+mi];
+      if(!sc||sc.s1===''||sc.s2==='') return;
+      var s1=parseInt(sc.s1),s2=parseInt(sc.s2);
+      if(isNaN(s1)||isNaN(s2)) return;
+      m.p1.forEach(function(p){ if(!st[p]) return; st[p].gp++; st[p].pf+=s1; st[p].pa+=s2; if(s1>s2) st[p].w++; else if(s2>s1) st[p].l++; });
+      m.p2.forEach(function(p){ if(!st[p]) return; st[p].gp++; st[p].pf+=s2; st[p].pa+=s1; if(s2>s1) st[p].w++; else if(s1>s2) st[p].l++; });
+    });
+  });
+  Object.values(st).forEach(refreshRates);
+  var ranked=Object.values(st).sort(function(a,b){
+    if(b.w!==a.w) return b.w-a.w;
+    var da=a.pf-a.pa, db=b.pf-b.pa;
+    if(db!==da) return db-da;
+    return b.pf-a.pf;
+  });
+  var html='<thead><tr><th>#</th><th>Player</th><th>W</th><th>L</th><th>PF</th><th>PA</th><th>Diff</th></tr></thead><tbody>';
+  ranked.forEach(function(p,i){
+    html+='<tr><td>'+(i+1)+'</td><td>'+dn(p.name)+'</td><td>'+p.w+'</td><td>'+p.l+'</td><td>'+p.pf+'</td><td>'+p.pa+'</td><td>'+(p.pf-p.pa)+'</td></tr>';
+  });
+  html+='</tbody>';
+  document.getElementById('mix-finals-standings').innerHTML=html;
 }
 
 function onMixScore(input){
@@ -2393,19 +2527,18 @@ function calcMixStandings(){
       if(!sc||sc.s1===''||sc.s2==='') return;
       var s1=parseInt(sc.s1),s2=parseInt(sc.s2);
       if(isNaN(s1)||isNaN(s2)) return;
-      var p1a=m.p1[0],p1b=m.p1[1],p2a=m.p2[0],p2b=m.p2[1];
-      [p1a,p1b].forEach(function(p){
+      m.p1.forEach(function(p){
         if(!st[p]) return;
         st[p].gp++; st[p].pf+=s1; st[p].pa+=s2;
         if(s1>s2) st[p].w++; else if(s2>s1) st[p].l++;
       });
-      [p2a,p2b].forEach(function(p){
+      m.p2.forEach(function(p){
         if(!st[p]) return;
         st[p].gp++; st[p].pf+=s2; st[p].pa+=s1;
         if(s2>s1) st[p].w++; else if(s1>s2) st[p].l++;
       });
-      [p1a,p1b].forEach(function(a){
-        [p2a,p2b].forEach(function(b){
+      m.p1.forEach(function(a){
+        m.p2.forEach(function(b){
           if(!h2h[a]) h2h[a]={};
           if(!h2h[a][b]) h2h[a][b]={w:0,l:0,pf:0,pa:0};
           h2h[a][b].pf+=s1; h2h[a][b].pa+=s2;
@@ -2422,8 +2555,28 @@ function calcMixStandings(){
   return Object.values(st).sort(function(a,b){ return kobSort(a,b,h2h); });
 }
 
+var mixStandingsView='individual';
+
 function renderMixStandings(){
-  var all=calcMixStandings();
+  var sd=SD;
+  var isFoursome = sd.mixMode==='foursome';
+  var filterEl=document.getElementById('mix-std-filter');
+  if(isFoursome){
+    filterEl.innerHTML=
+      '<button class="btn-xs'+(mixStandingsView==='individual'?' sel':'')+'" onclick="mixStandingsView=\'individual\';renderMixStandings()">Individual</button>'+
+      '<button class="btn-xs'+(mixStandingsView==='pairs'?' sel':'')+'" onclick="mixStandingsView=\'pairs\';renderMixStandings()">Permanent Pairs</button>';
+  } else {
+    filterEl.innerHTML='';
+  }
+
+  var all;
+  if(isFoursome && mixStandingsView==='pairs'){
+    all = calcMixPairStandings();
+  } else {
+    all = calcMixStandings();
+    all.forEach(function(p){ p.displayName = dn(p.name); });
+  }
+
   function pct(v){return(v*100).toFixed(1)+'%';}
   var thead='<thead><tr><th>#</th><th>Entry</th><th class="r">GP</th>'+
     '<th class="r">W</th><th class="r">L</th><th class="r">W%</th>'+
@@ -2435,7 +2588,7 @@ function renderMixStandings(){
     var dpg=p.diffPerGame,pos=dpg>0,neg=dpg<0;
     tbody+='<tr class="'+(rank%2===0?'alt':'')+'">' +
       '<td><span class="rnk '+badge+'">'+rank+'</span></td>'+
-      '<td>'+dn(p.name)+'</td>'+
+      '<td>'+p.displayName+'</td>'+
       '<td class="r">'+p.gp+'</td>'+
       '<td class="r">'+p.w+'</td>'+
       '<td class="r">'+p.l+'</td>'+
@@ -2447,6 +2600,31 @@ function renderMixStandings(){
       '</tr>';
   });
   document.getElementById('std-table-mix').innerHTML=thead+'<tbody>'+tbody+'</tbody>';
+}
+
+// Groups individual standings into permanent-pair rows (foursome/4s mode only).
+// Partners always share identical stats since they never play apart, so this
+// just relabels and dedupes rather than re-deriving anything.
+function calcMixPairStandings(){
+  var sd=SD;
+  var individual=calcMixStandings();
+  var byName={};
+  individual.forEach(function(p){ byName[p.name]=p; });
+  var pairs=[];
+  (sd.rosterA||[]).forEach(function(a,i){
+    var b=(sd.rosterB||[])[i];
+    if(!a||!b) return;
+    var pa=byName[a], pb=byName[b];
+    if(!pa||!pb) return;
+    var merged=Object.assign({}, pa); // stats are identical between fixed partners
+    merged.displayName=dn(a)+' + '+dn(b);
+    pairs.push(merged);
+  });
+  return pairs.sort(function(a,b){
+    if(b.w!==a.w) return b.w-a.w;
+    if(b.diffPerGame!==a.diffPerGame) return b.diffPerGame-a.diffPerGame;
+    return b.pfPerGame-a.pfPerGame;
+  });
 }
 
 

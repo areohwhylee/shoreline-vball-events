@@ -131,6 +131,17 @@ h2{font-size:18px;font-weight:700;margin-bottom:18px;}
   </div>
 </div>
 
+<!-- Rounds modal (KOB Random Mix) -->
+<div class="modal-bg" id="mix-modal">
+  <div class="modal" style="max-width:600px;max-height:85vh;overflow-y:auto;">
+    <h3 id="mix-title">Rounds</h3>
+    <div id="mix-body"><p class="msg">Loading round data...</p></div>
+    <div class="modal-btns" style="margin-top:16px;">
+      <button class="btn btn-ghost" onclick="closeMixModal()">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- Registrations modal -->
 <div class="modal-bg" id="reg-modal">
   <div class="modal" style="max-width:640px;max-height:85vh;overflow-y:auto;">
@@ -191,6 +202,7 @@ async function loadEvents(){
       '<div class="ev-actions">'+
         '<span class="tag">'+(ev.is_public?'Public':'Private')+'</span>'+
         (ev.format==='kob_league'?'<button class="btn btn-ghost" onclick="openSeasonModal(\''+ev.id+'\')">Season</button>':'')+
+        (ev.format==='kob_random_mix'?'<button class="btn btn-ghost" onclick="openMixModal(\''+ev.id+'\')">Rounds</button>':'')+
         (ev.format==='traditional_tournament'?'<button class="btn btn-ghost" onclick="openRosterModal(\''+ev.id+'\')">Roster</button>':'')+
         '<button class="btn btn-ghost" onclick="openRegModal(\''+ev.id+'\')">Registrations</button>'+
         '<button class="btn btn-ghost" onclick="copyLink(\''+ev.id+'\')">Copy link</button>'+
@@ -972,7 +984,466 @@ async function removeLastWeek(){
   renderSeasonModal();
 }
 
-// ── Drag & drop ───────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// KOB Random Mix — ported engine (identical logic to the generator, validated
+// this session) + dashboard "generate next round" / "generate finals" panel.
+// ═══════════════════════════════════════════════════════════════════════════
+function mixUnitKey(u){ return typeof u==='string'?u:u.join('|'); }
+function mixUnitMembers(u){ return typeof u==='string'?[u]:u; }
+
+function personByeScore(members, personByeHistory){
+  var total=0;
+  members.forEach(function(m){ total += (personByeHistory[m]||0); });
+  return total/members.length;
+}
+
+function buildRandomSides(units, sideHistory, repeatCap, personByeHistory){
+  repeatCap = repeatCap===undefined ? Infinity : repeatCap;
+  var pool = shuffle(units);
+  var byeUnit = null;
+  if(pool.length % 2 !== 0){
+    if(personByeHistory){
+      var scored = pool.map(function(u){ return {unit:u, score:personByeScore(mixUnitMembers(u), personByeHistory)}; });
+      var minScore = Math.min.apply(null, scored.map(function(s){return s.score;}));
+      var candidates = scored.filter(function(s){return s.score===minScore;});
+      byeUnit = candidates[Math.floor(Math.random()*candidates.length)].unit;
+    } else {
+      byeUnit = pool[pool.length-1];
+    }
+    pool.splice(pool.indexOf(byeUnit),1);
+    if(personByeHistory){
+      mixUnitMembers(byeUnit).forEach(function(m){ personByeHistory[m]=(personByeHistory[m]||0)+1; });
+    }
+  }
+  var sides = [];
+  while(pool.length){
+    var a = pool.shift();
+    var aKey = mixUnitKey(a);
+    var scored2 = pool.map(function(b){
+      var k = [aKey, mixUnitKey(b)].sort().join('~');
+      return { unit: b, count: sideHistory[k]||0 };
+    });
+    var underCap = scored2.filter(function(s){ return s.count < repeatCap; });
+    var pickFrom = underCap.length ? underCap : scored2;
+    var minCount = Math.min.apply(null, pickFrom.map(function(s){return s.count;}));
+    var bestTier = pickFrom.filter(function(s){ return s.count===minCount; });
+    var chosen = bestTier[Math.floor(Math.random()*bestTier.length)];
+    var b = chosen.unit;
+    pool.splice(pool.indexOf(b), 1);
+    var bKey = mixUnitKey(b);
+    var histKey = [aKey, bKey].sort().join('~');
+    sideHistory[histKey] = (sideHistory[histKey]||0) + 1;
+    sides.push({ members: mixUnitMembers(a).concat(mixUnitMembers(b)), units: [a, b] });
+  }
+  return { sides: sides, byeUnit: byeUnit };
+}
+
+function buildRandomCrossSides(listA, listB, sideHistory, repeatCap, personByeHistory){
+  repeatCap = repeatCap===undefined ? Infinity : repeatCap;
+  var poolB = listB.slice();
+  var byeUnit = null;
+  var poolA = shuffle(listA);
+  if(poolA.length !== poolB.length){
+    var longer = poolA.length > poolB.length ? poolA : poolB;
+    if(personByeHistory){
+      var scored0 = longer.map(function(u){ return {unit:u, score:personByeScore([u], personByeHistory)}; });
+      var minScore0 = Math.min.apply(null, scored0.map(function(s){return s.score;}));
+      var candidates0 = scored0.filter(function(s){return s.score===minScore0;});
+      byeUnit = candidates0[Math.floor(Math.random()*candidates0.length)].unit;
+    } else {
+      byeUnit = longer[longer.length-1];
+    }
+    if(poolA.length > poolB.length) poolA = poolA.filter(function(u){return u!==byeUnit;});
+    else poolB = poolB.filter(function(u){return u!==byeUnit;});
+    if(personByeHistory) personByeHistory[byeUnit]=(personByeHistory[byeUnit]||0)+1;
+  }
+  var sides = [];
+  poolA.forEach(function(a){
+    var scored = poolB.map(function(b){
+      var k = [a,b].sort().join('~');
+      return { unit: b, count: sideHistory[k]||0 };
+    });
+    var underCap = scored.filter(function(s){ return s.count < repeatCap; });
+    var pickFrom = underCap.length ? underCap : scored;
+    var minCount = Math.min.apply(null, pickFrom.map(function(s){return s.count;}));
+    var bestTier = pickFrom.filter(function(s){ return s.count===minCount; });
+    var chosen = bestTier[Math.floor(Math.random()*bestTier.length)];
+    poolB.splice(poolB.indexOf(chosen.unit), 1);
+    var histKey = [a, chosen.unit].sort().join('~');
+    sideHistory[histKey] = (sideHistory[histKey]||0) + 1;
+    sides.push({ members: [a, chosen.unit], units: [a, chosen.unit] });
+  });
+  return { sides: sides, byeUnit: byeUnit };
+}
+
+function buildRandomMatches(sides, matchupHistory, individualOppHistory, matchupCap, individualCap, personByeHistory){
+  matchupCap = matchupCap===undefined ? Infinity : matchupCap;
+  individualCap = individualCap===undefined ? Infinity : individualCap;
+  var pool = shuffle(sides);
+  var byeSide = null;
+  if(pool.length % 2 !== 0){
+    if(personByeHistory){
+      var scored0 = pool.map(function(s){ return {side:s, score:personByeScore(s.members, personByeHistory)}; });
+      var minScore0 = Math.min.apply(null, scored0.map(function(s){return s.score;}));
+      var candidates0 = scored0.filter(function(s){return s.score===minScore0;});
+      byeSide = candidates0[Math.floor(Math.random()*candidates0.length)].side;
+    } else {
+      byeSide = pool[pool.length-1];
+    }
+    pool.splice(pool.indexOf(byeSide),1);
+    if(personByeHistory){
+      byeSide.members.forEach(function(m){ personByeHistory[m]=(personByeHistory[m]||0)+1; });
+    }
+  }
+  var matches = [];
+  while(pool.length){
+    var a = pool.shift();
+    var aKey = a.members.slice().sort().join('|');
+    var scored = pool.map(function(b){
+      var bKey = b.members.slice().sort().join('|');
+      var mKey = [aKey, bKey].sort().join('~~');
+      var matchupCount = matchupHistory[mKey] || 0;
+      var maxIndivCount = 0, sumIndivCount = 0;
+      a.members.forEach(function(x){
+        b.members.forEach(function(y){
+          var k = [x,y].sort().join('|');
+          var c = individualOppHistory[k] || 0;
+          sumIndivCount += c;
+          if(c > maxIndivCount) maxIndivCount = c;
+        });
+      });
+      return { side: b, matchupCount: matchupCount, maxIndivCount: maxIndivCount, sumIndivCount: sumIndivCount };
+    });
+    var underCap = scored.filter(function(s){ return s.matchupCount < matchupCap && s.maxIndivCount < individualCap; });
+    var pickFrom = underCap.length ? underCap : scored;
+    var minMatchup = Math.min.apply(null, pickFrom.map(function(s){return s.matchupCount;}));
+    var tier1 = pickFrom.filter(function(s){ return s.matchupCount===minMatchup; });
+    var minSum = Math.min.apply(null, tier1.map(function(s){return s.sumIndivCount;}));
+    var bestTier = tier1.filter(function(s){ return s.sumIndivCount===minSum; });
+    var chosen = bestTier[Math.floor(Math.random()*bestTier.length)];
+    pool.splice(pool.indexOf(chosen.side), 1);
+    var bKey2 = chosen.side.members.slice().sort().join('|');
+    var mKey2 = [aKey, bKey2].sort().join('~~');
+    matchupHistory[mKey2] = (matchupHistory[mKey2]||0) + 1;
+    a.members.forEach(function(x){
+      chosen.side.members.forEach(function(y){
+        var k = [x,y].sort().join('|');
+        individualOppHistory[k] = (individualOppHistory[k]||0) + 1;
+      });
+    });
+    matches.push({ p1: a.members, p2: chosen.side.members, isBye: false });
+  }
+  if(byeSide) matches.push({ p1: byeSide.members, p2: null, isBye: true });
+  return matches;
+}
+
+function buildMixRound(mode, rosterA, rosterB, rosterSeed, sideHistory, matchupHistory, individualOppHistory, caps, courts, personByeHistory){
+  var sidesResult;
+  if(mode==='dual'){
+    sidesResult = buildRandomCrossSides(rosterA, rosterB, sideHistory, caps.pair, personByeHistory);
+  } else if(mode==='foursome'){
+    var pairUnits = rosterA.map(function(a,i){ return [a, rosterB[i]]; });
+    sidesResult = buildRandomSides(pairUnits, sideHistory, caps.pair, personByeHistory);
+  } else {
+    sidesResult = buildRandomSides(rosterSeed, sideHistory, caps.pair, personByeHistory);
+  }
+  var matches = buildRandomMatches(sidesResult.sides, matchupHistory, individualOppHistory, caps.side, caps.individual, personByeHistory);
+  var courtOrder = shuffle(matches.map(function(_,i){return i;}));
+  matches.forEach(function(m,i){
+    if(!m.isBye) m.court = (courtOrder[i]%courts)+1;
+    else m.court = null;
+  });
+  if(sidesResult.byeUnit){
+    matches.push({ p1: mixUnitMembers(sidesResult.byeUnit), p2: null, isBye: true, court: null });
+  }
+  return matches;
+}
+
+// Scores a candidate round by how badly individual-opponent repeats pile up
+// (max repeat first, since that's what lets one matchup snowball; count over
+// cap next; total excess as final tiebreak).
+function scoreRoundBadness(individualOppHistory){
+  var vals = Object.values(individualOppHistory);
+  var max = vals.length ? Math.max.apply(null, vals) : 0;
+  var over3 = vals.filter(function(v){return v>3;}).length;
+  var totalExcess = vals.reduce(function(s,v){return s+(v>1?v-1:0);},0);
+  return {max:max, over3:over3, totalExcess:totalExcess};
+}
+function compareBadness(a,b){
+  if(a.max!==b.max) return a.max-b.max;
+  if(a.over3!==b.over3) return a.over3-b.over3;
+  return a.totalExcess-b.totalExcess;
+}
+
+// Same as buildMixRound, but tries multiple random attempts and keeps
+// whichever leaves individual-opponent history in the best shape. A 4v4
+// foursome match creates 16 "who faced whom" combinations (vs 4 for 2v2),
+// so a single greedy attempt hits dead-ends far more often and can let one
+// pair's repeat count spike well past the cap.
+function buildMixRoundBest(mode, rosterA, rosterB, rosterSeed, sideHistory, matchupHistory, individualOppHistory, caps, courts, personByeHistory, attempts){
+  attempts = attempts || 60;
+  var best=null, bestScore=null, bestState=null;
+  for(var i=0;i<attempts;i++){
+    var sh=JSON.parse(JSON.stringify(sideHistory));
+    var mh=JSON.parse(JSON.stringify(matchupHistory));
+    var oh=JSON.parse(JSON.stringify(individualOppHistory));
+    var bh=JSON.parse(JSON.stringify(personByeHistory));
+    var matches=buildMixRound(mode, rosterA, rosterB, rosterSeed, sh, mh, oh, caps, courts, bh);
+    var score=scoreRoundBadness(oh);
+    if(best===null || compareBadness(score,bestScore)<0){ best=matches; bestScore=score; bestState={sh:sh,mh:mh,oh:oh,bh:bh}; }
+  }
+  Object.keys(bestState.sh).forEach(function(k){ sideHistory[k]=bestState.sh[k]; });
+  Object.keys(bestState.mh).forEach(function(k){ matchupHistory[k]=bestState.mh[k]; });
+  Object.keys(bestState.oh).forEach(function(k){ individualOppHistory[k]=bestState.oh[k]; });
+  Object.keys(bestState.bh).forEach(function(k){ personByeHistory[k]=bestState.bh[k]; });
+  return best;
+}
+
+// Foursome mode (4s) — pair-teaming via round-robin scheduling, guaranteeing
+// zero repeat teamings (not just minimizing them) plus perfectly fair byes.
+// Mirrors the generator's identical fix. Opponent-matching still uses
+// retry-based search since that stage has real slack.
+function foursomeTeamingForRound(shuffledPairs, roundIndex){
+  var n = shuffledPairs.length;
+  var cycleLength = n % 2 === 0 ? n - 1 : n;
+  var cycleNum = Math.floor(roundIndex / cycleLength);
+  var idxInCycle = roundIndex % cycleLength;
+  var rotated = shuffledPairs.slice(cycleNum % n).concat(shuffledPairs.slice(0, cycleNum % n));
+  var schedule = roundRobin(rotated);
+  return schedule[idxInCycle];
+}
+
+function buildFoursomeRoundBest(shuffledPairs, roundIndex, matchupHistory, individualOppHistory, caps, courts, attempts){
+  attempts = attempts || 60;
+  var teaming = foursomeTeamingForRound(shuffledPairs, roundIndex);
+  var sides = [], byeLabel = null;
+  teaming.forEach(function(t){
+    if(t.isBye){ byeLabel = t.p1; return; }
+    sides.push({ members: t.p1.split('|||').concat(t.p2.split('|||')) });
+  });
+  var best=null, bestScore=null, bestState=null;
+  for(var i=0;i<attempts;i++){
+    var mh=JSON.parse(JSON.stringify(matchupHistory));
+    var oh=JSON.parse(JSON.stringify(individualOppHistory));
+    var matches=buildRandomMatches(sides, mh, oh, caps.side, caps.individual, null);
+    var score=scoreRoundBadness(oh);
+    if(best===null || compareBadness(score,bestScore)<0){ best=matches; bestScore=score; bestState={mh:mh,oh:oh}; }
+  }
+  Object.keys(bestState.mh).forEach(function(k){ matchupHistory[k]=bestState.mh[k]; });
+  Object.keys(bestState.oh).forEach(function(k){ individualOppHistory[k]=bestState.oh[k]; });
+  var courtOrder = shuffle(best.map(function(_,i){return i;}));
+  best.forEach(function(m,i){ m.court=(courtOrder[i]%courts)+1; });
+  if(byeLabel) best.push({ p1: byeLabel.split('|||'), p2: null, isBye: true, court: null });
+  return best;
+}
+
+// Replays all previously-generated rounds (from sd.rounds) to rebuild
+// sideHistory/matchupHistory/individualOppHistory/personByeHistory.
+// excludeRoundIdx lets a specific round be left out (not used yet, but
+// mirrors the League pattern for a future "regenerate round" feature).
+function replayMixHistory(sd, excludeRoundIdx){
+  var sideHistory={}, matchupHistory={}, individualOppHistory={}, personByeHistory={};
+  (sd.rounds||[]).forEach(function(round, ri){
+    if(ri===excludeRoundIdx) return;
+    round.matches.forEach(function(m){
+      if(m.isBye){
+        (m.p1||[]).forEach(function(p){ personByeHistory[p]=(personByeHistory[p]||0)+1; });
+        return;
+      }
+      if(!m.p2) return;
+      // Reconstruct side-pairing history at the unit level.
+      // For dual/single modes p1/p2 have 2 members (units=individuals);
+      // for foursome mode they have 4 (units=pre-formed pairs, 2 members each).
+      [m.p1, m.p2].forEach(function(side){
+        if(side.length===2){
+          var k=side.slice().sort().join('~');
+          sideHistory[k]=(sideHistory[k]||0)+1;
+        } else if(side.length===4){
+          var unitA=[side[0],side[1]], unitB=[side[2],side[3]];
+          var k=[unitA.join('|'),unitB.join('|')].sort().join('~');
+          sideHistory[k]=(sideHistory[k]||0)+1;
+        }
+      });
+      var mKey=[m.p1.slice().sort().join('|'), m.p2.slice().sort().join('|')].sort().join('~~');
+      matchupHistory[mKey]=(matchupHistory[mKey]||0)+1;
+      m.p1.forEach(function(x){
+        m.p2.forEach(function(y){
+          var k=[x,y].sort().join('|');
+          individualOppHistory[k]=(individualOppHistory[k]||0)+1;
+        });
+      });
+    });
+  });
+  return { sideHistory:sideHistory, matchupHistory:matchupHistory, individualOppHistory:individualOppHistory, personByeHistory:personByeHistory };
+}
+
+// Computes per-individual standings from scored rounds (mirrors the viewer's
+// calcMixStandings, but reading from Supabase scores rather than the local
+// in-memory `scores` global).
+function calcMixStandingsFromScores(sd, scores){
+  var st = {};
+  (sd.allEntries||[]).forEach(function(e){ st[e] = {name:e, w:0, l:0, pf:0, pa:0, played:0}; });
+  (sd.rounds||[]).forEach(function(round, ri){
+    round.matches.forEach(function(m, mi){
+      if(m.isBye || !m.p2) return;
+      var sc = scores['r'+ri+'-m'+mi];
+      if(!sc || sc.s1===''||sc.s2===''||sc.s1==null||sc.s2==null) return;
+      var s1=parseInt(sc.s1), s2=parseInt(sc.s2);
+      if(isNaN(s1)||isNaN(s2)) return;
+      m.p1.forEach(function(p){ if(!st[p]) return; st[p].played++; st[p].pf+=s1; st[p].pa+=s2; if(s1>s2) st[p].w++; else if(s2>s1) st[p].l++; });
+      m.p2.forEach(function(p){ if(!st[p]) return; st[p].played++; st[p].pf+=s2; st[p].pa+=s1; if(s2>s1) st[p].w++; else if(s1>s2) st[p].l++; });
+    });
+  });
+  return st;
+}
+
+var mixEventId=null, mixSD=null, mixScores=null;
+
+async function openMixModal(eventId){
+  mixEventId=eventId;
+  document.getElementById('mix-title').textContent='Rounds — '+((eventsMap[eventId]||{}).title||'');
+  document.getElementById('mix-body').innerHTML='<p class="msg">Loading...</p>';
+  document.getElementById('mix-modal').classList.add('show');
+  await loadMixData();
+}
+function closeMixModal(){
+  document.getElementById('mix-modal').classList.remove('show');
+  mixEventId=null; mixSD=null; mixScores=null;
+}
+
+async function loadMixData(){
+  var {data:evRow,error:evErr}=await sb.from('events').select('sd_json').eq('id',mixEventId).single();
+  if(evErr||!evRow){ document.getElementById('mix-body').innerHTML='<p class="msg">Could not load event.</p>'; return; }
+  mixSD=evRow.sd_json;
+
+  var {data:scoreRows}=await sb.from('scores').select('score_key,s1,s2').eq('event_id',mixEventId);
+  mixScores={};
+  (scoreRows||[]).forEach(function(r){ mixScores[r.score_key]={s1:r.s1,s2:r.s2}; });
+
+  renderMixModal();
+}
+
+function isMixMatchScored(roundIdx, matchIdx){
+  var sc = mixScores['r'+roundIdx+'-m'+matchIdx];
+  if(!sc || sc.s1===''||sc.s2===''||sc.s1==null||sc.s2==null) return false;
+  var s1=parseInt(sc.s1), s2=parseInt(sc.s2);
+  return !isNaN(s1) && !isNaN(s2);
+}
+
+function renderMixModal(){
+  var sd=mixSD;
+  var rounds = sd.rounds||[];
+  var html='';
+  rounds.forEach(function(round, ri){
+    var total=0, done=0;
+    round.matches.forEach(function(m,mi){
+      if(m.isBye) return;
+      total++;
+      if(isMixMatchScored(ri,mi)) done++;
+    });
+    var complete = total>0 && done===total;
+    var pillClass = done===0?'none':(complete?'complete':'progress');
+    var pillLabel = done===0?'Not started':(complete?'Complete':(done+'/'+total));
+    html+='<div class="wk-row"><span class="wk-name">Round '+(ri+1)+'</span><span class="wk-pill '+pillClass+'">'+pillLabel+'</span></div>';
+  });
+  html+='<div class="season-actions"><button class="btn btn-green" onclick="generateNextMixRound()">Generate Round '+(rounds.length+1)+'</button></div>';
+
+  html+='<div class="section-divider" style="margin-top:20px;">Finals / Playoffs</div>';
+  if(sd.finals){
+    html+='<p class="msg">Finals already generated ('+sd.finals.pools.length+' pool'+(sd.finals.pools.length!==1?'s':'')+'). Regenerating is disabled once created — remove sd.finals manually in Supabase if you need to redo it.</p>';
+  } else {
+    html+='<div class="reg-cfg-row"><label>Style</label><select id="mix-finals-style"><option value="split-pool">Split Pool (Gold/Silver/...)</option><option value="set-pool">Set Pool (groups of 4)</option></select></div>'+
+      '<div class="reg-cfg-row"><label>Rounds within each pool</label><input type="number" id="mix-finals-rounds" value="3" min="1" max="10"></div>'+
+      (sd.mixMode==='dual' || sd.mixMode==='single'
+        ? '' 
+        : '<p class="msg" style="color:#e0c060;">Note: finals pools re-run the same rotating-mix engine as your main rounds.</p>')+
+      '<div class="season-actions"><button class="btn btn-green" onclick="generateMixFinals()">Generate Finals</button></div>';
+  }
+  document.getElementById('mix-body').innerHTML=html;
+}
+
+async function generateNextMixRound(){
+  var sd=mixSD;
+  var mode = sd.mixMode || (sd.isCoed?'dual':'foursome');
+  var courts = (sd.courts||[]).length || 4;
+  var caps = sd.repeatCaps || {pair:3, side:2, individual:3};
+  var roundIndex = (sd.rounds||[]).length;
+
+  var matches;
+  if(mode==='foursome'){
+    var shuffledPairs = sd.foursomeShuffledPairs;
+    if(!shuffledPairs){
+      // Fallback for events generated before this field existed.
+      shuffledPairs = shuffle((sd.rosterA||[]).map(function(a,i){ return a+'|||'+(sd.rosterB||[])[i]; }));
+      sd.foursomeShuffledPairs = shuffledPairs;
+    }
+    var hist = replayMixHistory(sd, -1); // still need matchup/individual-opp history for opponent-matching
+    matches = buildFoursomeRoundBest(shuffledPairs, roundIndex, hist.matchupHistory, hist.individualOppHistory, caps, courts, 60);
+  } else {
+    var hist2 = replayMixHistory(sd, -1);
+    matches = buildMixRoundBest(mode, sd.rosterA||[], sd.rosterB||[], sd.rosterSeed||[], hist2.sideHistory, hist2.matchupHistory, hist2.individualOppHistory, caps, courts, hist2.personByeHistory, 60);
+  }
+
+  sd.rounds = sd.rounds || [];
+  sd.rounds.push({ round: sd.rounds.length+1, matches: matches });
+
+  var {error}=await sb.from('events').update({sd_json:sd}).eq('id',mixEventId);
+  if(error){ alert('Failed to save new round: '+error.message); return; }
+  mixSD=sd;
+  renderMixModal();
+}
+
+async function generateMixFinals(){
+  var sd=mixSD;
+  if(sd.finals){ alert('Finals already generated for this event.'); return; }
+  var style = document.getElementById('mix-finals-style').value;
+  var poolRounds = parseInt(document.getElementById('mix-finals-rounds').value)||3;
+
+  var standings = calcMixStandingsFromScores(sd, mixScores);
+  var ranked = Object.values(standings).filter(function(p){return p.played>0;})
+    .sort(function(a,b){ if(b.w!==a.w) return b.w-a.w; var da=a.pf-a.pa, db=b.pf-b.pa; if(db!==da) return db-da; return b.pf-a.pf; });
+
+  if(ranked.length < 4){ alert('Need at least 4 players with recorded results to generate finals.'); return; }
+  if(!confirm('Generate finals for '+ranked.length+' ranked players using the "'+style+'" style? This cannot be undone from here.')) return;
+
+  var pools = [];
+  if(style==='set-pool'){
+    var groupNames = ['Group A','Group B','Group C','Group D','Group E','Group F','Group G','Group H'];
+    for(var i=0; i<ranked.length; i+=4){
+      var slice = ranked.slice(i, i+4).map(function(p){return p.name;});
+      if(slice.length < 2) continue; // leftover of 1 can't form a pool; drop (organizer can hand-place)
+      pools.push({ name: groupNames[pools.length]||('Group '+(pools.length+1)), entries: slice });
+    }
+  } else { // split-pool
+    var tierNames = ['Gold','Silver','Bronze','Copper','Tin','Iron','Plastic','Foam'];
+    var numTiers = Math.max(1, Math.ceil(ranked.length/8)); // aim for ~8 per tier, adjustable later
+    var perTier = Math.ceil(ranked.length/numTiers);
+    for(var t=0; t<numTiers; t++){
+      var slice = ranked.slice(t*perTier, (t+1)*perTier).map(function(p){return p.name;});
+      if(slice.length < 2) continue;
+      pools.push({ name: tierNames[t]||('Tier '+(t+1)), entries: slice });
+    }
+  }
+
+  var caps = sd.repeatCaps || {pair:3, side:2, individual:3};
+  pools.forEach(function(pool){
+    var sideHistory={}, matchupHistory={}, individualOppHistory={}, personByeHistory={};
+    var poolRoundsData = [];
+    for(var r=0; r<poolRounds; r++){
+      var matches = buildMixRoundBest('single', [], [], pool.entries, sideHistory, matchupHistory, individualOppHistory, caps, Math.max(1, Math.floor(pool.entries.length/4)), personByeHistory, 60);
+      poolRoundsData.push({ round: r+1, matches: matches });
+    }
+    pool.rounds = poolRoundsData;
+  });
+
+  sd.finals = { style: style, pools: pools };
+  var {error}=await sb.from('events').update({sd_json:sd}).eq('id',mixEventId);
+  if(error){ alert('Failed to save finals: '+error.message); return; }
+  mixSD=sd;
+  renderMixModal();
+}
+
+
 var uploadArea=document.querySelector('.upload-area');
 uploadArea.addEventListener('dragover',function(e){e.preventDefault();uploadArea.style.borderColor='#3d8c5a';});
 uploadArea.addEventListener('dragleave',function(){uploadArea.style.borderColor='#2d4a36';});

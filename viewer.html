@@ -291,8 +291,22 @@ body.admin-mode .bk-pick{display:inline-block;}
     <div class="prog-row"><span class="prog-lbl" id="mix-prog-lbl"></span><div class="prog-wrap"><div class="prog-bar" id="mix-prog-bar" style="width:0%"></div></div></div>
     <div id="mix-table"></div>
   </div>
+  <!-- KOB Random Mix finals/playoffs tab -->
+  <div id="tab-mix-finals" style="display:none">
+    <div class="nav-row">
+      <div class="nav-l" id="mix-finals-pool-btns"></div>
+    </div>
+    <div class="nav-row">
+      <div class="nav-l" id="mix-finals-round-btns"></div>
+      <button class="btn-sm green" onclick="exportXLSX()">Export .xlsx</button>
+    </div>
+    <div class="prog-row"><span class="prog-lbl" id="mix-finals-prog-lbl"></span><div class="prog-wrap"><div class="prog-bar" id="mix-finals-prog-bar" style="width:0%"></div></div></div>
+    <div id="mix-finals-table"></div>
+    <div class="std-wrap" style="margin-top:20px;"><table class="std-table" id="mix-finals-standings"></table></div>
+  </div>
   <!-- KOB Standings (shared for quads + mix) -->
   <div id="tab-mix-standings" style="display:none">
+    <div id="mix-std-filter" style="margin-bottom:12px;"></div>
     <div class="std-wrap"><table class="std-table" id="std-table-mix"></table></div>
   </div>
   <div id="tab-teams" style="display:none">
