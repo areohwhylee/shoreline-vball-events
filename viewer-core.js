@@ -189,7 +189,7 @@ function buildTabs(tabDefs){
   document.getElementById('tabs').innerHTML=h;
 }
 function switchTab(t){
-  var allTabs=['schedule','pools','standings','bracket','lookup','teams','quads-schedule','mix-schedule','mix-standings','mix-finals','trad-lg-schedule','playoff'];
+  var allTabs=['schedule','pools','rr-schedule','standings','bracket','lookup','teams','quads-schedule','mix-schedule','mix-standings','mix-finals','trad-lg-schedule','playoff'];
   allTabs.forEach(function(x){
     var el=document.getElementById('tab-'+x);
     if(el) el.style.display=x===t?'':'none';
@@ -197,6 +197,7 @@ function switchTab(t){
   document.querySelectorAll('.tab').forEach(function(b){
     b.classList.toggle('active', b.textContent.toLowerCase()===t||b.getAttribute('onclick').indexOf("'"+t+"'")>=0);
   });
+  if(t==='rr-schedule') renderRRSchedule();
   if(t==='standings'||t==='mix-standings') renderStandings();
   if(t==='bracket') renderBracket();
   if(t==='lookup') renderLookupSelect();
@@ -350,6 +351,14 @@ function calcLgStandings(){
 function initTournament(){
   var sd=SD;
   initNameMap();
+  if(sd.roundRobinOnly){
+    buildTabs([{id:'rr-schedule',label:'Schedule'},{id:'standings',label:'Standings'},{id:'lookup',label:'Lookup'},{id:'teams',label:'Teams'}]);
+    document.getElementById('page-sub').textContent=
+      sd.entries.length+' entries . '+sd.courts.length+' courts . round robin — everyone plays everyone once';
+    document.getElementById('tab-rr-schedule').style.display='';
+    renderRRSchedule();
+    return;
+  }
   buildTabs([{id:'pools',label:'Pool play'},{id:'standings',label:'Standings'},{id:'bracket',label:'Bracket'},{id:'lookup',label:'Lookup'},{id:'teams',label:'Teams'}]);
   document.getElementById('page-sub').textContent=sd.pools.length+' pools . '+sd.entries.length+' entries . '+sd.courts.length+' courts';
   document.getElementById('tab-pools').style.display='';
@@ -1064,6 +1073,7 @@ function renderBracket(){
 ======================================================= */
 function renderStandings(){
   if(fmt==='kob_league') renderLgStandings();
+  else if(fmt==='traditional_tournament' && SD.roundRobinOnly) renderRRStandings();
   else if(fmt==='traditional_tournament') renderTournamentStandings();
   else if(fmt==='traditional_league') renderTradLeagueStandings();
   else if(fmt==='kob_quads') renderQuadsStandings();
@@ -1103,6 +1113,180 @@ function calcAllPoolStandings(){
   });
   return allPlayers.sort(sortByCoeff);
 }
+// ── Round Robin Only (multi-court, no bracket) ──────────────────────────────
+var selRRRound=0;
+function renderRRSchedule(){
+  var sd=SD;
+  var rounds=sd.rrRounds;
+  var rb='';
+  rounds.forEach(function(r,ri){
+    rb+='<button class="btn-sm'+(ri===selRRRound?' sel':'')+'" onclick="selRRRound='+ri+';renderRRSchedule()">Round '+(ri+1)+'</button>';
+  });
+  document.getElementById('rr-round-btns').innerHTML=rb;
+
+  var round=rounds[selRRRound];
+  var rrSets=sd.scoring.numSets||1;
+  var matchNum=0;
+  var rows='<div style="display:flex;flex-direction:column;gap:8px;">';
+
+  round.matches.forEach(function(m,mi){
+    matchNum++;
+    var courtName=sd.courts[m.court]?sd.courts[m.court].name:'C'+(m.court+1);
+
+    var mySets1=0,mySets2=0,allDone=true;
+    var setData=[];
+    for(var si=0;si<rrSets;si++){
+      var key='rr-r'+selRRRound+'-m'+mi+'-s'+si;
+      var sc=scores[key]||{s1:'',s2:''};
+      var s1n=parseInt(sc.s1),s2n=parseInt(sc.s2);
+      var has=sc.s1!==''&&sc.s2!==''&&!isNaN(s1n)&&!isNaN(s2n);
+      if(!has) allDone=false;
+      if(has){ if(s1n>s2n) mySets1++; else if(s2n>s1n) mySets2++; }
+      setData.push({key:key,sc:sc,has:has,
+        c1:has?(s1n>s2n?'win':s1n<s2n?'lose':''):'',
+        c2:has?(s2n>s1n?'win':s2n<s1n?'lose':''):'',s1n:s1n,s2n:s2n});
+    }
+    var matchWin1=allDone&&mySets1>mySets2;
+    var matchWin2=allDone&&mySets2>mySets1;
+    var cardBorder=allDone?'border:.5px solid var(--bs)':'border:.5px solid var(--b3)';
+
+    var card='<div style="background:var(--bg1);'+cardBorder+';border-radius:var(--rl);overflow:hidden;">';
+    card+='<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;background:var(--bg2);border-bottom:.5px solid var(--b3);">';
+    card+='<span style="font-size:11px;color:var(--t3);font-weight:600;">#'+matchNum+'</span>';
+    card+='<span style="font-size:11px;color:var(--t2);">'+courtName+'</span>';
+    if(allDone) card+='<span style="font-size:11px;font-weight:600;color:var(--ts);">'+(matchWin1?dn(m.p1):matchWin2?dn(m.p2):'Tie')+'</span>';
+    card+='</div>';
+
+    card+='<div style="display:grid;grid-template-columns:1fr 28px 1fr;gap:8px;padding:8px 12px;border-bottom:.5px solid var(--b3);">';
+    card+='<span style="font-size:13px;font-weight:'+(matchWin1?'600':'400')+';color:'+(matchWin1?'var(--ts)':'var(--ti)')+';">'+dn(m.p1)+'</span>';
+    card+='<span style="font-size:12px;color:var(--t3);text-align:center;align-self:center;">vs</span>';
+    card+='<span style="font-size:13px;font-weight:'+(matchWin2?'600':'400')+';color:'+(matchWin2?'var(--ts)':'var(--tp)')+';text-align:right;">'+dn(m.p2)+'</span>';
+    card+='</div>';
+
+    setData.forEach(function(s,si){
+      var rowBg=si%2===0?'':'background:var(--bg2);';
+      card+='<div style="display:grid;grid-template-columns:40px 80px 28px 80px;gap:8px;align-items:center;padding:6px 12px;'+rowBg+'border-bottom:.5px solid var(--b3);">';
+      card+='<span style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;">Set '+(si+1)+'</span>';
+      card+='<input type="number" min="0" max="99" class="score-in '+s.c1+'" value="'+s.sc.s1+'" data-key="'+s.key+'" data-side="0" oninput="onRRScore(this)" style="max-width:80px;">';
+      card+='<span style="font-size:12px;color:var(--t3);text-align:center;">vs</span>';
+      card+='<input type="number" min="0" max="99" class="score-in '+s.c2+'" value="'+s.sc.s2+'" data-key="'+s.key+'" data-side="1" oninput="onRRScore(this)" style="max-width:80px;">';
+      card+='</div>';
+    });
+    if(rrSets>1&&allDone){
+      card+='<div style="padding:5px 12px;font-size:11px;color:var(--t3);background:var(--bg2);">Sets: '+mySets1+' - '+mySets2+'</div>';
+    }
+    card+='</div>';
+    rows+=card;
+  });
+  rows+='</div>';
+
+  if(round.sitting && round.sitting.length){
+    rows+='<div style="margin-top:12px;padding:8px 12px;font-size:12px;color:var(--t2);font-style:italic;background:var(--bg2);border-radius:var(--rm);border:.5px solid var(--b3);">'+
+      'Sitting out this round: '+round.sitting.map(dn).join(', ')+'</div>';
+  }
+
+  document.getElementById('rr-table').innerHTML=rows;
+  updateRRProgress();
+}
+
+function onRRScore(input){
+  var key=input.dataset.key, side=parseInt(input.dataset.side);
+  if(!scores[key]) scores[key]={s1:'',s2:''};
+  if(side===0) scores[key].s1=input.value; else scores[key].s2=input.value;
+  var sc=scores[key];
+  var s1n=parseInt(sc.s1),s2n=parseInt(sc.s2);
+  var has=sc.s1!==''&&sc.s2!==''&&!isNaN(s1n)&&!isNaN(s2n);
+  var c1=has?(s1n>s2n?'win':s1n<s2n?'lose':''):'';
+  var c2=has?(s2n>s1n?'win':s2n<s1n?'lose':''):'';
+  var inputs=document.querySelectorAll('[data-key="'+key+'"]');
+  if(inputs[0]) inputs[0].className='score-in '+c1;
+  if(inputs[1]) inputs[1].className='score-in '+c2;
+  storeSave(key);
+  updateRRProgress();
+}
+
+function updateRRProgress(){
+  var sd=SD; var total=0,done=0;
+  var rrSets=sd.scoring.numSets||1;
+  sd.rrRounds.forEach(function(round,ri){
+    round.matches.forEach(function(m,mi){
+      total++;
+      var allDone=true;
+      for(var si=0;si<rrSets;si++){
+        var sc=scores['rr-r'+ri+'-m'+mi+'-s'+si];
+        if(!sc||sc.s1===''||sc.s2===''||isNaN(parseInt(sc.s1))||isNaN(parseInt(sc.s2))){allDone=false;break;}
+      }
+      if(allDone) done++;
+    });
+  });
+  var pEl=document.getElementById('rr-prog-lbl');
+  var bEl=document.getElementById('rr-prog-bar');
+  if(pEl) pEl.textContent=done+' / '+total+' scored';
+  if(bEl) bEl.style.width=total?Math.round(done/total*100)+'%':'0%';
+}
+
+function calcRRStandings(){
+  var sd=SD;
+  var rrSets=sd.scoring.numSets||1;
+  var st={};
+  sd.entries.forEach(function(e){ st[e]=blankEntry(e); });
+  sd.rrRounds.forEach(function(round,ri){
+    round.matches.forEach(function(m,mi){
+      var setsWon1=0,setsWon2=0,pts1=0,pts2=0,allDone=true;
+      for(var si=0;si<rrSets;si++){
+        var sc=scores['rr-r'+ri+'-m'+mi+'-s'+si];
+        if(!sc||sc.s1===''||sc.s2===''){allDone=false;break;}
+        var s1n=parseInt(sc.s1),s2n=parseInt(sc.s2);
+        if(isNaN(s1n)||isNaN(s2n)){allDone=false;break;}
+        pts1+=s1n; pts2+=s2n;
+        if(s1n>s2n) setsWon1++; else if(s2n>s1n) setsWon2++;
+      }
+      if(!allDone) return;
+      if(!st[m.p1]||!st[m.p2]) return;
+      st[m.p1].gp++; st[m.p1].pf+=pts1; st[m.p1].pa+=pts2;
+      st[m.p2].gp++; st[m.p2].pf+=pts2; st[m.p2].pa+=pts1;
+      if(setsWon1>setsWon2) st[m.p1].w++; else if(setsWon2>setsWon1) st[m.p1].l++;
+      if(setsWon2>setsWon1) st[m.p2].w++; else if(setsWon1>setsWon2) st[m.p2].l++;
+    });
+  });
+  Object.values(st).forEach(refreshRates);
+  return Object.values(st).sort(function(a,b){
+    if(b.w!==a.w) return b.w-a.w;
+    var da=a.pf-a.pa, db=b.pf-b.pa;
+    if(db!==da) return db-da;
+    return b.pf-a.pf;
+  });
+}
+
+function renderRRStandings(){
+  var fEl=document.getElementById('std-filter');
+  if(fEl) fEl.innerHTML='';
+  var all=calcRRStandings();
+  function pct(v){return(v*100).toFixed(1)+'%';}
+  var thead='<thead><tr><th>#</th><th>Entry</th><th class="r">GP</th>'+
+    '<th class="r">W</th><th class="r">L</th><th class="r">W%</th>'+
+    '<th class="r">+/-/G</th><th class="r">PF/G</th><th class="r">PA/G</th></tr></thead>';
+  var tbody='';
+  all.forEach(function(p,i){
+    var rank=i+1;
+    var badge=rank===1?'gold':rank===2?'silver':rank===3?'bronze':'';
+    var dpg=p.diffPerGame,pos=dpg>0,neg=dpg<0;
+    tbody+='<tr class="'+(rank%2===0?'alt':'')+'">' +
+      '<td><span class="rnk '+badge+'">'+rank+'</span></td>'+
+      '<td>'+dn(p.name)+'</td>'+
+      '<td class="r">'+p.gp+'</td>'+
+      '<td class="r">'+p.w+'</td>'+
+      '<td class="r">'+p.l+'</td>'+
+      '<td class="r"><strong>'+pct(p.winRate)+'</strong></td>'+
+      '<td class="r"><span class="'+(pos?'dpos':neg?'dneg':'')+'">'+
+        (pos?'+':'')+dpg.toFixed(2)+'</span></td>'+
+      '<td class="r">'+p.pfPerGame.toFixed(2)+'</td>'+
+      '<td class="r">'+p.paPerGame.toFixed(2)+'</td>'+
+      '</tr>';
+  });
+  document.getElementById('std-table').innerHTML=thead+'<tbody>'+tbody+'</tbody>';
+}
+
 function renderTournamentStandings(){
   var sd=SD;
   var fEl=document.getElementById('std-filter');
