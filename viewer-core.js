@@ -1374,7 +1374,10 @@ function applyRenames(){
     nameMap[orig]=val||orig;
   });
   // Refresh all visible tabs
-  if(fmt==='traditional_tournament'){
+  if(fmt==='traditional_tournament' && SD.roundRobinOnly){
+    renderRRSchedule();
+    renderStandings();
+  } else if(fmt==='traditional_tournament'){
     renderPoolSchedule();
     renderStandings();
     if(allBrackets.length) renderBracket();
@@ -1385,7 +1388,10 @@ function applyRenames(){
 function resetRenames(){
   Object.keys(nameMap).forEach(function(k){ nameMap[k]=k; });
   renderTeamsTab();
-  if(fmt==='traditional_tournament'){
+  if(fmt==='traditional_tournament' && SD.roundRobinOnly){
+    renderRRSchedule();
+    renderStandings();
+  } else if(fmt==='traditional_tournament'){
     renderPoolSchedule();
     renderStandings();
     if(allBrackets.length) renderBracket();
@@ -1494,6 +1500,7 @@ function renderTournLookup(name){
 ======================================================= */
 function exportXLSX(){
   if(fmt==='kob_league') exportLgXLSX();
+  else if(fmt==='traditional_tournament' && SD.roundRobinOnly) exportRRXLSX();
   else if(fmt==='traditional_tournament') exportTournXLSX();
 }
 function exportLgXLSX(){
@@ -1649,6 +1656,108 @@ function exportLgXLSX(){
   XLSX.utils.book_append_sheet(wb,rankWs,'Standings');
   XLSX.writeFile(wb,(sd.title||'KOB').replace(/[^a-zA-Z0-9]/g,'_')+'_Sheets.xlsx');
 }
+function exportRRXLSX(){
+  var sd=SD, wb=XLSX.utils.book_new();
+  var rrSets=(sd.scoring||{}).numSets||1;
+
+  // Summary
+  var sumRows=[[sd.title||'Tournament'],[],
+    ['Format','Round Robin Only'],['Entries',sd.entries.length],['Courts',sd.courts.length],['Rounds',sd.rrRounds.length]];
+  var sw=XLSX.utils.aoa_to_sheet(sumRows); sw['!cols']=[{wch:20},{wch:20}];
+  XLSX.utils.book_append_sheet(wb,sw,'Summary');
+
+  // Schedule sheet — one row block per round
+  var aoa=[['Round Robin Schedule'],[]];
+  var hdrs=['#','Round','Court','Entry 1'];
+  for(var si=0;si<rrSets;si++) hdrs.push((rrSets>1?'S'+(si+1)+' ':'')+'Score E1',(rrSets>1?'S'+(si+1)+' ':'')+'Score E2');
+  hdrs.push('Entry 2','Winner');
+  aoa.push(hdrs);
+
+  var matchNum=0, matchRowMap=[];
+  sd.rrRounds.forEach(function(round,ri){
+    round.matches.forEach(function(m,mi){
+      matchNum++;
+      var courtName=sd.courts[m.court]?sd.courts[m.court].name:'C'+(m.court+1);
+      var row=[matchNum, ri+1, courtName, dn(m.p1)];
+      for(var si2=0;si2<rrSets;si2++) row.push('','');
+      row.push(dn(m.p2), '');
+      aoa.push(row);
+      matchRowMap.push({excelRow:aoa.length, p1:m.p1, p2:m.p2, ri:ri, mi:mi});
+    });
+    if(round.sitting && round.sitting.length){
+      aoa.push(['','Sitting out (Round '+(ri+1)+'): '+round.sitting.map(dn).join(', ')]);
+    }
+  });
+
+  var ws=XLSX.utils.aoa_to_sheet(aoa);
+  var cols=[{wch:5},{wch:8},{wch:12},{wch:18}];
+  for(var si3=0;si3<rrSets;si3++) cols.push({wch:9},{wch:9});
+  cols.push({wch:18},{wch:18});
+  ws['!cols']=cols;
+
+  // Restore scores + yellow fill + winner formula (same live-formula pattern as pool export)
+  matchRowMap.forEach(function(mr){
+    var r=mr.excelRow;
+    var e1ScoreCols=[], e2ScoreCols=[];
+    for(var si4=0;si4<rrSets;si4++){
+      var c1=5+si4*2, c2=6+si4*2;
+      var addr1=XLSX.utils.encode_col(c1-1)+r, addr2=XLSX.utils.encode_col(c2-1)+r;
+      var keyBase='rr-r'+mr.ri+'-m'+mr.mi+'-s'+si4;
+      var sc=scores[keyBase]||{s1:'',s2:''};
+      [addr1,addr2].forEach(function(addr,side){
+        if(!ws[addr]) ws[addr]={t:'n',v:null};
+        ws[addr].v=side===0?(sc.s1!==''?parseInt(sc.s1):''):(sc.s2!==''?parseInt(sc.s2):'');
+        ws[addr].s={fill:{fgColor:{rgb:'FFF9C4'},patternType:'solid'},font:{bold:true,sz:11},alignment:{horizontal:'center'}};
+      });
+      e1ScoreCols.push(addr1); e2ScoreCols.push(addr2);
+    }
+    var e1Ref=XLSX.utils.encode_col(3)+r, e2Ref=XLSX.utils.encode_col(4+rrSets*2)+r;
+    var winAddr=XLSX.utils.encode_col(4+rrSets*2+1)+r;
+    var s1parts=e1ScoreCols.map(function(d,i){return 'IF('+d+'>'+e2ScoreCols[i]+',1,0)';}).join('+');
+    var s2parts=e2ScoreCols.map(function(d,i){return 'IF('+d+'>'+e1ScoreCols[i]+',1,0)';}).join('+');
+    ws[winAddr]={t:'s',f:'IF(AND('+e1ScoreCols[0]+'=\"\",'+e2ScoreCols[0]+'=\"\"),\"\",IF(('+s1parts+')>('+s2parts+'),'+e1Ref+',IF(('+s2parts+')>('+s1parts+'),'+e2Ref+',\"Tie\")))',v:''};
+  });
+
+  // Standings block, live formulas
+  var stdStart=aoa.length+2;
+  XLSX.utils.sheet_add_aoa(ws,[['Standings'],
+    ['Rank','Entry','GP','W','L','W%','+/-/G','PF/G']],{origin:{r:stdStart-1,c:0}});
+
+  sd.entries.forEach(function(entry,idx){
+    var sr=stdStart+2+idx;
+    var gpParts=[],wParts=[],pfParts=[],paParts=[];
+    matchRowMap.forEach(function(mr){
+      var r2=mr.excelRow;
+      for(var si5=0;si5<rrSets;si5++){
+        var c1=5+si5*2, c2=6+si5*2;
+        var d=XLSX.utils.encode_col(c1-1)+r2, f=XLSX.utils.encode_col(c2-1)+r2;
+        if(mr.p1===entry){
+          if(si5===0) gpParts.push('IF(AND('+d+'<>\"\",'+f+'<>\"\"),1,0)');
+          wParts.push('IF(AND('+d+'<>\"\",'+f+'<>\"\"),IF('+d+'>'+f+',1,0),0)');
+          pfParts.push('IF('+d+'<>\"\",'+d+',0)'); paParts.push('IF('+f+'<>\"\",'+f+',0)');
+        } else if(mr.p2===entry){
+          if(si5===0) gpParts.push('IF(AND('+d+'<>\"\",'+f+'<>\"\"),1,0)');
+          wParts.push('IF(AND('+d+'<>\"\",'+f+'<>\"\"),IF('+f+'>'+d+',1,0),0)');
+          pfParts.push('IF('+f+'<>\"\",'+f+',0)'); paParts.push('IF('+d+'<>\"\",'+d+',0)');
+        }
+      }
+    });
+    var gpF=gpParts.join('+')||'0', wF=wParts.join('+')||'0';
+    var pfF=pfParts.join('+')||'0', paF=paParts.join('+')||'0';
+    var gpC='C'+sr, wC='D'+sr;
+    XLSX.utils.sheet_add_aoa(ws,[[idx+1,dn(entry)]],{origin:{r:sr-1,c:0}});
+    ws['C'+sr]={t:'n',f:gpF,v:0};
+    ws['D'+sr]={t:'n',f:wF,v:0};
+    ws['E'+sr]={t:'n',f:gpC+'-'+wC,v:0};
+    ws['F'+sr]={t:'n',f:'IF('+gpC+'>0,'+wC+'/'+gpC+',0)',z:'0.0%',v:0};
+    ws['G'+sr]={t:'n',f:'IF('+gpC+'>0,('+pfF+'-'+paF+')/'+gpC+',0)',v:0};
+    ws['H'+sr]={t:'n',f:'IF('+gpC+'>0,('+pfF+')/'+gpC+',0)',v:0};
+  });
+
+  XLSX.utils.book_append_sheet(wb,ws,'Schedule');
+  XLSX.writeFile(wb,(sd.title||'Tournament').replace(/[^a-zA-Z0-9]/g,'_')+'_RoundRobin.xlsx');
+}
+
 function exportTournXLSX(){
   var sd=SD, wb=XLSX.utils.book_new();
   // Summary
