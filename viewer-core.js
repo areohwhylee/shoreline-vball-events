@@ -536,22 +536,22 @@ function updatePoolProgress(){
 function calcPoolStandings(poolIdx){
   var sd=SD, pool=sd.pools[poolIdx];
   var players={};
-  pool.entries.forEach(function(e){players[e]={name:e,w:0,l:0,t:0,pf:0,pa:0,gp:0};});
+  pool.entries.forEach(function(e){players[e]={name:e,w:0,l:0,t:0,pf:0,pa:0,gp:0,matchesPlayed:0};});
   var poolSets=pool.sets||sd.scoring.numSets||1;
   pool.rounds.forEach(function(round,ri){round.forEach(function(m,mi){
     if(m.isBye) return;
-    var sets1=0,sets2=0,totalPF1=0,totalPF2=0,allScored=true;
+    var sets1=0,sets2=0,totalPF1=0,totalPF2=0,allScored=true,setsPlayed=0;
     for(var si=0;si<poolSets;si++){
       var sc=scores['p'+poolIdx+'-r'+ri+'-m'+mi+'-s'+si];
       if(!sc||sc.s1===''||sc.s2===''){allScored=false;break;}
       var s1=parseInt(sc.s1),s2=parseInt(sc.s2);
       if(isNaN(s1)||isNaN(s2)){allScored=false;break;}
-      totalPF1+=s1; totalPF2+=s2;
+      totalPF1+=s1; totalPF2+=s2; setsPlayed++;
       if(s1>s2) sets1++; else if(s2>s1) sets2++;
     }
     if(!allScored) return;
-    players[m.p1].gp++; players[m.p1].pf+=totalPF1; players[m.p1].pa+=totalPF2;
-    players[m.p2].gp++; players[m.p2].pf+=totalPF2; players[m.p2].pa+=totalPF1;
+    players[m.p1].matchesPlayed++; players[m.p1].gp+=setsPlayed; players[m.p1].pf+=totalPF1; players[m.p1].pa+=totalPF2;
+    players[m.p2].matchesPlayed++; players[m.p2].gp+=setsPlayed; players[m.p2].pf+=totalPF2; players[m.p2].pa+=totalPF1;
     if(sets1>sets2){players[m.p1].w++;players[m.p2].l++;}
     else if(sets2>sets1){players[m.p2].w++;players[m.p1].l++;}
     else{players[m.p1].t++;players[m.p2].t++;}
@@ -563,15 +563,17 @@ function calcPoolStandings(poolIdx){
     if(!sc||sc.s1===''||sc.s2==='') return;
     var s1=parseInt(sc.s1),s2=parseInt(sc.s2);
     if(isNaN(s1)||isNaN(s2)) return;
-    players[m.p1].gp++; players[m.p1].pf+=s1; players[m.p1].pa+=s2;
-    players[m.p2].gp++; players[m.p2].pf+=s2; players[m.p2].pa+=s1;
+    players[m.p1].matchesPlayed++; players[m.p1].gp++; players[m.p1].pf+=s1; players[m.p1].pa+=s2;
+    players[m.p2].matchesPlayed++; players[m.p2].gp++; players[m.p2].pf+=s2; players[m.p2].pa+=s1;
     if(s1>s2){players[m.p1].w++;players[m.p2].l++;}
     else if(s2>s1){players[m.p2].w++;players[m.p1].l++;}
     else{players[m.p1].t++;players[m.p2].t++;}
   });});
-  // Attach per-game coefficients for cross-pool fairness
+  // Attach per-game coefficients for cross-pool fairness. Win rate uses
+  // matches played (correct for standings); PF/PA/diff rates use GP = total
+  // sets played, since a 2-set match should count as 2 games, not 1.
   Object.values(players).forEach(function(p){
-    p.winRate=p.gp>0?p.w/p.gp:0;
+    p.winRate=p.matchesPlayed>0?p.w/p.matchesPlayed:0;
     p.diffPerGame=p.gp>0?(p.pf-p.pa)/p.gp:0;
     p.pfPerGame=p.gp>0?p.pf/p.gp:0;
   });
@@ -1229,27 +1231,32 @@ function calcRRStandings(){
   var sd=SD;
   var rrSets=sd.scoring.numSets||1;
   var st={};
-  sd.entries.forEach(function(e){ st[e]=blankEntry(e); });
+  sd.entries.forEach(function(e){ st[e]=blankEntry(e); st[e].matchesPlayed=0; });
   sd.rrRounds.forEach(function(round,ri){
     round.matches.forEach(function(m,mi){
-      var setsWon1=0,setsWon2=0,pts1=0,pts2=0,allDone=true;
+      var setsWon1=0,setsWon2=0,pts1=0,pts2=0,allDone=true,setsPlayed=0;
       for(var si=0;si<rrSets;si++){
         var sc=scores['rr-r'+ri+'-m'+mi+'-s'+si];
         if(!sc||sc.s1===''||sc.s2===''){allDone=false;break;}
         var s1n=parseInt(sc.s1),s2n=parseInt(sc.s2);
         if(isNaN(s1n)||isNaN(s2n)){allDone=false;break;}
-        pts1+=s1n; pts2+=s2n;
+        pts1+=s1n; pts2+=s2n; setsPlayed++;
         if(s1n>s2n) setsWon1++; else if(s2n>s1n) setsWon2++;
       }
       if(!allDone) return;
       if(!st[m.p1]||!st[m.p2]) return;
-      st[m.p1].gp++; st[m.p1].pf+=pts1; st[m.p1].pa+=pts2;
-      st[m.p2].gp++; st[m.p2].pf+=pts2; st[m.p2].pa+=pts1;
+      st[m.p1].matchesPlayed++; st[m.p1].gp+=setsPlayed; st[m.p1].pf+=pts1; st[m.p1].pa+=pts2;
+      st[m.p2].matchesPlayed++; st[m.p2].gp+=setsPlayed; st[m.p2].pf+=pts2; st[m.p2].pa+=pts1;
       if(setsWon1>setsWon2) st[m.p1].w++; else if(setsWon2>setsWon1) st[m.p1].l++;
       if(setsWon2>setsWon1) st[m.p2].w++; else if(setsWon1>setsWon2) st[m.p2].l++;
     });
   });
-  Object.values(st).forEach(refreshRates);
+  Object.values(st).forEach(function(e){
+    e.winRate=e.matchesPlayed>0?e.w/e.matchesPlayed:0;
+    e.diffPerGame=e.gp>0?(e.pf-e.pa)/e.gp:0;
+    e.pfPerGame=e.gp>0?e.pf/e.gp:0;
+    e.paPerGame=e.gp>0?e.pa/e.gp:0;
+  });
   return Object.values(st).sort(function(a,b){
     if(b.w!==a.w) return b.w-a.w;
     var da=a.pf-a.pa, db=b.pf-b.pa;
@@ -2577,8 +2584,9 @@ function initKOBRandomMix(){
   tabs.push({id:'lookup',label:'Lookup'});
   tabs.push({id:'teams',label:'Teams'});
   buildTabs(tabs);
-  document.getElementById('page-sub').textContent=
-    sd.rounds.length+' rounds . '+sd.allEntries.length+' entries . '+(sd.isCoed?'Coed Solo':'Mixed Pairs');
+  document.getElementById('page-sub').textContent=sd.sessionLeague
+    ? ((sd.sessionPlan&&sd.sessionPlan.weeks.length)||0)+' weeks . 2 sessions/week . '+(sd.allEntries.length/2)+' pairs'
+    : sd.rounds.length+' rounds . '+sd.allEntries.length+' entries . '+(sd.isCoed?'Coed Solo':'Mixed Pairs');
   document.getElementById('tab-mix-schedule').style.display='';
   renderMixSchedule();
 }
@@ -2598,10 +2606,42 @@ function formatSideNames(members){
 function renderMixSchedule(){
   var sd=SD;
   var roundHtml='';
-  sd.rounds.forEach(function(r,ri){
-    roundHtml+='<button class="btn-sm'+(ri===selMixRound?' sel':'')+
-      '" onclick="selMixRound='+ri+';renderMixSchedule()">Round '+r.round+'</button>';
-  });
+  if(sd.sessionLeague){
+    // Week / Session / Round navigation. rounds[] is flat; each round carries week+session.
+    var cur=sd.rounds[selMixRound]||sd.rounds[0];
+    var weekNums=[]; sd.rounds.forEach(function(r){ if(weekNums.indexOf(r.week)<0) weekNums.push(r.week); });
+    roundHtml+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;width:100%;">';
+    weekNums.forEach(function(w){
+      var first=-1; sd.rounds.forEach(function(r,ri){ if(first<0&&r.week===w&&r.session===cur.session) first=ri; });
+      if(first<0) sd.rounds.forEach(function(r,ri){ if(first<0&&r.week===w) first=ri; });
+      roundHtml+='<button class="btn-sm'+(w===cur.week?' sel':'')+'" onclick="selMixRound='+first+';renderMixSchedule()">Wk '+w+'</button>';
+    });
+    roundHtml+='</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;width:100%;">';
+    ['early','late'].forEach(function(ss){
+      var first=-1; sd.rounds.forEach(function(r,ri){ if(first<0&&r.week===cur.week&&r.session===ss) first=ri; });
+      if(first<0) return;
+      roundHtml+='<button class="btn-sm'+(ss===cur.session?' sel':'')+'" onclick="selMixRound='+first+';renderMixSchedule()">'+(ss==='early'?'Early':'Late')+' session</button>';
+    });
+    roundHtml+='</div><div style="display:flex;flex-wrap:wrap;gap:6px;width:100%;">';
+    sd.rounds.forEach(function(r,ri){
+      if(r.week!==cur.week||r.session!==cur.session) return;
+      roundHtml+='<button class="btn-sm'+(ri===selMixRound?' sel':'')+'" onclick="selMixRound='+ri+';renderMixSchedule()">Round '+r.sessionRound+'</button>';
+    });
+    roundHtml+='</div>';
+    // who plays this session
+    var wkPlan=(sd.sessionPlan&&sd.sessionPlan.weeks||[]).filter(function(w){return w.week===cur.week;})[0];
+    var sessPlan=wkPlan&&wkPlan.sessions.filter(function(x){return x.session===cur.session;})[0];
+    if(sessPlan){
+      var lockedLbl=sd.sessionPlan.locks||{};
+      roundHtml+='<div style="font-size:11px;color:var(--t2);margin-top:8px;width:100%;line-height:1.6;"><strong>'+(cur.session==='early'?'Early':'Late')+' session pairs:</strong> '+
+        sessPlan.pairs.map(function(p){var q=p.split('|||');return dn(q[0])+'+'+dn(q[1])+(lockedLbl[p]?' \u{1F512}':'');}).join(' &middot; ')+'</div>';
+    }
+  } else {
+    sd.rounds.forEach(function(r,ri){
+      roundHtml+='<button class="btn-sm'+(ri===selMixRound?' sel':'')+
+        '" onclick="selMixRound='+ri+';renderMixSchedule()">Round '+r.round+'</button>';
+    });
+  }
   document.getElementById('mix-round-btns').innerHTML=roundHtml;
 
   var round=sd.rounds[selMixRound];
@@ -2806,6 +2846,7 @@ function updateMixProgress(){
   if(bEl) bEl.style.width=total?Math.round(done/total*100)+'%':'0%';
 }
 
+var mixStandingsWeek=0; // 0 = whole season; N = only Week N (session-league events)
 function calcMixStandings(){
   var sd=SD;
   var st={};
@@ -2814,6 +2855,7 @@ function calcMixStandings(){
   sd.allEntries.forEach(function(e){ h2h[e]={}; });
 
   sd.rounds.forEach(function(round,ri){
+    if(mixStandingsWeek&&round.week!==mixStandingsWeek) return;
     round.matches.forEach(function(m,mi){
       if(m.isBye) return;
       var sc=scores['r'+ri+'-m'+mi];
@@ -2860,6 +2902,12 @@ function renderMixStandings(){
       '<button class="btn-xs'+(mixStandingsView==='pairs'?' sel':'')+'" onclick="mixStandingsView=\'pairs\';renderMixStandings()">Permanent Pairs</button>';
   } else {
     filterEl.innerHTML='';
+  }
+  if(sd.sessionLeague){
+    var wks=[]; sd.rounds.forEach(function(r){ if(wks.indexOf(r.week)<0) wks.push(r.week); });
+    filterEl.innerHTML+='<span style="display:inline-block;width:12px"></span>'+
+      '<button class="btn-xs'+(!mixStandingsWeek?' sel':'')+'" onclick="mixStandingsWeek=0;renderMixStandings()">Season</button>'+
+      wks.map(function(w){return '<button class="btn-xs'+(mixStandingsWeek===w?' sel':'')+'" onclick="mixStandingsWeek='+w+';renderMixStandings()">Wk '+w+'</button>';}).join('');
   }
 
   var all;
