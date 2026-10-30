@@ -1334,6 +1334,7 @@ function isMixMatchScored(roundIdx, matchIdx){
 function renderMixModal(){
   var sd=mixSD;
   if(sd.sessionLeague){ renderSessionLeagueModal(); return; }
+  if(sd.weekLeague){ renderWeekLeagueModal(); return; }
   var rounds = sd.rounds||[];
   var html='';
   rounds.forEach(function(round, ri){
@@ -1754,6 +1755,26 @@ async function slSaveLocks(){
   if(await slSave(sd)) renderMixModal();
 }
 
+
+// ── Rotating Sit-Out League: read-only week progress (re-generate from the generator to change the plan) ──
+function renderWeekLeagueModal(){
+  var sd=mixSD, byWeek={};
+  (sd.rounds||[]).forEach(function(r,ri){
+    var w=byWeek[r.week]=byWeek[r.week]||{done:0,total:0,slots:0};
+    w.slots++;
+    r.matches.forEach(function(m,mi){ if(m.isBye) return; w.total++; if(isMixMatchScored(ri,mi)) w.done++; });
+  });
+  var sp=sd.sitoutPlan||{};
+  var html='<p class="msg" style="text-align:left;">'+Object.keys(byWeek).length+' weeks &middot; '+(sd.rosterA||[]).length+' pairs &middot; '+(sp.totalSlots||sd.rounds.length)+' slots'+(sp.setsPerPair?' &middot; '+sp.setsPerPair+' sets per pair':'')+
+    '. This schedule is fixed; to change it, generate a new one from the generator.</p>';
+  Object.keys(byWeek).forEach(function(w){
+    var x=byWeek[w], complete=x.total>0&&x.done===x.total;
+    var pc=x.done===0?'none':(complete?'complete':'progress');
+    var pl=x.done===0?'Not started':(complete?'Complete':(x.done+'/'+x.total));
+    html+='<div class="wk-row"><span class="wk-name">Week '+w+' ('+x.slots+' slots)</span><span class="wk-pill '+pc+'">'+pl+'</span></div>';
+  });
+  document.getElementById('mix-body').innerHTML=html;
+}
 
 var uploadArea=document.querySelector('.upload-area');
 uploadArea.addEventListener('dragover',function(e){e.preventDefault();uploadArea.style.borderColor='#3d8c5a';});

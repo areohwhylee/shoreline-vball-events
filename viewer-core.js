@@ -423,7 +423,7 @@ function renderPoolSchedule(){
       card+='</div>';
 
       // Entry name bar
-      card+='<div style="display:grid;grid-template-columns:1fr 28px 1fr;gap:8px;padding:8px 12px;border-bottom:.5px solid var(--b3);">';
+      card+='<div style="display:grid;grid-template-columns:1fr 48px 1fr;gap:8px;padding:8px 12px;border-bottom:.5px solid var(--b3);">';
       card+='<span style="font-size:13px;font-weight:'+(matchWin1?'600':'400')+';color:'+(matchWin1?'var(--ts)':'var(--ti)')+';">'+dn(m.p1)+'</span>';
       card+='<span style="font-size:12px;color:var(--t3);text-align:center;align-self:center;">vs</span>';
       card+='<span style="font-size:13px;font-weight:'+(matchWin2?'600':'400')+';color:'+(matchWin2?'var(--ts)':'var(--tp)')+';text-align:right;">'+dn(m.p2)+'</span>';
@@ -432,11 +432,10 @@ function renderPoolSchedule(){
       // One row per set
       setData.forEach(function(s,si){
         var rowBg=si%2===0?'':'background:var(--bg2);';
-        card+='<div style="display:grid;grid-template-columns:40px 80px 28px 80px;gap:8px;align-items:center;padding:6px 12px;'+rowBg+'border-bottom:.5px solid var(--b3);">';
-        card+='<span style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;">Set '+(si+1)+'</span>';
-        card+='<input type="number" min="0" max="99" class="score-in '+s.c1+'" value="'+s.sc.s1+'" data-key="'+s.key+'" data-side="0" oninput="onPoolScore(this)" style="max-width:80px;">';
-        card+='<span style="font-size:12px;color:var(--t3);text-align:center;">vs</span>';
-        card+='<input type="number" min="0" max="99" class="score-in '+s.c2+'" value="'+s.sc.s2+'" data-key="'+s.key+'" data-side="1" oninput="onPoolScore(this)" style="max-width:80px;">';
+        card+='<div style="display:grid;grid-template-columns:1fr 48px 1fr;gap:8px;align-items:center;padding:6px 12px;'+rowBg+'border-bottom:.5px solid var(--b3);">';
+        card+='<input type="number" min="0" max="99" class="score-in '+s.c1+'" value="'+s.sc.s1+'" data-key="'+s.key+'" data-side="0" oninput="onPoolScore(this)" style="width:80px;justify-self:start;">';
+        card+='<span style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;text-align:center;align-self:center;">Set '+(si+1)+'</span>';
+        card+='<input type="number" min="0" max="99" class="score-in '+s.c2+'" value="'+s.sc.s2+'" data-key="'+s.key+'" data-side="1" oninput="onPoolScore(this)" style="width:80px;justify-self:end;">';
         card+='</div>';
       });
 
@@ -471,17 +470,16 @@ function renderPoolSchedule(){
         card+='<span style="font-size:11px;color:var(--t2);">'+courtName+(m.ref?' | Ref: '+dn(m.ref):'')+'</span>';
         if(winnerLabel) card+='<span style="font-size:11px;font-weight:600;color:var(--ts);">'+winnerLabel+'</span>';
         card+='</div>';
-        card+='<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;padding:8px 12px;border-bottom:.5px solid var(--b3);">';
+        card+='<div style="display:grid;grid-template-columns:1fr 48px 1fr;gap:8px;padding:8px 12px;border-bottom:.5px solid var(--b3);">';
         card+='<span style="font-size:13px;color:var(--ti);">'+dn(m.p1)+'</span>';
         card+='<span style="font-size:12px;color:var(--t3);text-align:center;align-self:center;">vs</span>';
         card+='<span style="font-size:13px;color:var(--tp);text-align:right;">'+dn(m.p2)+'</span>';
         card+='</div>';
         // Single set row
-        card+='<div style="display:grid;grid-template-columns:40px 80px 28px 80px;gap:8px;align-items:center;padding:6px 12px;">';
-        card+='<span style="font-size:10px;font-weight:600;color:var(--ts);text-transform:uppercase;">Set 1</span>';
-        card+='<input type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'" data-key="'+key+'" data-side="0" oninput="onPoolScore(this)" style="max-width:80px;">';
-        card+='<span style="font-size:12px;color:var(--t3);text-align:center;">vs</span>';
-        card+='<input type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'" data-key="'+key+'" data-side="1" oninput="onPoolScore(this)" style="max-width:80px;">';
+        card+='<div style="display:grid;grid-template-columns:1fr 48px 1fr;gap:8px;align-items:center;padding:6px 12px;">';
+        card+='<input type="number" min="0" max="99" class="score-in '+c1+'" value="'+sc.s1+'" data-key="'+key+'" data-side="0" oninput="onPoolScore(this)" style="width:80px;justify-self:start;">';
+        card+='<span style="font-size:10px;font-weight:600;color:var(--ts);text-transform:uppercase;text-align:center;align-self:center;">Set 1</span>';
+        card+='<input type="number" min="0" max="99" class="score-in '+c2+'" value="'+sc.s2+'" data-key="'+key+'" data-side="1" oninput="onPoolScore(this)" style="width:80px;justify-self:end;">';
         card+='</div>';
         card+='</div>';
         rows+=card;
@@ -1159,7 +1157,7 @@ function renderRRSchedule(){
     if(allDone) card+='<span style="font-size:11px;font-weight:600;color:var(--ts);">'+(matchWin1?dn(m.p1):matchWin2?dn(m.p2):'Tie')+'</span>';
     card+='</div>';
 
-    card+='<div style="display:grid;grid-template-columns:1fr 28px 1fr;gap:8px;padding:8px 12px;border-bottom:.5px solid var(--b3);">';
+    card+='<div style="display:grid;grid-template-columns:1fr 48px 1fr;gap:8px;padding:8px 12px;border-bottom:.5px solid var(--b3);">';
     card+='<span style="font-size:13px;font-weight:'+(matchWin1?'600':'400')+';color:'+(matchWin1?'var(--ts)':'var(--ti)')+';">'+dn(m.p1)+'</span>';
     card+='<span style="font-size:12px;color:var(--t3);text-align:center;align-self:center;">vs</span>';
     card+='<span style="font-size:13px;font-weight:'+(matchWin2?'600':'400')+';color:'+(matchWin2?'var(--ts)':'var(--tp)')+';text-align:right;">'+dn(m.p2)+'</span>';
@@ -1167,11 +1165,10 @@ function renderRRSchedule(){
 
     setData.forEach(function(s,si){
       var rowBg=si%2===0?'':'background:var(--bg2);';
-      card+='<div style="display:grid;grid-template-columns:40px 80px 28px 80px;gap:8px;align-items:center;padding:6px 12px;'+rowBg+'border-bottom:.5px solid var(--b3);">';
-      card+='<span style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;">Set '+(si+1)+'</span>';
-      card+='<input type="number" min="0" max="99" class="score-in '+s.c1+'" value="'+s.sc.s1+'" data-key="'+s.key+'" data-side="0" oninput="onRRScore(this)" style="max-width:80px;">';
-      card+='<span style="font-size:12px;color:var(--t3);text-align:center;">vs</span>';
-      card+='<input type="number" min="0" max="99" class="score-in '+s.c2+'" value="'+s.sc.s2+'" data-key="'+s.key+'" data-side="1" oninput="onRRScore(this)" style="max-width:80px;">';
+      card+='<div style="display:grid;grid-template-columns:1fr 48px 1fr;gap:8px;align-items:center;padding:6px 12px;'+rowBg+'border-bottom:.5px solid var(--b3);">';
+      card+='<input type="number" min="0" max="99" class="score-in '+s.c1+'" value="'+s.sc.s1+'" data-key="'+s.key+'" data-side="0" oninput="onRRScore(this)" style="width:80px;justify-self:start;">';
+      card+='<span style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;text-align:center;align-self:center;">Set '+(si+1)+'</span>';
+      card+='<input type="number" min="0" max="99" class="score-in '+s.c2+'" value="'+s.sc.s2+'" data-key="'+s.key+'" data-side="1" oninput="onRRScore(this)" style="width:80px;justify-self:end;">';
       card+='</div>';
     });
     if(rrSets>1&&allDone){
@@ -2584,7 +2581,9 @@ function initKOBRandomMix(){
   tabs.push({id:'lookup',label:'Lookup'});
   tabs.push({id:'teams',label:'Teams'});
   buildTabs(tabs);
-  document.getElementById('page-sub').textContent=sd.sessionLeague
+  document.getElementById('page-sub').textContent=sd.weekLeague
+    ? sd.rounds.reduce(function(m,r){return Math.max(m,r.week);},0)+' weeks . '+(sd.sitoutPlan?sd.sitoutPlan.totalSlots+' slots . ':'')+(sd.allEntries.length/2)+' pairs'
+    : sd.sessionLeague
     ? ((sd.sessionPlan&&sd.sessionPlan.weeks.length)||0)+' weeks . 2 sessions/week . '+(sd.allEntries.length/2)+' pairs'
     : sd.rounds.length+' rounds . '+sd.allEntries.length+' entries . '+(sd.isCoed?'Coed Solo':'Mixed Pairs');
   document.getElementById('tab-mix-schedule').style.display='';
@@ -2606,7 +2605,7 @@ function formatSideNames(members){
 function renderMixSchedule(){
   var sd=SD;
   var roundHtml='';
-  if(sd.sessionLeague){
+  if(sd.sessionLeague||sd.weekLeague){
     // Week / Session / Round navigation. rounds[] is flat; each round carries week+session.
     var cur=sd.rounds[selMixRound]||sd.rounds[0];
     var weekNums=[]; sd.rounds.forEach(function(r){ if(weekNums.indexOf(r.week)<0) weekNums.push(r.week); });
@@ -2625,13 +2624,14 @@ function renderMixSchedule(){
     roundHtml+='</div><div style="display:flex;flex-wrap:wrap;gap:6px;width:100%;">';
     sd.rounds.forEach(function(r,ri){
       if(r.week!==cur.week||r.session!==cur.session) return;
-      roundHtml+='<button class="btn-sm'+(ri===selMixRound?' sel':'')+'" onclick="selMixRound='+ri+';renderMixSchedule()">Round '+r.sessionRound+'</button>';
+      roundHtml+='<button class="btn-sm'+(ri===selMixRound?' sel':'')+'" onclick="selMixRound='+ri+';renderMixSchedule()">'+(sd.weekLeague?'Slot ':'Round ')+r.sessionRound+'</button>';
     });
     roundHtml+='</div>';
+    if(cur.time) roundHtml+='<div style="font-size:12px;color:var(--t2);margin-top:8px;width:100%;">'+cur.time+'</div>';
     // who plays this session
     var wkPlan=(sd.sessionPlan&&sd.sessionPlan.weeks||[]).filter(function(w){return w.week===cur.week;})[0];
     var sessPlan=wkPlan&&wkPlan.sessions.filter(function(x){return x.session===cur.session;})[0];
-    if(sessPlan){
+    if(sessPlan&&!sd.weekLeague){
       var lockedLbl=sd.sessionPlan.locks||{};
       roundHtml+='<div style="font-size:11px;color:var(--t2);margin-top:8px;width:100%;line-height:1.6;"><strong>'+(cur.session==='early'?'Early':'Late')+' session pairs:</strong> '+
         sessPlan.pairs.map(function(p){var q=p.split('|||');return dn(q[0])+'+'+dn(q[1])+(lockedLbl[p]?' \u{1F512}':'');}).join(' &middot; ')+'</div>';
@@ -2903,7 +2903,7 @@ function renderMixStandings(){
   } else {
     filterEl.innerHTML='';
   }
-  if(sd.sessionLeague){
+  if(sd.sessionLeague||sd.weekLeague){
     var wks=[]; sd.rounds.forEach(function(r){ if(wks.indexOf(r.week)<0) wks.push(r.week); });
     filterEl.innerHTML+='<span style="display:inline-block;width:12px"></span>'+
       '<button class="btn-xs'+(!mixStandingsWeek?' sel':'')+'" onclick="mixStandingsWeek=0;renderMixStandings()">Season</button>'+
