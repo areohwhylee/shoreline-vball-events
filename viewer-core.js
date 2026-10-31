@@ -3086,6 +3086,8 @@ function renderTradLeagueSchedule(){
   // Rotating sit-out leagues: show the slot time above, and who sits below
   if(sd.slotTimes&&sd.slotTimes[selTradWeek]&&sd.slotTimes[selTradWeek][selTradRound])
     rows='<div style="font-size:12px;color:var(--t2);margin-bottom:8px;">'+sd.slotTimes[selTradWeek][selTradRound]+'</div>'+rows;
+  if(sd.bookends&&sd.bookends[selTradWeek]&&sd.bookends[selTradWeek].length)
+    rows='<div style="font-size:12px;color:var(--t2);margin-bottom:8px;">Arrive late / leave early this week: <strong>'+sd.bookends[selTradWeek].map(dn).join(' + ')+'</strong> (sit first and last slot)</div>'+rows;
   if(sd.sitting&&sd.sitting[selTradWeek]&&sd.sitting[selTradWeek][selTradRound]&&sd.sitting[selTradWeek][selTradRound].length)
     rows+='<div style="margin-top:10px;padding:8px 12px;font-size:12px;color:var(--t2);font-style:italic;background:var(--bg2);border-radius:var(--rm);border:.5px solid var(--b3);">Sitting out: '+
       sd.sitting[selTradWeek][selTradRound].map(dn).join(', ')+'</div>';
