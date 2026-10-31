@@ -2581,9 +2581,7 @@ function initKOBRandomMix(){
   tabs.push({id:'lookup',label:'Lookup'});
   tabs.push({id:'teams',label:'Teams'});
   buildTabs(tabs);
-  document.getElementById('page-sub').textContent=sd.weekLeague
-    ? sd.rounds.reduce(function(m,r){return Math.max(m,r.week);},0)+' weeks . '+(sd.sitoutPlan?sd.sitoutPlan.totalSlots+' slots . ':'')+(sd.allEntries.length/2)+' pairs'
-    : sd.sessionLeague
+  document.getElementById('page-sub').textContent=sd.sessionLeague
     ? ((sd.sessionPlan&&sd.sessionPlan.weeks.length)||0)+' weeks . 2 sessions/week . '+(sd.allEntries.length/2)+' pairs'
     : sd.rounds.length+' rounds . '+sd.allEntries.length+' entries . '+(sd.isCoed?'Coed Solo':'Mixed Pairs');
   document.getElementById('tab-mix-schedule').style.display='';
@@ -2605,7 +2603,7 @@ function formatSideNames(members){
 function renderMixSchedule(){
   var sd=SD;
   var roundHtml='';
-  if(sd.sessionLeague||sd.weekLeague){
+  if(sd.sessionLeague){
     // Week / Session / Round navigation. rounds[] is flat; each round carries week+session.
     var cur=sd.rounds[selMixRound]||sd.rounds[0];
     var weekNums=[]; sd.rounds.forEach(function(r){ if(weekNums.indexOf(r.week)<0) weekNums.push(r.week); });
@@ -2624,14 +2622,13 @@ function renderMixSchedule(){
     roundHtml+='</div><div style="display:flex;flex-wrap:wrap;gap:6px;width:100%;">';
     sd.rounds.forEach(function(r,ri){
       if(r.week!==cur.week||r.session!==cur.session) return;
-      roundHtml+='<button class="btn-sm'+(ri===selMixRound?' sel':'')+'" onclick="selMixRound='+ri+';renderMixSchedule()">'+(sd.weekLeague?'Slot ':'Round ')+r.sessionRound+'</button>';
+      roundHtml+='<button class="btn-sm'+(ri===selMixRound?' sel':'')+'" onclick="selMixRound='+ri+';renderMixSchedule()">Round '+r.sessionRound+'</button>';
     });
     roundHtml+='</div>';
-    if(cur.time) roundHtml+='<div style="font-size:12px;color:var(--t2);margin-top:8px;width:100%;">'+cur.time+'</div>';
     // who plays this session
     var wkPlan=(sd.sessionPlan&&sd.sessionPlan.weeks||[]).filter(function(w){return w.week===cur.week;})[0];
     var sessPlan=wkPlan&&wkPlan.sessions.filter(function(x){return x.session===cur.session;})[0];
-    if(sessPlan&&!sd.weekLeague){
+    if(sessPlan){
       var lockedLbl=sd.sessionPlan.locks||{};
       roundHtml+='<div style="font-size:11px;color:var(--t2);margin-top:8px;width:100%;line-height:1.6;"><strong>'+(cur.session==='early'?'Early':'Late')+' session pairs:</strong> '+
         sessPlan.pairs.map(function(p){var q=p.split('|||');return dn(q[0])+'+'+dn(q[1])+(lockedLbl[p]?' \u{1F512}':'');}).join(' &middot; ')+'</div>';
@@ -2903,7 +2900,7 @@ function renderMixStandings(){
   } else {
     filterEl.innerHTML='';
   }
-  if(sd.sessionLeague||sd.weekLeague){
+  if(sd.sessionLeague){
     var wks=[]; sd.rounds.forEach(function(r){ if(wks.indexOf(r.week)<0) wks.push(r.week); });
     filterEl.innerHTML+='<span style="display:inline-block;width:12px"></span>'+
       '<button class="btn-xs'+(!mixStandingsWeek?' sel':'')+'" onclick="mixStandingsWeek=0;renderMixStandings()">Season</button>'+
@@ -2987,7 +2984,7 @@ function initTraditionalLeague(){
   var matchesPerRound=Math.floor(sd.teams.length/2);
   document.getElementById('page-sub').textContent=
     sd.teams.length+' teams . '+sd.weeks+'w . '+
-    sd.roundsPerWeek+'r/w . '+sd.courts.length+' court'+(sd.courts.length!==1?'s':'');
+    (sd.sitoutPlan?sd.sitoutPlan.totalSlots+' slots . ':sd.roundsPerWeek+'r/w . ')+sd.courts.length+' court'+(sd.courts.length!==1?'s':'');
   document.getElementById('tab-trad-lg-schedule').style.display='';
   if(sd.warnings&&sd.warnings.length){
     var note=document.createElement('div');
@@ -3009,9 +3006,10 @@ function renderTradLeagueSchedule(){
 
   // Round buttons
   var rb='';
-  for(var r=0;r<sd.roundsPerWeek;r++)
+  var nTR=(sd.sched[selTradWeek]&&sd.sched[selTradWeek].length)||sd.roundsPerWeek;
+  for(var r=0;r<nTR;r++)
     rb+='<button class="btn-xs'+(r===selTradRound?' sel':'')+
-      '" onclick="selTradRound='+r+';renderTradLeagueSchedule()">Round '+(r+1)+'</button>';
+      '" onclick="selTradRound='+r+';renderTradLeagueSchedule()">'+(sd.slotTimes?'Slot ':'Round ')+(r+1)+'</button>';
   document.getElementById('trad-round-btns').innerHTML=rb;
 
   var round=sd.sched[selTradWeek][selTradRound];
@@ -3085,6 +3083,12 @@ function renderTradLeagueSchedule(){
         '</div>'+setRows;
     }
   });
+  // Rotating sit-out leagues: show the slot time above, and who sits below
+  if(sd.slotTimes&&sd.slotTimes[selTradWeek]&&sd.slotTimes[selTradWeek][selTradRound])
+    rows='<div style="font-size:12px;color:var(--t2);margin-bottom:8px;">'+sd.slotTimes[selTradWeek][selTradRound]+'</div>'+rows;
+  if(sd.sitting&&sd.sitting[selTradWeek]&&sd.sitting[selTradWeek][selTradRound]&&sd.sitting[selTradWeek][selTradRound].length)
+    rows+='<div style="margin-top:10px;padding:8px 12px;font-size:12px;color:var(--t2);font-style:italic;background:var(--bg2);border-radius:var(--rm);border:.5px solid var(--b3);">Sitting out: '+
+      sd.sitting[selTradWeek][selTradRound].map(dn).join(', ')+'</div>';
   document.getElementById('trad-lg-table').innerHTML=rows;
   storeSave();
   updateTradLgProgress();
