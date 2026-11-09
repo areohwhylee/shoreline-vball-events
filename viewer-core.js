@@ -182,6 +182,7 @@ function initNameMap(){
 
 /* -- Tabs -- */
 function buildTabs(tabDefs){
+  setTimeout(tmDecorate,0);
   var h='';
   tabDefs.forEach(function(t,i){
     h+='<button class="tab'+(i===0?' active':'')+'" onclick="switchTab(\''+t.id+'\')">'+t.label+'</button>';
@@ -265,15 +266,40 @@ function initKOBLeague(){
   document.getElementById('tab-schedule').style.display='';
   renderLgSchedule();
 }
+
+// ── Dates & times for every format (sd.timing = {dates:{'1':'YYYY-MM-DD'}, start:'HH:MM', roundMinutes:N}); weekly formats key dates by week number, single-day formats use '1' ──
+function tmDate(i,long){ var t=SD.timing; return (t&&t.dates&&t.dates[i+1])?slFmtDate(t.dates[i+1],long):''; }
+function tmStart(ri){ var t=SD.timing; if(!t||!t.start) return ''; return slFmtTime(t.start,ri*(parseInt(t.roundMinutes)||0)); }
+function tmRange(ri){
+  var t=SD.timing; if(!t||!t.start) return '';
+  var m=parseInt(t.roundMinutes)||0, a=tmStart(ri);
+  return m? a+' \u2013 '+slFmtTime(t.start,ri*m+m) : a;
+}
+function tmLine(day,ri){
+  var p=[tmDate(day,true), ri==null?'':tmRange(ri)].filter(Boolean);
+  return p.length?'<div style="font-size:13px;font-weight:600;margin:0 0 8px;">'+p.join(' \u00b7 ')+'</div>':'';
+}
+function tmDecorate(){
+  var el=document.getElementById('page-sub'); if(!el||el.getAttribute('data-tm')) return;
+  var t=SD.timing||SD.leagueSchedule||SD.sessionSchedule; if(!t) return;
+  var ds=Object.keys(t.dates||{}).map(function(k){return t.dates[k];}).filter(Boolean).sort();
+  var st=t.start||(t.early&&t.early.start)||'';
+  var parts=[];
+  if(ds.length) parts.push(ds.length>1&&ds[0]!==ds[ds.length-1]? slFmtDate(ds[0])+' \u2013 '+slFmtDate(ds[ds.length-1]) : slFmtDate(ds[0],true));
+  if(st) parts.push((t.early&&!t.start?'from ':'')+slFmtTime(st,0));
+  if(!parts.length) return;
+  el.textContent+=' . '+parts.join(' \u00b7 '); el.setAttribute('data-tm','1');
+}
+
 function renderLgSchedule(){
   var sd=SD;
   var weeks=sd.weeks||sd.sched.length;
   var roundsPerWeek=sd.roundsPerWeek||sd.sched[0].length;
   var wb='';
-  for(var w=0;w<weeks;w++) wb+='<button class="btn-sm'+(w===selWeek?' sel':'')+'" onclick="selWeek='+w+';selLgRound=0;renderLgSchedule()">Week '+(w+1)+'</button>';
+  for(var w=0;w<weeks;w++) wb+='<button class="btn-sm'+(w===selWeek?' sel':'')+'" onclick="selWeek='+w+';selLgRound=0;renderLgSchedule()">Week '+(w+1)+(tmDate(w)?' \u00b7 '+tmDate(w):'')+'</button>';
   document.getElementById('week-btns').innerHTML=wb;
   var rb='';
-  for(var r=0;r<roundsPerWeek;r++) rb+='<button class="btn-xs'+(r===selLgRound?' sel':'')+'" onclick="selLgRound='+r+';renderLgSchedule()">Round '+(r+1)+'</button>';
+  for(var r=0;r<roundsPerWeek;r++) rb+='<button class="btn-xs'+(r===selLgRound?' sel':'')+'" onclick="selLgRound='+r+';renderLgSchedule()">Round '+(r+1)+(tmStart(r)?' \u00b7 '+tmStart(r):'')+'</button>';
   document.getElementById('round-btns').innerHTML=rb;
   var round=sd.sched[selWeek][selLgRound];
   var rows='<div class="net-table"><div class="net-head"><span>Net</span><span>Pair 1</span><span style="text-align:center">Score</span><span></span><span style="text-align:center">Score</span><span>Pair 2</span></div>';
@@ -302,7 +328,7 @@ function renderLgSchedule(){
       +'</div>';
   }
   rows+='</div>';
-  document.getElementById('net-table').innerHTML=rows;
+  document.getElementById('net-table').innerHTML=tmLine(selWeek,selLgRound)+rows;
   updateLgProgress();
 }
 function onLgScore(input){
@@ -487,7 +513,7 @@ function renderPoolSchedule(){
     });
   }
   rows+='</div>';
-  document.getElementById('pool-table').innerHTML=rows;
+  document.getElementById('pool-table').innerHTML=(SD.timing&&(SD.timing.start||tmDate(0))?'<div style="font-size:13px;font-weight:600;margin:0 0 8px;">'+[tmDate(0,true),SD.timing.start?'Pool play starts '+tmStart(0):''].filter(Boolean).join(' \u00b7 ')+'</div>':'')+rows;
   updatePoolProgress();
 }
 function onPoolScore(input){
@@ -1120,7 +1146,7 @@ function renderRRSchedule(){
   var rounds=sd.rrRounds;
   var rb='';
   rounds.forEach(function(r,ri){
-    rb+='<button class="btn-sm'+(ri===selRRRound?' sel':'')+'" onclick="selRRRound='+ri+';renderRRSchedule()">Round '+(ri+1)+'</button>';
+    rb+='<button class="btn-sm'+(ri===selRRRound?' sel':'')+'" onclick="selRRRound='+ri+';renderRRSchedule()">Round '+(ri+1)+(tmStart(ri)?' \u00b7 '+tmStart(ri):'')+'</button>';
   });
   document.getElementById('rr-round-btns').innerHTML=rb;
 
@@ -1184,7 +1210,7 @@ function renderRRSchedule(){
       'Sitting out this round: '+round.sitting.map(dn).join(', ')+'</div>';
   }
 
-  document.getElementById('rr-table').innerHTML=rows;
+  document.getElementById('rr-table').innerHTML=tmLine(0,selRRRound)+rows;
   updateRRProgress();
 }
 
@@ -1425,7 +1451,54 @@ function renderLookup(){
   if(fmt==='kob_league') renderLgLookup(val);
   else if(fmt==='traditional_league') renderTradLeagueLookup(val);
   else if(fmt==='kob_quads') renderQuadsLookup(val);
+  else if(fmt==='kob_random_mix') renderMixLookup(val);
   else renderTournLookup(val);
+}
+function renderMixLookup(name){
+  var sd=SD, sl=!!sd.sessionLeague, groups=[], cur=null, w=0, l=0, pf=0, pa=0, played=0, todo=0;
+  sd.rounds.forEach(function(r,ri){
+    r.matches.forEach(function(m,mi){
+      if(m.isBye){ if((m.p1||[]).indexOf(name)>=0){ pushRow(r,ri,{note:'Bye'}); } return; }
+      var onP1=m.p1.indexOf(name)>=0, onP2=m.p2.indexOf(name)>=0;
+      if(!onP1&&!onP2) return;
+      var side=onP1?m.p1:m.p2, opp=onP1?m.p2:m.p1;
+      var sc=scores['r'+ri+'-m'+mi]||{s1:'',s2:''}, a=parseInt(onP1?sc.s1:sc.s2), b=parseInt(onP1?sc.s2:sc.s1);
+      var has=sc.s1!==''&&sc.s2!==''&&!isNaN(a)&&!isNaN(b);
+      if(has){ played++; pf+=a; pa+=b; if(a>b) w++; else if(b>a) l++; } else todo++;
+      pushRow(r,ri,{mates:side.filter(function(x){return x!==name;}), opp:opp, court:m.court||'', has:has, a:a, b:b});
+    });
+  });
+  function pushRow(r,ri,row){
+    var key=sl?(r.week+'|'+r.session):'all';
+    if(!cur||cur.key!==key){ cur={key:key, week:r.week, session:r.session, rows:[]}; groups.push(cur); }
+    row.r=r; row.ri=ri; cur.rows.push(row);
+  }
+  var html='<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px;margin-bottom:10px;">'+
+    '<div style="font-size:16px;font-weight:600;color:var(--ti);">'+dn(name)+'</div>'+
+    '<div style="font-size:12px;color:var(--t2);">'+w+'–'+l+' &middot; points '+pf+'–'+pa+' &middot; '+played+' played &middot; '+todo+' to go</div></div><div class="lk-wrap">';
+  if(!groups.length) html+='<div style="padding:12px;font-size:13px;color:var(--t2);">No matches found for this player.</div>';
+  groups.forEach(function(g){
+    if(sl){
+      var d=slWeekDate(g.week,true);
+      html+='<div style="padding:8px 10px;background:var(--bg2);font-size:12px;font-weight:600;color:var(--t2);border-top:.5px solid var(--b3);">Week '+g.week+(d?' · '+d:'')+' · '+(g.session==='early'?'Early':'Late')+' session'+(slSessionRange(g.session)?' ('+slSessionRange(g.session)+')':'')+'</div>';
+    }
+    g.rows.forEach(function(it){
+      var r=it.r, label=sl?('Round '+r.sessionRound):('Round '+r.round);
+      var tm=sl?slRoundTime(r.session,r.sessionRound):tmStart(it.ri);
+      var top=(tm?tm+' · ':'')+label+(it.court?' · '+it.court:'');
+      var left, right='';
+      if(it.note){ left='<div style="font-size:11px;color:var(--t3);">'+top+'</div><div style="font-style:italic;color:var(--t2);font-size:13px;">'+it.note+'</div>'; }
+      else {
+        left='<div style="font-size:11px;color:var(--t3);">'+top+'</div>'+
+          '<div style="font-size:13px;"><span style="color:var(--t3);font-size:12px;">with</span> <span class="pa">'+it.mates.map(dn).join(' + ')+'</span></div>'+
+          '<div style="font-size:13px;"><span style="color:var(--t3);font-size:12px;">vs</span> <span class="pb">'+it.opp.map(dn).join(' + ')+'</span></div>';
+        if(it.has){ var col=it.a>it.b?'var(--ts)':it.a<it.b?'var(--tw)':'var(--t2)'; right='<span style="color:'+col+'">'+it.a+'–'+it.b+'</span>'; }
+        else right='<span style="font-size:12px;color:var(--t3);">Upcoming</span>';
+      }
+      html+='<div class="lk-row" style="display:flex;grid-template-columns:none;justify-content:space-between;align-items:center;gap:12px;padding:8px 10px;"><div style="min-width:0;">'+left+'</div><div style="text-align:right;font-family:var(--mono);font-size:13px;white-space:nowrap;">'+right+'</div></div>';
+    });
+  });
+  document.getElementById('lookup-res').innerHTML=html+'</div>';
 }
 function renderLgLookup(val){
   var parts=val.split('|'),name=parts[0],grp=parts[1];
@@ -2194,7 +2267,7 @@ function renderQuadsSchedule(){
   //    Round tabs                                                             
   var rtHtml='';
   rqRounds.forEach(function(r,ri){
-    var lbl=r.isFinal?'Finals':(ri===0?'Round 1':'Round '+(ri+1));
+    var lbl=r.isFinal?'Finals':(ri===0?'Round 1':'Round '+(ri+1))+(tmStart(ri)?' \u00b7 '+tmStart(ri):'');
     rtHtml+='<button class="btn-sm'+(ri===rqSelRound?' sel':'')+
       '" onclick="rqSelRound='+ri+';rqSelPool=0;renderQuadsSchedule()">'+lbl+'</button>';
   });
@@ -2272,7 +2345,7 @@ function renderQuadsSchedule(){
     '</div>';
   });
   rows+='</div>';
-  document.getElementById('quads-table').innerHTML=rows;
+  document.getElementById('quads-table').innerHTML=(currentRound.isFinal?tmLine(0,null):tmLine(0,rqSelRound))+rows;
 
   //    Pool composition display (admin)                                      
   rqRenderPoolEditor();
@@ -2665,8 +2738,9 @@ function renderMixSchedule(){
   } else {
     sd.rounds.forEach(function(r,ri){
       roundHtml+='<button class="btn-sm'+(ri===selMixRound?' sel':'')+
-        '" onclick="selMixRound='+ri+';renderMixSchedule()">Round '+r.round+'</button>';
+        '" onclick="selMixRound='+ri+';renderMixSchedule()">Round '+r.round+(tmStart(ri)?' \u00b7 '+tmStart(ri):'')+'</button>';
     });
+    roundHtml+=tmLine(0,selMixRound);
   }
   document.getElementById('mix-round-btns').innerHTML=roundHtml;
 
@@ -3024,13 +3098,29 @@ function initTraditionalLeague(){
   renderTradLeagueSchedule();
 }
 
+
+// ── Traditional League dates & times (sd.leagueSchedule = {dates:{'1':'YYYY-MM-DD'}, start:'HH:MM', roundMinutes:N}) ──
+function tlWeekDate(wi,long){ var s=SD.leagueSchedule; return (s&&s.dates&&s.dates[wi+1])?slFmtDate(s.dates[wi+1],long):''; }
+function tlSlotStart(wi,ri){
+  var s=SD.leagueSchedule; if(!s||!s.start) return '';
+  return slFmtTime(s.start,ri*(parseInt(s.roundMinutes)||0));
+}
+function tlSlotTime(wi,ri){
+  var s=SD.leagueSchedule;
+  if(s&&s.start){
+    var mins=parseInt(s.roundMinutes)||0, a=tlSlotStart(wi,ri);
+    return mins? a+' \u2013 '+slFmtTime(s.start,ri*mins+mins) : a;
+  }
+  return (SD.slotTimes&&SD.slotTimes[wi]&&SD.slotTimes[wi][ri])||'';
+}
+
 function renderTradLeagueSchedule(){
   var sd=SD;
   // Week buttons
   var wb='';
   for(var w=0;w<sd.weeks;w++)
     wb+='<button class="btn-sm'+(w===selTradWeek?' sel':'')+
-      '" onclick="selTradWeek='+w+';selTradRound=0;renderTradLeagueSchedule()">Week '+(w+1)+'</button>';
+      '" onclick="selTradWeek='+w+';selTradRound=0;renderTradLeagueSchedule()">Week '+(w+1)+(tlWeekDate(w)?' \u00b7 '+tlWeekDate(w):'')+'</button>';
   document.getElementById('trad-week-btns').innerHTML=wb;
 
   // Round buttons
@@ -3038,7 +3128,7 @@ function renderTradLeagueSchedule(){
   var nTR=(sd.sched[selTradWeek]&&sd.sched[selTradWeek].length)||sd.roundsPerWeek;
   for(var r=0;r<nTR;r++)
     rb+='<button class="btn-xs'+(r===selTradRound?' sel':'')+
-      '" onclick="selTradRound='+r+';renderTradLeagueSchedule()">'+(sd.slotTimes?'Slot ':'Round ')+(r+1)+'</button>';
+      '" onclick="selTradRound='+r+';renderTradLeagueSchedule()">'+(sd.slotTimes?'Slot ':'Round ')+(r+1)+(tlSlotStart(selTradWeek,r)?' \u00b7 '+tlSlotStart(selTradWeek,r):'')+'</button>';
   document.getElementById('trad-round-btns').innerHTML=rb;
 
   var round=sd.sched[selTradWeek][selTradRound];
@@ -3113,8 +3203,9 @@ function renderTradLeagueSchedule(){
     }
   });
   // Rotating sit-out leagues: show the slot time above, and who sits below
-  if(sd.slotTimes&&sd.slotTimes[selTradWeek]&&sd.slotTimes[selTradWeek][selTradRound])
-    rows='<div style="font-size:12px;color:var(--t2);margin-bottom:8px;">'+sd.slotTimes[selTradWeek][selTradRound]+'</div>'+rows;
+  var _tl=[tlWeekDate(selTradWeek,true), tlSlotTime(selTradWeek,selTradRound)].filter(Boolean);
+  if(_tl.length)
+    rows='<div style="font-size:13px;font-weight:600;margin-bottom:8px;">'+_tl.join(' \u00b7 ')+'</div>'+rows;
   if(sd.bookends&&sd.bookends[selTradWeek]&&sd.bookends[selTradWeek].length)
     rows='<div style="font-size:12px;color:var(--t2);margin-bottom:8px;">Arrive late / leave early this week: <strong>'+sd.bookends[selTradWeek].map(dn).join(' + ')+'</strong> (sit first and last slot)</div>'+rows;
   if(sd.sitting&&sd.sitting[selTradWeek]&&sd.sitting[selTradWeek][selTradRound]&&sd.sitting[selTradWeek][selTradRound].length)
@@ -3249,38 +3340,65 @@ function renderTradLeagueStandings(){
 }
 
 function renderTradLeagueLookup(name){
-  var sd=SD, rows=[];
+  var sd=SD, numSets=(sd.scoring&&sd.scoring.numSets>1)?sd.scoring.numSets:1, weeks=[], sw=0, sl=0, mp=0, todo=0;
   sd.sched.forEach(function(week,wi){
+    var items=[];
     week.forEach(function(round,ri){
+      var found=null, bye=false;
       round.forEach(function(m,mi){
-        if(m.isBye) return;
+        if(m.isBye){ if(m.p1===name||m.p2===name) bye=true; return; }
         if(m.p1!==name&&m.p2!==name) return;
-        var sc=scores['tl-w'+wi+'-r'+ri+'-m'+mi];
-        var opp=m.p1===name?m.p2:m.p1;
-        var mySc=null,oppSc=null;
-        if(sc&&sc.s1!==''&&sc.s2!==''){
-          mySc=m.p1===name?parseInt(sc.s1):parseInt(sc.s2);
-          oppSc=m.p1===name?parseInt(sc.s2):parseInt(sc.s1);
+        var mine=(m.p1===name), sets=[];
+        for(var si=0;si<numSets;si++){
+          var sc=scores['tl-w'+wi+'-r'+ri+'-m'+mi+(numSets>1?'-s'+si:'')];
+          if(!sc||sc.s1===''||sc.s2===''||sc.s1==null||sc.s2==null) continue;
+          var a=parseInt(sc.s1), b=parseInt(sc.s2); if(isNaN(a)||isNaN(b)) continue;
+          sets.push(mine?[a,b]:[b,a]);
         }
-        rows.push({label:'W'+(wi+1)+' R'+(ri+1),opp:opp,mySc:mySc,oppSc:oppSc});
+        found={ri:ri, opp:mine?m.p2:m.p1, sets:sets, court:(sd.courts&&sd.courts[m.court])?sd.courts[m.court].name:''};
       });
+      if(found){
+        found.sets.forEach(function(s){ if(s[0]>s[1]) sw++; else if(s[1]>s[0]) sl++; });
+        if(found.sets.length) mp++; else todo++;
+        items.push(found);
+      } else if(bye) items.push({ri:ri, note:'Bye'});
+      else if(sd.sitting&&sd.sitting[wi]&&sd.sitting[wi][ri]&&sd.sitting[wi][ri].indexOf(name)>=0) items.push({ri:ri, note:'Sitting out'});
     });
+    weeks.push({wi:wi, items:items});
   });
-  var html='<div class="lk-wrap"><div class="lk-head" style="grid-template-columns:80px 1fr 28px 1fr 80px 1fr">'+
-    '<span>Round</span><span>Team</span><span></span><span>Opponent</span><span>Result</span><span></span></div>';
-  rows.forEach(function(r,i){
-    var resHtml='<span style="color:var(--t3)">-</span>';
-    if(r.mySc!==null&&!isNaN(r.mySc)){
-      var win=r.mySc>r.oppSc;
-      var col=win?'var(--ts)':r.mySc<r.oppSc?'var(--tw)':'var(--t2)';
-      resHtml='<span style="font-family:var(--mono);font-size:12px;color:'+col+'">'+r.mySc+'-'+r.oppSc+'</span>';
-    }
-    html+='<div class="lk-row'+(i%2?' alt':'')+'" style="grid-template-columns:80px 1fr 28px 1fr 80px 1fr">'+
-      '<span style="font-size:12px;color:var(--t2)">'+r.label+'</span>'+
-      '<span class="pair"><span class="pa">'+dn(name)+'</span></span>'+
-      '<span class="vsc">vs</span>'+
-      '<span class="pair"><span class="pb">'+dn(r.opp)+'</span></span>'+
-      resHtml+'<span></span></div>';
+  var wlabel=sd.slotTimes?'Slot ':'Round ';
+  var html='<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px;margin-bottom:10px;">'+
+    '<div style="font-size:16px;font-weight:600;color:var(--ti);">'+dn(name)+'</div>'+
+    '<div style="font-size:12px;color:var(--t2);">Sets '+sw+'\u2013'+sl+' &middot; '+mp+' played &middot; '+todo+' to go</div></div>';
+  html+='<div class="lk-wrap">';
+  weeks.forEach(function(wk){
+    if(!wk.items.length) return;
+    var d=tlWeekDate(wk.wi,true);
+    var be=(sd.bookends&&sd.bookends[wk.wi]&&sd.bookends[wk.wi].indexOf(name)>=0)?' <span style="font-weight:400;color:var(--tw);">\u00b7 arrive late / leave early</span>':'';
+    html+='<div style="padding:8px 10px;background:var(--bg2);font-size:12px;font-weight:600;color:var(--t2);border-top:.5px solid var(--b3);">Week '+(wk.wi+1)+(d?' \u00b7 '+d:'')+be+'</div>';
+    wk.items.forEach(function(it){
+      var tm=tlSlotTime(wk.wi,it.ri), top=(tm?tm+' \u00b7 ':'')+wlabel+(it.ri+1)+(it.court?' \u00b7 '+it.court:'');
+      var left, right='';
+      if(it.note){
+        left='<div style="font-size:11px;color:var(--t3);">'+top+'</div><div style="font-style:italic;color:var(--t2);font-size:13px;">'+it.note+'</div>';
+      } else {
+        left='<div style="font-size:11px;color:var(--t3);">'+top+'</div><div><span style="color:var(--t3);font-size:12px;">vs</span> <span class="pb" style="font-size:14px;">'+dn(it.opp)+'</span></div>';
+        if(it.sets.length){
+          var w1=0,w2=0;
+          right=it.sets.map(function(s){
+            if(s[0]>s[1]) w1++; else if(s[1]>s[0]) w2++;
+            var col=s[0]>s[1]?'var(--ts)':s[0]<s[1]?'var(--tw)':'var(--t2)';
+            return '<span style="color:'+col+'">'+s[0]+'\u2013'+s[1]+'</span>';
+          }).join('<span style="color:var(--t3)"> &middot; </span>');
+          if(numSets>1){
+            var done=it.sets.length===numSets;
+            right+='<div style="font-size:11px;color:var(--t2);font-family:var(--sans,inherit);">'+(done?(w1>w2?'Won ':w2>w1?'Lost ':'Split ')+w1+'\u2013'+w2:'In progress')+'</div>';
+          }
+        } else right='<span style="font-size:12px;color:var(--t3);">Upcoming</span>';
+      }
+      html+='<div class="lk-row" style="display:flex;grid-template-columns:none;justify-content:space-between;align-items:center;gap:12px;padding:8px 10px;">'+
+        '<div style="min-width:0;">'+left+'</div><div style="text-align:right;font-family:var(--mono);font-size:13px;white-space:nowrap;">'+right+'</div></div>';
+    });
   });
   document.getElementById('lookup-res').innerHTML=html+'</div>';
 }

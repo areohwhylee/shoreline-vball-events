@@ -202,6 +202,7 @@ async function loadEvents(){
       '<div class="ev-actions">'+
         '<span class="tag">'+(ev.is_public?'Public':'Private')+'</span>'+
         (ev.format==='kob_league'?'<button class="btn btn-ghost" onclick="openSeasonModal(\''+ev.id+'\')">Season</button>':'')+
+        '<button class="btn btn-ghost" onclick="openTimingModal(\''+ev.id+'\')">Dates &amp; times</button>'+
         (ev.format==='kob_random_mix'?'<button class="btn btn-ghost" onclick="openMixModal(\''+ev.id+'\')">Rounds / Weeks</button>':'')+
         (ev.format==='traditional_tournament'?'<button class="btn btn-ghost" onclick="openRosterModal(\''+ev.id+'\')">Roster</button>':'')+
         '<button class="btn btn-ghost" onclick="openRegModal(\''+ev.id+'\')">Registrations</button>'+
@@ -1807,6 +1808,86 @@ async function slSaveSchedule(){
     roundMinutes:parseInt(document.getElementById('sl-t-min').value)||0};
   sd.sessionSchedule=sch;
   if(await slSave(sd)){ alert('Dates & times saved.'); renderMixModal(); }
+}
+
+
+// ── Dates & times for every format (routes league types to their own editors) ──
+async function openTimingModal(eventId){
+  mixEventId=eventId;
+  document.getElementById('mix-title').textContent='Dates & times — '+((eventsMap[eventId]||{}).title||'');
+  document.getElementById('mix-body').innerHTML='<p class="msg">Loading...</p>';
+  document.getElementById('mix-modal').classList.add('show');
+  var {data:row,error}=await sb.from('events').select('sd_json').eq('id',eventId).single();
+  if(error||!row){ document.getElementById('mix-body').innerHTML='<p class="msg">Could not load event.</p>'; return; }
+  var sd=row.sd_json;
+  if(sd.sessionLeague){ document.getElementById('mix-title').textContent='Weeks — '+((eventsMap[eventId]||{}).title||''); await loadMixData(); return; }
+  if(sd.format==='traditional_league'){ await openLeagueTimes(eventId); return; }
+  mixSD=sd;
+  var weekly=(sd.format==='kob_league'), n=weekly?(sd.weeks||(sd.sched||[]).length||1):1, t=sd.timing||{dates:{}};
+  var html='<p class="msg" style="text-align:left;">Shown on the viewer: '+(weekly?'a date on each week and ':'the event date and ')+'a time on each round.</p>'+
+    '<div style="display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;font-size:13px;margin-bottom:10px;">'+
+    '<label>First round starts at</label><input type="time" id="tm-start" value="'+(t.start||'')+'" style="width:120px;">'+
+    '<label>Minutes per round</label><input type="number" id="tm-min" min="1" max="180" value="'+(t.roundMinutes||'')+'" style="width:80px;"></div>'+
+    '<div style="display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;font-size:13px;">';
+  for(var w=1;w<=n;w++) html+='<label>'+(weekly?'Week '+w+' date':'Event date')+'</label><input type="date" id="tm-d-'+w+'" value="'+((t.dates||{})[w]||'')+'">';
+  html+='</div><div class="season-actions" style="margin-top:12px;gap:8px;flex-wrap:wrap;"><button class="btn btn-green" onclick="saveTiming('+n+')">Save dates &amp; times</button>'+
+    (weekly?'<button class="btn btn-ghost" onclick="fillTimingWeekly('+n+')">Fill later weeks (+7 days from Week 1)</button>':'')+'</div>';
+  document.getElementById('mix-body').innerHTML=html;
+}
+function fillTimingWeekly(n){
+  var first=document.getElementById('tm-d-1').value;
+  if(!first){ alert('Enter the Week 1 date first.'); return; }
+  var p=first.split('-');
+  for(var w=1;w<=n;w++){
+    var d=new Date(+p[0],+p[1]-1,+p[2]+7*(w-1));
+    document.getElementById('tm-d-'+w).value=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
+  }
+}
+async function saveTiming(n){
+  var sd=mixSD, dates={};
+  for(var w=1;w<=n;w++){ var v=document.getElementById('tm-d-'+w).value; if(v) dates[w]=v; }
+  sd.timing={dates:dates, start:document.getElementById('tm-start').value||'', roundMinutes:parseInt(document.getElementById('tm-min').value)||0};
+  var {error}=await sb.from('events').update({sd_json:sd}).eq('id',mixEventId);
+  if(error){ alert('Failed to save: '+error.message); return; }
+  alert('Dates & times saved.');
+}
+// ── Traditional League dates & times ──
+async function openLeagueTimes(eventId){
+  mixEventId=eventId;
+  document.getElementById('mix-title').textContent='Dates & times — '+((eventsMap[eventId]||{}).title||'');
+  document.getElementById('mix-body').innerHTML='<p class="msg">Loading...</p>';
+  document.getElementById('mix-modal').classList.add('show');
+  var {data:row,error}=await sb.from('events').select('sd_json').eq('id',eventId).single();
+  if(error||!row){ document.getElementById('mix-body').innerHTML='<p class="msg">Could not load event.</p>'; return; }
+  mixSD=row.sd_json;
+  var sd=mixSD, sch=sd.leagueSchedule||{dates:{}}, cfg=sd.config||{};
+  var start=sch.start||cfg['tl-start']||cfg['tl-cstart']||'', mins=sch.roundMinutes||cfg['tl-minutes']||cfg['tl-cmin']||'';
+  var html='<p class="msg" style="text-align:left;">Shown on the viewer: a date on each week, and a time on each round/slot.</p>'+
+    '<div style="display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;font-size:13px;margin-bottom:10px;">'+
+    '<label>First slot starts at</label><input type="time" id="lt-start" value="'+start+'" style="width:120px;">'+
+    '<label>Minutes per round / slot</label><input type="number" id="lt-min" min="1" max="180" value="'+mins+'" style="width:80px;"></div>'+
+    '<div style="display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;font-size:13px;">';
+  for(var w=1;w<=sd.weeks;w++) html+='<label>Week '+w+' date</label><input type="date" id="lt-d-'+w+'" value="'+((sch.dates||{})[w]||'')+'">';
+  html+='</div><div class="season-actions" style="margin-top:12px;gap:8px;flex-wrap:wrap;"><button class="btn btn-green" onclick="saveLeagueTimes()">Save dates &amp; times</button>'+
+    '<button class="btn btn-ghost" onclick="fillLeagueWeekly()">Fill later weeks (+7 days from Week 1)</button></div>';
+  document.getElementById('mix-body').innerHTML=html;
+}
+function fillLeagueWeekly(){
+  var first=document.getElementById('lt-d-1').value;
+  if(!first){ alert('Enter the Week 1 date first.'); return; }
+  var p=first.split('-');
+  for(var w=1;w<=mixSD.weeks;w++){
+    var d=new Date(+p[0],+p[1]-1,+p[2]+7*(w-1));
+    document.getElementById('lt-d-'+w).value=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
+  }
+}
+async function saveLeagueTimes(){
+  var sd=mixSD, dates={};
+  for(var w=1;w<=sd.weeks;w++){ var v=document.getElementById('lt-d-'+w).value; if(v) dates[w]=v; }
+  sd.leagueSchedule={dates:dates, start:document.getElementById('lt-start').value||'', roundMinutes:parseInt(document.getElementById('lt-min').value)||0};
+  var {error}=await sb.from('events').update({sd_json:sd}).eq('id',mixEventId);
+  if(error){ alert('Failed to save: '+error.message); return; }
+  alert('Dates & times saved.');
 }
 async function slSaveLocks(){
   var sd=mixSD, pairs=slAllPairs(sd), locks={}, nE=0, nL=0;
