@@ -1575,10 +1575,90 @@ function renderTournLookup(name){
 /* =======================================================
    EXPORT
 ======================================================= */
+
+// ── Excel export for Random Mix / Two-Session, Traditional League and Quads ──
+function _xlSave(wb){ var t=(SD.title||'event').replace(/[^\w\- ]+/g,'').trim()||'event'; XLSX.writeFile(wb,t+' - schedule.xlsx'); }
+function _xlWin(a,b){ return (a===''||b===''||isNaN(a)||isNaN(b))?'':(a>b?1:(b>a?2:0)); }
+function exportMixXLSX(){
+  var sd=SD, sl=!!sd.sessionLeague, wb=XLSX.utils.book_new();
+  var hdr=sl?['Week','Date','Session','Round','Time','Court','Side 1','Score 1','Score 2','Side 2']:['Round','Time','Court','Side 1','Score 1','Score 2','Side 2'];
+  var aoa=[hdr];
+  sd.rounds.forEach(function(r,ri){
+    r.matches.forEach(function(m,mi){
+      if(m.isBye){ return; }
+      var sc=scores['r'+ri+'-m'+mi]||{s1:'',s2:''};
+      var a=sc.s1!==''?parseInt(sc.s1):'', b=sc.s2!==''?parseInt(sc.s2):'';
+      var s1=formatSideNames(m.p1), s2=formatSideNames(m.p2);
+      if(sl) aoa.push([r.week, slWeekDate(r.week,true)||'', r.session==='early'?'Early':'Late', r.sessionRound, slRoundTime(r.session,r.sessionRound)||'', m.court||'', s1, a, b, s2]);
+      else aoa.push([r.round, tmStart(ri)||'', m.court||'', s1, a, b, s2]);
+    });
+  });
+  var ws=XLSX.utils.aoa_to_sheet(aoa); ws['!cols']=(sl?[{wch:6},{wch:20},{wch:8},{wch:7},{wch:10},{wch:9},{wch:44},{wch:8},{wch:8},{wch:44}]:[{wch:7},{wch:10},{wch:9},{wch:44},{wch:8},{wch:8},{wch:44}]);
+  XLSX.utils.book_append_sheet(wb,ws,'Schedule');
+  if(sl&&sd.sessionPlan){
+    var pairs=(sd.rosterA||[]).map(function(a,i){return a+'|||'+sd.rosterB[i];});
+    var nmP=function(p){var q=p.split('|||');return dn(q[0])+' + '+dn(q[1]);};
+    var weeks=sd.sessionPlan.weeks;
+    var el=[['Pair'].concat(weeks.map(function(w){return 'Wk '+w.week;}),['Early','Late'])];
+    pairs.forEach(function(p){
+      var row=[nmP(p)], e=0, l=0;
+      weeks.forEach(function(w){ var s=w.sessions.filter(function(x){return x.pairs.indexOf(p)>=0;})[0]; var c=s?(s.session==='early'?'E':'L'):'-'; if(c==='E') e++; else if(c==='L') l++; row.push(c); });
+      el.push(row.concat([e,l]));
+    });
+    var w2=XLSX.utils.aoa_to_sheet(el); w2['!cols']=[{wch:30}]; XLSX.utils.book_append_sheet(wb,w2,'Early-Late');
+    var idx={}; pairs.forEach(function(p,i){idx[p]=i;});
+    var T=pairs.map(function(){return pairs.map(function(){return 0;});}), O=pairs.map(function(){return pairs.map(function(){return 0;});});
+    weeks.forEach(function(w){ w.sessions.forEach(function(s){ s.rounds.forEach(function(r){ r.matches.forEach(function(m){
+      [m.p1,m.p2].forEach(function(t){ var a=idx[t[0]],b=idx[t[1]]; if(a!=null&&b!=null){T[a][b]++;T[b][a]++;} });
+      m.p1.forEach(function(x){ m.p2.forEach(function(y){ var a=idx[x],b=idx[y]; if(a!=null&&b!=null){O[a][b]++;O[b][a]++;} }); });
+    }); }); }); });
+    [['Teammates',T],['Opponents',O]].forEach(function(z){
+      var rows=[[z[0]+' (pair with pair)'].concat(pairs.map(nmP),['Total'])];
+      pairs.forEach(function(p,i){ rows.push([nmP(p)].concat(z[1][i],[z[1][i].reduce(function(a,b){return a+b;},0)])); });
+      var wz=XLSX.utils.aoa_to_sheet(rows); wz['!cols']=[{wch:30}]; XLSX.utils.book_append_sheet(wb,wz,z[0]);
+    });
+  }
+  _xlSave(wb);
+}
+function exportTradLeagueXLSX(){
+  var sd=SD, wb=XLSX.utils.book_new(), n=(sd.scoring&&sd.scoring.numSets>1)?sd.scoring.numSets:1;
+  var hdr=['Week','Date','Slot','Time','Court','Team 1','Team 2'], i;
+  for(i=0;i<n;i++) hdr.push('Set '+(i+1)+' (T1-T2)'); hdr.push('Sets T1','Sets T2');
+  var aoa=[hdr], sit=[['Week','Slot','Sitting out']];
+  sd.sched.forEach(function(week,wi){ week.forEach(function(round,ri){
+    round.forEach(function(m,mi){
+      if(m.isBye) return;
+      var row=[wi+1, tlWeekDate(wi,true)||'', ri+1, tlSlotTime(wi,ri)||'', (sd.courts&&sd.courts[m.court])?sd.courts[m.court].name:'', dn(m.p1), dn(m.p2)], w1=0, w2=0;
+      for(i=0;i<n;i++){
+        var sc=scores['tl-w'+wi+'-r'+ri+'-m'+mi+(n>1?'-s'+i:'')]||{s1:'',s2:''};
+        var a=sc.s1!==''?parseInt(sc.s1):NaN, b=sc.s2!==''?parseInt(sc.s2):NaN;
+        if(!isNaN(a)&&!isNaN(b)){ row.push(a+'-'+b); if(a>b) w1++; else if(b>a) w2++; } else row.push('');
+      }
+      row.push(w1,w2); aoa.push(row);
+    });
+    if(sd.sitting&&sd.sitting[wi]&&sd.sitting[wi][ri]&&sd.sitting[wi][ri].length) sit.push([wi+1,ri+1,sd.sitting[wi][ri].map(dn).join(', ')]);
+  }); });
+  var ws=XLSX.utils.aoa_to_sheet(aoa); ws['!cols']=[{wch:6},{wch:20},{wch:6},{wch:20},{wch:9},{wch:22},{wch:22}]; XLSX.utils.book_append_sheet(wb,ws,'Schedule');
+  if(sit.length>1) XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sit),'Sit-outs');
+  _xlSave(wb);
+}
+function exportQuadsXLSX(){
+  var sd=SD, wb=XLSX.utils.book_new(), aoa=[['Round','Time','Pool','Court','Team 1','Score 1','Score 2','Team 2']];
+  rqRounds.forEach(function(round,ri){ round.pools.forEach(function(pool,pi){ rqPoolMatches(pool).forEach(function(m,mi){
+    var sc=scores[rqKey(ri,pi,mi)]||{s1:'',s2:''};
+    aoa.push([round.isFinal?'Finals':ri+1, round.isFinal?'':(tmStart(ri)||''), String.fromCharCode(65+pi), (sd.courts&&sd.courts[pi])?sd.courts[pi].name:'', m.p1.map(dn).join(' + '), sc.s1!==''?parseInt(sc.s1):'', sc.s2!==''?parseInt(sc.s2):'', m.p2.map(dn).join(' + ')]);
+  }); }); });
+  var ws=XLSX.utils.aoa_to_sheet(aoa); ws['!cols']=[{wch:7},{wch:10},{wch:6},{wch:9},{wch:30},{wch:8},{wch:8},{wch:30}]; XLSX.utils.book_append_sheet(wb,ws,'Schedule');
+  _xlSave(wb);
+}
 function exportXLSX(){
   if(fmt==='kob_league') exportLgXLSX();
   else if(fmt==='traditional_tournament' && SD.roundRobinOnly) exportRRXLSX();
   else if(fmt==='traditional_tournament') exportTournXLSX();
+  else if(fmt==='kob_random_mix') exportMixXLSX();
+  else if(fmt==='traditional_league') exportTradLeagueXLSX();
+  else if(fmt==='kob_quads') exportQuadsXLSX();
+  else alert('Export is not available for this format yet.');
 }
 function exportLgXLSX(){
   var sd=SD, wb=XLSX.utils.book_new();
