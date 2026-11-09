@@ -2600,6 +2600,31 @@ function formatSideNames(members){
   return names.join(' + ');
 }
 
+
+// ── Session-league dates & times (sd.sessionSchedule = {dates:{'1':'YYYY-MM-DD'}, early:{start:'HH:MM'}, late:{start:'HH:MM'}, roundMinutes:N}) ──
+function slFmtTime(hhmm,addMin){
+  var p=String(hhmm||'').split(':'); if(p.length<2||isNaN(+p[0])) return '';
+  var m=(+p[0])*60+(+p[1])+(addMin||0); m=((m%1440)+1440)%1440;
+  var h=Math.floor(m/60), mm=m%60;
+  return (h%12||12)+':'+('0'+mm).slice(-2)+' '+(h>=12?'PM':'AM');
+}
+function slFmtDate(iso,long){
+  var p=String(iso||'').split('-'); if(p.length<3) return '';
+  var d=new Date(+p[0],+p[1]-1,+p[2]); if(isNaN(d)) return '';
+  return d.toLocaleDateString('en-US',long?{weekday:'long',month:'long',day:'numeric'}:{month:'short',day:'numeric'});
+}
+function slWeekDate(w,long){ var s=SD.sessionSchedule; return (s&&s.dates&&s.dates[w])?slFmtDate(s.dates[w],long):''; }
+function slRoundTime(session,sessionRound){
+  var s=SD.sessionSchedule; if(!s||!s[session]||!s[session].start) return '';
+  return slFmtTime(s[session].start,(sessionRound-1)*(parseInt(s.roundMinutes)||0));
+}
+function slSessionRange(session){
+  var s=SD.sessionSchedule; if(!s||!s[session]||!s[session].start) return '';
+  var n=(SD.sessionPlan&&SD.sessionPlan.roundsPerSession)||4, mins=parseInt(s.roundMinutes)||0;
+  var a=slFmtTime(s[session].start,0);
+  return mins? a+' – '+slFmtTime(s[session].start,n*mins) : a;
+}
+
 function renderMixSchedule(){
   var sd=SD;
   var roundHtml='';
@@ -2611,20 +2636,24 @@ function renderMixSchedule(){
     weekNums.forEach(function(w){
       var first=-1; sd.rounds.forEach(function(r,ri){ if(first<0&&r.week===w&&r.session===cur.session) first=ri; });
       if(first<0) sd.rounds.forEach(function(r,ri){ if(first<0&&r.week===w) first=ri; });
-      roundHtml+='<button class="btn-sm'+(w===cur.week?' sel':'')+'" onclick="selMixRound='+first+';renderMixSchedule()">Wk '+w+'</button>';
+      roundHtml+='<button class="btn-sm'+(w===cur.week?' sel':'')+'" onclick="selMixRound='+first+';renderMixSchedule()">Wk '+w+(slWeekDate(w)?' \u00b7 '+slWeekDate(w):'')+'</button>';
     });
     roundHtml+='</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;width:100%;">';
     ['early','late'].forEach(function(ss){
       var first=-1; sd.rounds.forEach(function(r,ri){ if(first<0&&r.week===cur.week&&r.session===ss) first=ri; });
       if(first<0) return;
-      roundHtml+='<button class="btn-sm'+(ss===cur.session?' sel':'')+'" onclick="selMixRound='+first+';renderMixSchedule()">'+(ss==='early'?'Early':'Late')+' session</button>';
+      roundHtml+='<button class="btn-sm'+(ss===cur.session?' sel':'')+'" onclick="selMixRound='+first+';renderMixSchedule()">'+(ss==='early'?'Early':'Late')+' session'+(slRoundTime(ss,1)?' \u00b7 '+slRoundTime(ss,1):'')+'</button>';
     });
     roundHtml+='</div><div style="display:flex;flex-wrap:wrap;gap:6px;width:100%;">';
     sd.rounds.forEach(function(r,ri){
       if(r.week!==cur.week||r.session!==cur.session) return;
-      roundHtml+='<button class="btn-sm'+(ri===selMixRound?' sel':'')+'" onclick="selMixRound='+ri+';renderMixSchedule()">Round '+r.sessionRound+'</button>';
+      roundHtml+='<button class="btn-sm'+(ri===selMixRound?' sel':'')+'" onclick="selMixRound='+ri+';renderMixSchedule()">Round '+r.sessionRound+(slRoundTime(r.session,r.sessionRound)?' \u00b7 '+slRoundTime(r.session,r.sessionRound):'')+'</button>';
     });
     roundHtml+='</div>';
+    var _wd=slWeekDate(cur.week,true), _rt=slRoundTime(cur.session,cur.sessionRound), _sr=slSessionRange(cur.session);
+    if(_wd||_rt){
+      roundHtml+='<div style="font-size:13px;margin-top:10px;width:100%;line-height:1.6;"><strong>'+(_wd?_wd+' \u00b7 ':'')+'Week '+cur.week+'</strong> \u00b7 '+(cur.session==='early'?'Early':'Late')+' session'+(_sr?' ('+_sr+')':'')+(_rt?' \u00b7 <strong>Round '+cur.sessionRound+' at '+_rt+'</strong>':'')+'</div>';
+    }
     // who plays this session
     var wkPlan=(sd.sessionPlan&&sd.sessionPlan.weeks||[]).filter(function(w){return w.week===cur.week;})[0];
     var sessPlan=wkPlan&&wkPlan.sessions.filter(function(x){return x.session===cur.session;})[0];

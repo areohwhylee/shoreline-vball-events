@@ -1607,6 +1607,17 @@ function renderSessionLeagueModal(){
     });
     html+='<div class="season-actions" style="margin-top:8px;"><button class="btn btn-green" onclick="slSaveLocks()">Save locks &amp; redraw unscored weeks</button></div></div>';
   }
+  var sch=sd.sessionSchedule||{dates:{},early:{},late:{},roundMinutes:''};
+  html+='<div style="border:.5px solid #2d4a36;border-radius:8px;padding:10px;margin-bottom:12px;">'+
+    '<div style="font-size:13px;font-weight:600;margin-bottom:8px;">Dates &amp; times <span style="font-weight:400;color:#8aa;">(shown on the viewer)</span></div>'+
+    '<div style="display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;font-size:13px;margin-bottom:8px;">'+
+      '<label>Early session starts</label><input type="time" id="sl-t-early" value="'+((sch.early||{}).start||'')+'" style="width:120px;">'+
+      '<label>Late session starts</label><input type="time" id="sl-t-late" value="'+((sch.late||{}).start||'')+'" style="width:120px;">'+
+      '<label>Minutes per round</label><input type="number" id="sl-t-min" min="1" max="120" value="'+(sch.roundMinutes||'')+'" style="width:80px;">'+
+    '</div><div style="display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;font-size:13px;">';
+  weeks.forEach(function(wk){ html+='<label>Week '+wk.week+' date</label><input type="date" id="sl-d-'+wk.week+'" value="'+((sch.dates||{})[wk.week]||'')+'">'; });
+  html+='</div><div class="season-actions" style="margin-top:10px;gap:8px;flex-wrap:wrap;"><button class="btn btn-green" onclick="slSaveSchedule()">Save dates &amp; times</button>'+
+    '<button class="btn btn-ghost" onclick="slFillWeekly()">Fill later weeks (+7 days from Week 1)</button></div></div>';
   weeks.forEach(function(wk, wi){
     var pr=slWeekProgress(sd, wk.week);
     var complete=pr.total>0&&pr.done===pr.total;
@@ -1779,6 +1790,23 @@ async function slRemoveLastWeek(){
   if(!confirm('Remove Week '+last.week+'?')) return;
   weeks.pop(); slEdit.open=null;
   if(await slSave(sd)) renderMixModal();
+}
+function slFillWeekly(){
+  var first=document.getElementById('sl-d-'+mixSD.sessionPlan.weeks[0].week).value;
+  if(!first){ alert('Enter the Week 1 date first.'); return; }
+  var p=first.split('-');
+  mixSD.sessionPlan.weeks.forEach(function(wk,i){
+    var d=new Date(+p[0],+p[1]-1,+p[2]+7*i);
+    document.getElementById('sl-d-'+wk.week).value=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
+  });
+}
+async function slSaveSchedule(){
+  var sd=mixSD, dates={};
+  sd.sessionPlan.weeks.forEach(function(wk){ var v=document.getElementById('sl-d-'+wk.week).value; if(v) dates[wk.week]=v; });
+  var sch={dates:dates, early:{start:document.getElementById('sl-t-early').value||''}, late:{start:document.getElementById('sl-t-late').value||''},
+    roundMinutes:parseInt(document.getElementById('sl-t-min').value)||0};
+  sd.sessionSchedule=sch;
+  if(await slSave(sd)){ alert('Dates & times saved.'); renderMixModal(); }
 }
 async function slSaveLocks(){
   var sd=mixSD, pairs=slAllPairs(sd), locks={}, nE=0, nL=0;
